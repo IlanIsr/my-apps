@@ -31,6 +31,7 @@ import { anniversaryKey } from "../src/person";
 import {
   createPerson,
   isStoreConfigured,
+  listPersons,
   updatePerson,
   type StoredEvent,
 } from "../src/store";
@@ -82,6 +83,27 @@ async function main() {
       "FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY not set.",
     );
     process.exit(1);
+  }
+
+  if (commit) {
+    let existing: Awaited<ReturnType<typeof listPersons>>;
+    try {
+      existing = await listPersons();
+    } catch (error) {
+      console.error(
+        "Could not reach the Firestore database. Check FIREBASE_* creds and " +
+          "that the named database exists (FIREBASE_DATABASE_ID, default 'app-1').\n",
+        error,
+      );
+      process.exit(1);
+    }
+    if (existing.length > 0) {
+      console.error(
+        `The 'persons' collection already has ${existing.length} document(s). ` +
+          "Refusing to migrate on top of existing data — clear it first if this is a re-run.",
+      );
+      process.exit(1);
+    }
   }
 
   const all = await listAllEvents();

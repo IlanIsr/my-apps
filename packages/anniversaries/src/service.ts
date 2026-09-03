@@ -14,7 +14,6 @@ import {
 } from "@repo/hebcal";
 
 import {
-  deletePersonEvents,
   isCalendarReachable,
   patchEvent,
   syncPersonEvents,
@@ -27,7 +26,6 @@ import {
 } from "./person";
 import {
   createPerson,
-  deletePerson,
   findByKey,
   getPerson,
   isStoreConfigured,
@@ -246,13 +244,9 @@ export async function addAnniversary(
     members,
     events: base.map(toDesired),
   });
+  // A declined guest has effectively left. The person + events still stay on
+  // the shared calendar — only the shared account itself removes an event.
   const finalMembers = members.filter((m) => !sync.declined.includes(m));
-
-  if (finalMembers.length === 0) {
-    await deletePersonEvents(sync.events.map((e) => e.googleEventId));
-    await deletePerson(existing.id);
-    return { created: 0, joined: false };
-  }
 
   await updatePerson(existing.id, {
     members: finalMembers,
@@ -273,7 +267,11 @@ function toDesired(e: StoredEvent) {
   };
 }
 
-/** Remove the user from a person's list; delete everything if they were last. */
+/**
+ * Remove the user from a person's list. The person + their events always stay
+ * on the shared calendar (even with zero members) — only the shared account
+ * itself ever deletes an event.
+ */
 export async function leaveAnniversary(
   id: string,
   viewerEmail: string,
@@ -285,11 +283,6 @@ export async function leaveAnniversary(
   }
 
   const members = person.members.filter((m) => m !== email);
-  if (members.length === 0) {
-    await deletePersonEvents(person.events.map((e) => e.googleEventId));
-    await deletePerson(id);
-    return { removed: 0, deleted: person.events.length };
-  }
 
   const sync = await syncPersonEvents({
     personId: id,
@@ -298,12 +291,6 @@ export async function leaveAnniversary(
     events: person.events.map(toDesired),
   });
   const finalMembers = members.filter((m) => !sync.declined.includes(m));
-
-  if (finalMembers.length === 0) {
-    await deletePersonEvents(sync.events.map((e) => e.googleEventId));
-    await deletePerson(id);
-    return { removed: 1, deleted: person.events.length };
-  }
 
   await updatePerson(id, {
     members: finalMembers,

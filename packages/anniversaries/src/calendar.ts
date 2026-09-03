@@ -277,21 +277,23 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
   return { events, declined: [...declined] };
 }
 
+/** Delete one Google Calendar event. Throws if the API rejects it. */
+export async function deleteEvent(id: string): Promise<void> {
+  await calendarApi(`/${encodeURIComponent(id)}?sendUpdates=none`, {
+    method: "DELETE",
+  });
+}
+
 /** Delete the given Google Calendar events; ignores ones already gone. */
 export async function deletePersonEvents(ids: string[]): Promise<void> {
   await Promise.all(
-    ids
-      .filter(Boolean)
-      .map(async (id) => {
-        try {
-          await calendarApi(
-            `/${encodeURIComponent(id)}?sendUpdates=none`,
-            { method: "DELETE" },
-          );
-        } catch {
-          // already deleted
-        }
-      }),
+    ids.filter(Boolean).map(async (id) => {
+      try {
+        await deleteEvent(id);
+      } catch {
+        // already deleted
+      }
+    }),
   );
 }
 
