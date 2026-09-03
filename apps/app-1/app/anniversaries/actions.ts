@@ -11,7 +11,7 @@ import {
   leaveAnniversary,
   NoSuchHebrewDateError,
   updateEvent,
-} from "@/server/calendar";
+} from "@repo/anniversaries";
 
 export type ActionResult<T = undefined> =
   | ({ ok: true } & (T extends undefined ? object : { data: T }))

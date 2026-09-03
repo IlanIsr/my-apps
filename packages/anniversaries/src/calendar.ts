@@ -1,5 +1,3 @@
-import "server-only";
-
 import { OAuth2Client } from "google-auth-library";
 
 import {
@@ -14,7 +12,7 @@ import {
   encodeAnniversaryDescription,
   type Anniversary,
   type AnniversaryEvent,
-} from "@/lib/anniversary";
+} from "./anniversary";
 
 const TIMEZONE = "Asia/Jerusalem";
 const EVENT_DURATION_MIN = 15;

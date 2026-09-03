@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { useLanguage } from "@/i18n";
-import type { Anniversary, AnniversaryEvent } from "@/lib/anniversary";
+import type { Anniversary, AnniversaryEvent } from "@repo/anniversaries";
 import { updateEventAction } from "../../anniversaries/actions";
 
 export type EditEventFormTexts = {

@@ -1,6 +1,6 @@
 import { getCurrentUserEmail } from "@repo/auth/user";
 
-import { isCalendarConfigured, listAnniversaries } from "@/server/calendar";
+import { isCalendarConfigured, listAnniversaries } from "@repo/anniversaries";
 import type { AgendaItem } from "../components/anniversary/CalendarAgenda";
 import { AgendaView } from "./AgendaView";
 

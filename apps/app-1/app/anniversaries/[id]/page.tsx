@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 
 import { getCurrentUserEmail } from "@repo/auth/user";
 
-import { getAnniversary, isCalendarConfigured } from "@/server/calendar";
+import { getAnniversary, isCalendarConfigured } from "@repo/anniversaries";
 import { AnniversaryDetailView } from "./AnniversaryDetailView";
 
 export const dynamic = "force-dynamic";

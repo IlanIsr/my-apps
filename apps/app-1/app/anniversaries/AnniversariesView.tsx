@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "@/i18n";
-import type { Anniversary } from "@/lib/anniversary";
+import type { Anniversary } from "@repo/anniversaries";
 import { AnniversaryList } from "../components/anniversary/AnniversaryList";
 import { CalendarUnavailable } from "../components/anniversary/CalendarUnavailable";
 

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { LOCALE_TAG, useLanguage } from "@/i18n";
-import type { Anniversary } from "@/lib/anniversary";
+import type { Anniversary } from "@repo/anniversaries";
 
 export type AnniversariesTexts = {
   listPage: { title: string; subtitle: string };

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { LOCALE_TAG, useLanguage } from "@/i18n";
-import type { Anniversary } from "@/lib/anniversary";
+import type { Anniversary } from "@repo/anniversaries";
 import {
   addAnniversaryAction,
   leaveAnniversaryAction,
