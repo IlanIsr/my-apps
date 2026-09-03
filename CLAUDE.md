@@ -41,6 +41,10 @@ Run from the repo root; Turborepo fans tasks out across the workspace.
 
 No test runner is configured — there is no `test` task in `turbo.json` or any package.
 
+### Env vars
+
+Next only reads `.env*` from an app's own directory. `@repo/env/load` (imported at the top of every `apps/*/next.config.js`) backfills from a **monorepo-root `.env`** with `override: false` — so shared defaults live in root `.env` (git-ignored; see `.env.example`), and an app's own `apps/<name>/.env.local` overrides them. Production sets vars per App Hosting backend, which also win (nothing is committed).
+
 ## Code architecture
 
 ### Shared packages (consumed as raw source, not built)
@@ -49,6 +53,7 @@ No test runner is configured — there is no `test` task in `turbo.json` or any 
 - `@repo/ui` — React components, exports per-file as `./src/*.tsx` (import as `@repo/ui/button`). Raw source. Starter-quality on purpose; leave it.
 - `@repo/tailwind-config` — shared Tailwind v4 base (`styles.css`, exported as `.`). See the styling note above.
 - `@repo/auth` — Clerk wiring shared by all apps. Exports `./proxy` (`clerkProxy` handler), `./provider` (`<AuthProvider>`), `./sign-in` (`<SignInView>`), `./nav` (`<AuthControl>`). See the Auth section below.
+- `@repo/env` — `./load` (a side-effect JS module) backfills env vars from the root `.env`; imported by each app's `next.config.js`. See the Env vars note.
 - `@repo/eslint-config` — flat-config presets `./base`, `./next-js`, `./react-internal`. `base.js` includes `eslint-config-prettier`, `typescript-eslint`, `eslint-plugin-turbo`, and `eslint-plugin-only-warn` (downgrades every rule to a warning — combined with the apps' `--max-warnings 0`, warnings still block).
 - `@repo/typescript-config` — `base.json`, `nextjs.json`, `react-library.json`. Base is strict with `noUncheckedIndexedAccess` and `NodeNext` resolution.
 
@@ -72,7 +77,7 @@ All three apps are **fully gated** — every route redirects to `/sign-in` witho
 - **Wiring per app**: `proxy.ts` (Next 16's renamed middleware — re-exports `clerkProxy`, but `config.matcher` must be a literal in the file), `<AuthProvider>` in the root layout, `<AuthControl>` in the header, `app/sign-in/[[...sign-in]]/page.tsx` rendering `<SignInView>`.
 - **`@clerk/nextjs` is v7 / "Core 3"** (March 2026): `<SignedIn>`/`<SignedOut>`/`<Protect>` are gone — use `<Show when="signed-in">`. `createRouteMatcher` is deprecated. The proxy does a plain `auth()` + `NextResponse.redirect` instead.
 - Social-only (Google + Apple) is configured in the Clerk dashboard, not code.
-- **Env**: each app needs its own `.env.local` (see `.env.example`) with `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` — same values in all three. Also set them in each App Hosting backend for production.
+- **Keys**: put `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` in the root `.env` (see env note below). Set them per App Hosting backend for production.
 
 ## Firebase
 
