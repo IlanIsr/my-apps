@@ -59,7 +59,7 @@ Apps consume these via `workspace:*`. Changes to a package are seen directly by 
 
 ### app-1 i18n
 
-Hand-rolled, no library. `apps/app-1/i18n/`: `config.ts` (locales `en`/`he`/`fr`, dir, `Intl` tags), `messages/{en,he,fr}.ts` typed against `types.ts`, `context.tsx` (`I18nProvider` + `useI18n()` → `{ locale, setLocale, t, dir }`). Locale is persisted in `localStorage` (`app-1.locale`) and read via `useSyncExternalStore` (falls back to `navigator.language`, then `en`). An inline script in `layout.tsx` sets `<html lang/dir>` before paint to avoid an RTL flash — **keep its storage key and locale list in sync with `config.ts`**. Gregorian month names come from `Intl.DateTimeFormat`, not the message files. Add a UI string → add it to `types.ts` and all three message files (TS enforces completeness).
+Hand-rolled, no library. `apps/app-1/i18n/`: `config.ts` (locales `en`/`he`/`fr`, dir, `Intl` tags), `context.tsx` (`I18nProvider` + `useI18n()` → `{ locale, setLocale, t, dir }`), and `messages/<locale>/` — one folder per language, each with `common.ts` / `home.ts` / `forms.ts` (split further as strings grow) composed into the full `Messages` object in that folder's `index.ts`. Partials are typed as `Messages["home"]` etc.; `index.ts` is where TS enforces the object is complete. Locale is persisted in `localStorage` (`app-1.locale`) and read via `useSyncExternalStore` (falls back to `navigator.language`, then `en`). An inline script in `layout.tsx` sets `<html lang/dir>` before paint to avoid an RTL flash — **keep its storage key and locale list in sync with `config.ts`**. Gregorian month names come from `Intl.DateTimeFormat`, not the message files. Add a UI string → add it to `types.ts` and the matching partial in all three locale folders.
 
 ## Firebase
 
