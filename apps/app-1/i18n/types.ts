@@ -1,7 +1,13 @@
 import type { HebrewMonthKey } from "@repo/hebcal";
 
+import type { AnniversaryMessages } from "./messages/en/anniversary";
+import type { CalendarMessages } from "./messages/en/calendar";
+
 export type Messages = {
   appName: string;
+  /** Anniversary manager (Google Calendar feature). */
+  anniversary: AnniversaryMessages;
+  calendar: CalendarMessages;
   home: {
     question: string;
     gregorian: string;

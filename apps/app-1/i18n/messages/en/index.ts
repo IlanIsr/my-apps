@@ -1,4 +1,6 @@
 import type { Messages } from "../../types";
+import { anniversary } from "./anniversary";
+import { calendar } from "./calendar";
 import { common } from "./common";
 import { gregorianForm, hebrewForm, hebrewMonths } from "./forms";
 import { home } from "./home";
@@ -9,4 +11,6 @@ export const en: Messages = {
   hebrewForm,
   gregorianForm,
   hebrewMonths,
+  anniversary,
+  calendar,
 };
