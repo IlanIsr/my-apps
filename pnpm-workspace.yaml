@@ -3,6 +3,7 @@ packages:
   - "packages/*"
 allowBuilds:
   '@firebase/util': true
+  esbuild: true
   protobufjs: true
 minimumReleaseAgeExclude:
   - '@clerk/backend@3.17.1'

@@ -33,20 +33,28 @@ export function toHebrewMonthKey(name: string): string {
   return n;
 }
 
+/** One future occurrence of a Hebrew day/month: its Hebrew year and the eve. */
+export type HebrewOccurrence = {
+  /** The Hebrew year the day/month falls in — a stable per-occurrence key. */
+  hebrewYear: number;
+  /** Gregorian eve of that occurrence, ISO `YYYY-MM-DD`. */
+  date: string;
+};
+
 /**
- * The next `count` Gregorian dates on which a Hebrew day + month recurs,
- * **shifted one day earlier** so a calendar event lands on the eve — the Jewish
- * day begins at nightfall, so an anniversary "on" a Hebrew date is observed the
- * preceding evening. Only dates today or later are returned.
+ * The next `count` occurrences on which a Hebrew day + month recurs, each with
+ * its Hebrew year and the Gregorian **eve** date (the Jewish day begins at
+ * nightfall, so an anniversary "on" a Hebrew date is observed the preceding
+ * evening). Only occurrences whose eve is today or later are returned.
  *
- * Returns ISO `YYYY-MM-DD` strings. Skips years where the date can't exist
- * (30th of a 29-day month, Adar II in a non-leap year, …).
+ * Skips years where the date can't exist (30th of a 29-day month, Adar II in a
+ * non-leap year, …).
  */
-export function calculateNextDates(
+export function calculateNextOccurrences(
   hebDay: number,
   hebMonth: string,
   count = 10,
-): string[] {
+): HebrewOccurrence[] {
   count = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
   if (count === 0) return [];
 
@@ -56,12 +64,12 @@ export function calculateNextDates(
   today.setHours(0, 0, 0, 0);
   const currentHebrewYear = new HDate(today).getFullYear();
 
-  const dates: string[] = [];
+  const occurrences: HebrewOccurrence[] = [];
   const MAX_OFFSET = count + 15; // safety margin for skipped years
 
   for (
     let offset = 0;
-    dates.length < count && offset <= MAX_OFFSET;
+    occurrences.length < count && offset <= MAX_OFFSET;
     offset++
   ) {
     const hebrewYear = currentHebrewYear + offset;
@@ -78,16 +86,29 @@ export function calculateNextDates(
       eve.setDate(eve.getDate() - 1);
 
       if (eve >= today) {
-        dates.push(
-          `${eve.getFullYear()}-${String(eve.getMonth() + 1).padStart(2, "0")}-${String(eve.getDate()).padStart(2, "0")}`,
-        );
+        occurrences.push({
+          hebrewYear,
+          date: `${eve.getFullYear()}-${String(eve.getMonth() + 1).padStart(2, "0")}-${String(eve.getDate()).padStart(2, "0")}`,
+        });
       }
     } catch {
       // date doesn't exist this year — skip
     }
   }
 
-  return dates;
+  return occurrences;
+}
+
+/**
+ * The next `count` Gregorian eve dates on which a Hebrew day + month recurs, as
+ * ISO `YYYY-MM-DD` strings. See {@link calculateNextOccurrences}.
+ */
+export function calculateNextDates(
+  hebDay: number,
+  hebMonth: string,
+  count = 10,
+): string[] {
+  return calculateNextOccurrences(hebDay, hebMonth, count).map((o) => o.date);
 }
 
 const MONTH_NUM_TO_NAME: Record<number, string> = {

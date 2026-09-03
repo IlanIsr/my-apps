@@ -15,7 +15,7 @@ export type AgendaItem = {
   name: string;
   date: string;
   time?: string;
-  htmlLink: string;
+  htmlLink?: string;
 };
 
 export function CalendarAgenda({

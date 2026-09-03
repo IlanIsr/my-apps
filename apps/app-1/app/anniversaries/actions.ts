@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { getCurrentUserEmail } from "@repo/auth/user";
+import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
 
 import { getDictionary, type Locale } from "@/i18n";
 import {
@@ -10,6 +10,7 @@ import {
   CalendarNotConfiguredError,
   leaveAnniversary,
   NoSuchHebrewDateError,
+  StoreNotConfiguredError,
   updateEvent,
 } from "@repo/anniversaries";
 
@@ -21,7 +22,10 @@ export type ActionResult<T = undefined> =
     };
 
 function fail(error: unknown): { ok: false; error: string } {
-  if (error instanceof CalendarNotConfiguredError) {
+  if (
+    error instanceof CalendarNotConfiguredError ||
+    error instanceof StoreNotConfiguredError
+  ) {
     return { ok: false, error: "not-configured" };
   }
   if (error instanceof NoSuchHebrewDateError) {
@@ -42,14 +46,22 @@ export async function addAnniversaryAction(input: {
   hebMonth: string;
   years: number;
   sharedEmails: string[];
+  hebrewName?: string;
+  origin?: string;
   locale: Locale;
 }): Promise<ActionResult<{ created: number; joined: boolean }>> {
   try {
-    const email = await getCurrentUserEmail();
-    if (!email) return { ok: false, error: "not-signed-in" };
+    const [email, userId] = await Promise.all([
+      getCurrentUserEmail(),
+      getCurrentUserId(),
+    ]);
+    if (!email || !userId) return { ok: false, error: "not-signed-in" };
 
     const summary = getDictionary(input.locale).eventSummary.format(input.name);
-    const data = await addAnniversary({ ...input, summary }, email);
+    const data = await addAnniversary(
+      { ...input, summary, createdBy: userId },
+      email,
+    );
     refreshAnniversaries();
     return { ok: true, data };
   } catch (error) {

@@ -105,6 +105,15 @@ export function findNextHebrewDate(
   return null;
 }
 
+/** The Hebrew year a Gregorian date (1-based month) falls in. */
+export function hebrewYearForGregorian(
+  year: number,
+  month: number,
+  day: number,
+): number {
+  return new HDate(new Date(year, month - 1, day)).getFullYear();
+}
+
 /**
  * Convert a Gregorian date to its Hebrew equivalent. `monthIndex` is 0-based
  * (JS `Date` convention). Returns `null` for dates that don't exist

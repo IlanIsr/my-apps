@@ -8,10 +8,12 @@
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "migrate": "node --env-file=../../.env --import tsx scripts/migrate-to-firestore.ts"
   },
   "dependencies": {
     "@repo/hebcal": "workspace:*",
+    "firebase-admin": "^14.3.0",
     "google-auth-library": "^10.5.0"
   },
   "devDependencies": {
@@ -20,6 +22,7 @@
     "@types/node": "26.3.0",
     "eslint": "10.9.1",
     "globals": "17.11.0",
+    "tsx": "^4.19.2",
     "typescript": "7.0.2"
   }
 }

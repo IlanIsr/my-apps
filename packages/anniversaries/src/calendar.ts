@@ -1,18 +1,16 @@
+/**
+ * Google Calendar I/O against the shared bot calendar
+ * (`anniversaries.calendar@gmail.com`). The calendar is a **projection** of
+ * Firestore: `syncPersonEvents` reconciles a person's events to match what the
+ * store says they should be.
+ *
+ * Authenticates AS the bot account via `google-auth-library` + a stored refresh
+ * token; talks to the Calendar REST API with `fetch`.
+ */
+
 import { OAuth2Client } from "google-auth-library";
 
-import {
-  calculateNextDates,
-  getTsetHakohavimWithFallback,
-  parseHebrewDate,
-} from "@repo/hebcal";
-
-import {
-  anniversaryKey,
-  decodeAnniversaryDescription,
-  encodeAnniversaryDescription,
-  type Anniversary,
-  type AnniversaryEvent,
-} from "./anniversary";
+import { getTsetHakohavimWithFallback } from "@repo/hebcal";
 
 const TIMEZONE = "Asia/Jerusalem";
 const EVENT_DURATION_MIN = 15;
@@ -27,13 +25,6 @@ export class CalendarNotConfiguredError extends Error {
   constructor() {
     super("shared-calendar-not-configured");
     this.name = "CalendarNotConfiguredError";
-  }
-}
-
-export class NoSuchHebrewDateError extends Error {
-  constructor() {
-    super("no-such-hebrew-date");
-    this.name = "NoSuchHebrewDateError";
   }
 }
 
@@ -73,11 +64,13 @@ async function calendarApi<T>(path: string, init?: RequestInit): Promise<T> {
       `Google Calendar API ${response.status}: ${await response.text()}`,
     );
   }
-  return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+  return response.status === 204
+    ? (undefined as T)
+    : ((await response.json()) as T);
 }
 
 /** Whether the shared bot calendar is configured and reachable. */
-export async function isCalendarConfigured(): Promise<boolean> {
+export async function isCalendarReachable(): Promise<boolean> {
   try {
     const response = await fetch(`${eventsUrl}?maxResults=1`, {
       headers: { Authorization: `Bearer ${await botToken()}` },
@@ -88,59 +81,258 @@ export async function isCalendarConfigured(): Promise<boolean> {
   }
 }
 
-type GoogleAttendee = { email?: string; optional?: boolean };
-type GoogleEvent = {
+type GoogleAttendee = {
+  email?: string;
+  optional?: boolean;
+  responseStatus?: string;
+};
+
+export type GoogleEvent = {
   id: string;
   summary?: string;
   description?: string;
   htmlLink?: string;
   start?: { dateTime?: string; date?: string };
   attendees?: GoogleAttendee[];
+  extendedProperties?: { private?: Record<string, string> };
 };
 
-function attendeeEmails(event: GoogleEvent): string[] {
-  return (event.attendees ?? [])
-    .map((a) => a.email?.toLowerCase().trim())
-    .filter((email): email is string => Boolean(email));
-}
+type AttendeeInput = { email: string; responseStatus?: string };
 
 function buildEventBody(fields: {
-  summary: string;
-  description: string;
+  summary?: string;
+  description?: string;
   date: string;
   time: string;
-  attendees: string[];
-}) {
+  attendees: AttendeeInput[];
+  personId?: string;
+}): Record<string, unknown> {
   const [hour = 0, minute = 0] = fields.time.split(":").map(Number);
   const endTotal = minute + EVENT_DURATION_MIN;
-  const endTime = `${String(hour + Math.floor(endTotal / 60)).padStart(2, "0")}:${String(endTotal % 60).padStart(2, "0")}`;
+  const endTime = `${String(hour + Math.floor(endTotal / 60)).padStart(
+    2,
+    "0",
+  )}:${String(endTotal % 60).padStart(2, "0")}`;
 
-  return {
-    summary: fields.summary,
-    description: fields.description,
+  const body: Record<string, unknown> = {
     start: { dateTime: `${fields.date}T${fields.time}:00`, timeZone: TIMEZONE },
     end: { dateTime: `${fields.date}T${endTime}:00`, timeZone: TIMEZONE },
-    attendees: fields.attendees.map((email) => ({ email, optional: true })),
+    attendees: fields.attendees.map((a) =>
+      a.responseStatus
+        ? { email: a.email, optional: true, responseStatus: a.responseStatus }
+        : { email: a.email, optional: true },
+    ),
     guestsCanModify: false,
     guestsCanInviteOthers: false,
     guestsCanSeeOtherGuests: false,
     colorId: EVENT_COLOR_ID,
   };
+  if (fields.summary !== undefined) body.summary = fields.summary;
+  if (fields.description !== undefined) body.description = fields.description;
+  if (fields.personId) {
+    body.extendedProperties = { private: { personId: fields.personId } };
+  }
+  return body;
 }
 
-function toAnniversaryEvent(event: GoogleEvent): AnniversaryEvent {
-  const start = event.start?.dateTime ?? "";
-  return {
-    id: event.id,
-    date: start.slice(0, 10) || event.start?.date || "",
-    summary: event.summary ?? "",
-    startDateTime: start,
-    htmlLink: event.htmlLink ?? "",
-    time: start.slice(11, 16) || undefined,
-  };
+export type DesiredEvent = {
+  year: number;
+  /** Gregorian eve date, ISO `YYYY-MM-DD`. */
+  date: string;
+  /** `HH:MM`, or `""` to compute tzeit hakochavim. */
+  time: string;
+  /** Existing Google event id, or `""` to create one. */
+  googleEventId: string;
+};
+
+export type SyncedEvent = {
+  year: number;
+  date: string;
+  time: string;
+  googleEventId: string;
+  htmlLink: string;
+};
+
+export type SyncInput = {
+  personId: string;
+  /** Pre-translated event title. Omit to leave existing titles untouched. */
+  summary?: string;
+  /** Title for brand-new events when `summary` is omitted. */
+  summaryFallback: string;
+  /** Event description. Omit to leave it untouched. */
+  description?: string;
+  /** Family member emails (any case). */
+  members: string[];
+  /** The events that should exist, after applying manual overrides. */
+  events: DesiredEvent[];
+};
+
+export type SyncResult = {
+  events: SyncedEvent[];
+  /** Emails that declined on the shared calendar — treat as "left". */
+  declined: string[];
+};
+
+/** Reconcile a person's Google Calendar events to match `input`. */
+export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
+  // 1. Fetch the events we think already exist.
+  const existing = new Map<string, GoogleEvent>();
+  await Promise.all(
+    input.events
+      .filter((e) => e.googleEventId)
+      .map(async (e) => {
+        try {
+          existing.set(
+            e.googleEventId,
+            await calendarApi<GoogleEvent>(
+              `/${encodeURIComponent(e.googleEventId)}`,
+            ),
+          );
+        } catch {
+          // deleted on the calendar — it'll be recreated below
+        }
+      }),
+  );
+
+  // 2. Anyone who declined on any existing event has left.
+  const declined = new Set<string>();
+  for (const ev of existing.values()) {
+    for (const a of ev.attendees ?? []) {
+      if (a.responseStatus === "declined" && a.email) {
+        declined.add(a.email.toLowerCase());
+      }
+    }
+  }
+  const memberEmails = [
+    ...new Set(input.members.map((m) => m.toLowerCase())),
+  ].filter((m) => !declined.has(m));
+
+  // 3. Reconcile each desired event.
+  const events = await Promise.all(
+    input.events.map(async (want): Promise<SyncedEvent> => {
+      const time = want.time || (await getTsetHakohavimWithFallback(want.date));
+      const found = want.googleEventId
+        ? existing.get(want.googleEventId)
+        : undefined;
+
+      const priorStatus = new Map<string, string>();
+      for (const a of found?.attendees ?? []) {
+        if (a.email && a.responseStatus) {
+          priorStatus.set(a.email.toLowerCase(), a.responseStatus);
+        }
+      }
+      const attendees: AttendeeInput[] = memberEmails.map((email) => {
+        const responseStatus = priorStatus.get(email);
+        return responseStatus ? { email, responseStatus } : { email };
+      });
+
+      if (found) {
+        const patched = await calendarApi<GoogleEvent>(
+          `/${encodeURIComponent(found.id)}?sendUpdates=none`,
+          {
+            method: "PATCH",
+            body: JSON.stringify(
+              buildEventBody({
+                summary: input.summary,
+                description: input.description,
+                date: want.date,
+                time,
+                attendees,
+              }),
+            ),
+          },
+        );
+        return {
+          year: want.year,
+          date: want.date,
+          time,
+          googleEventId: found.id,
+          htmlLink: patched.htmlLink ?? found.htmlLink ?? "",
+        };
+      }
+
+      const created = await calendarApi<GoogleEvent>("?sendUpdates=none", {
+        method: "POST",
+        body: JSON.stringify(
+          buildEventBody({
+            summary: input.summary ?? input.summaryFallback,
+            description: input.description ?? "",
+            date: want.date,
+            time,
+            attendees,
+            personId: input.personId,
+          }),
+        ),
+      });
+      return {
+        year: want.year,
+        date: want.date,
+        time,
+        googleEventId: created.id,
+        htmlLink: created.htmlLink ?? "",
+      };
+    }),
+  );
+
+  return { events, declined: [...declined] };
 }
 
-async function listAllEvents(): Promise<GoogleEvent[]> {
+/** Delete the given Google Calendar events; ignores ones already gone. */
+export async function deletePersonEvents(ids: string[]): Promise<void> {
+  await Promise.all(
+    ids
+      .filter(Boolean)
+      .map(async (id) => {
+        try {
+          await calendarApi(
+            `/${encodeURIComponent(id)}?sendUpdates=none`,
+            { method: "DELETE" },
+          );
+        } catch {
+          // already deleted
+        }
+      }),
+  );
+}
+
+/** Patch a single event's date/time/title (a manual per-event edit). */
+export async function patchEvent(input: {
+  googleEventId: string;
+  date: string;
+  time: string;
+  summary?: string;
+  description?: string;
+}): Promise<{ htmlLink: string }> {
+  const event = await calendarApi<GoogleEvent>(
+    `/${encodeURIComponent(input.googleEventId)}`,
+  );
+  const attendees: AttendeeInput[] = (event.attendees ?? [])
+    .filter((a): a is GoogleAttendee & { email: string } => Boolean(a.email))
+    .map((a) =>
+      a.responseStatus
+        ? { email: a.email, responseStatus: a.responseStatus }
+        : { email: a.email },
+    );
+  const patched = await calendarApi<GoogleEvent>(
+    `/${encodeURIComponent(input.googleEventId)}?sendUpdates=none`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(
+        buildEventBody({
+          summary: input.summary,
+          description: input.description,
+          date: input.date,
+          time: input.time,
+          attendees,
+        }),
+      ),
+    },
+  );
+  return { htmlLink: patched.htmlLink ?? event.htmlLink ?? "" };
+}
+
+/** Every event on the shared calendar. Used only by the migration script. */
+export async function listAllEvents(): Promise<GoogleEvent[]> {
   const events: GoogleEvent[] = [];
   let pageToken: string | undefined;
   do {
@@ -160,242 +352,20 @@ async function listAllEvents(): Promise<GoogleEvent[]> {
   return events;
 }
 
-type Grouped = {
-  name: string;
-  hebDateLabel: string;
-  hebDate: { day: number; month: string };
-  members: Set<string>;
-  events: GoogleEvent[];
-};
-
-async function groupAnniversaries(): Promise<Map<string, Grouped>> {
-  const byKey = new Map<string, Grouped>();
-
-  for (const event of await listAllEvents()) {
-    const tag = decodeAnniversaryDescription(event.description);
-    if (!tag) continue;
-    const hebDate = parseHebrewDate(tag.hebDateLabel);
-    if (!hebDate) continue;
-
-    const key = anniversaryKey(tag.name, hebDate.day, hebDate.month);
-    const existing = byKey.get(key);
-    if (existing) {
-      existing.events.push(event);
-      for (const email of attendeeEmails(event)) existing.members.add(email);
-    } else {
-      byKey.set(key, {
-        name: tag.name,
-        hebDateLabel: tag.hebDateLabel,
-        hebDate,
-        members: new Set(attendeeEmails(event)),
-        events: [event],
-      });
-    }
-  }
-
-  return byKey;
-}
-
-function toAnniversary(
-  key: string,
-  group: Grouped,
-  userEmail: string,
-): Anniversary {
-  const events = group.events
-    .map(toAnniversaryEvent)
-    .sort((a, b) => a.date.localeCompare(b.date));
-  return {
-    id: key,
-    name: group.name,
-    hebDate: group.hebDate,
-    hebDateLabel: group.hebDateLabel,
-    members: [...group.members].sort(),
-    joined: group.members.has(userEmail.toLowerCase()),
-    events,
-  };
-}
-
-/** Every anniversary on the shared calendar, with a `joined` flag for the user. */
-export async function listAnniversaries(
-  userEmail: string,
-): Promise<Anniversary[]> {
-  const grouped = await groupAnniversaries();
-  const list = [...grouped.entries()].map(([key, group]) =>
-    toAnniversary(key, group, userEmail),
-  );
-  list.sort((a, b) =>
-    (a.events[0]?.date ?? "").localeCompare(b.events[0]?.date ?? ""),
-  );
-  return list;
-}
-
-export async function getAnniversary(
-  id: string,
-  userEmail: string,
-): Promise<Anniversary | null> {
-  const grouped = await groupAnniversaries();
-  const group = grouped.get(id);
-  return group ? toAnniversary(id, group, userEmail) : null;
-}
-
-export type AddAnniversaryInput = {
-  name: string;
-  hebDay: number;
-  hebMonth: string;
-  years: number;
-  /** Extra people to add to the family list alongside the current user. */
-  sharedEmails: string[];
-  /** Pre-translated event title. */
-  summary: string;
-};
-
-/**
- * Create the shared events for an anniversary, or — if it already exists — add
- * the current user (and any `sharedEmails`) to its events and top up missing
- * future years.
- */
-export async function addAnniversary(
-  input: AddAnniversaryInput,
-  userEmail: string,
-): Promise<{ created: number; joined: boolean }> {
-  const email = userEmail.toLowerCase();
-  const hebDateLabel = `${input.hebDay} ${input.hebMonth}`;
-  const description = encodeAnniversaryDescription(input.name, hebDateLabel);
-  const key = anniversaryKey(input.name, input.hebDay, input.hebMonth);
-
-  const grouped = await groupAnniversaries();
-  const existing = grouped.get(key);
-
-  // Guard against a missing/garbage `years` producing a silent no-op.
-  const years = Math.min(
-    50,
-    Math.max(1, Number.isFinite(input.years) ? Math.floor(input.years) : 1),
-  );
-  const wantedDates = calculateNextDates(
-    input.hebDay,
-    input.hebMonth,
-    years,
-  );
-
-  if (existing) {
-    // Add the user (+ shared) to every existing event.
-    const toAdd = [email, ...input.sharedEmails.map((e) => e.toLowerCase())];
-    for (const event of existing.events) {
-      const current = attendeeEmails(event);
-      const merged = [...new Set([...current, ...toAdd])];
-      if (merged.length !== current.length) {
-        await calendarApi(`/${encodeURIComponent(event.id)}?sendUpdates=none`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            attendees: merged.map((e) => ({ email: e, optional: true })),
-          }),
-        });
-      }
-    }
-
-    // Create events for any wanted future date that doesn't exist yet.
-    const covered = new Set(
-      existing.events.map((e) => toAnniversaryEvent(e).date),
-    );
-    const members = [...new Set([...existing.members, ...toAdd])];
-    let created = 0;
-    for (const date of wantedDates.filter((d) => !covered.has(d))) {
-      await createEvent({ date, summary: input.summary, description, members });
-      created++;
-    }
-    return { created, joined: true };
-  }
-
-  // Brand new anniversary — if the date never occurs there's nothing to create.
-  if (wantedDates.length === 0) throw new NoSuchHebrewDateError();
-
-  const members = [
-    ...new Set([email, ...input.sharedEmails.map((e) => e.toLowerCase())]),
-  ];
-  let created = 0;
-  for (const date of wantedDates) {
-    await createEvent({ date, summary: input.summary, description, members });
-    created++;
-  }
-  return { created, joined: true };
-}
-
-async function createEvent(fields: {
-  date: string;
-  summary: string;
-  description: string;
-  members: string[];
-}): Promise<void> {
-  const time = await getTsetHakohavimWithFallback(fields.date);
-  await calendarApi("?sendUpdates=none", {
-    method: "POST",
-    body: JSON.stringify(
-      buildEventBody({
-        summary: fields.summary,
-        description: fields.description,
-        date: fields.date,
-        time,
-        attendees: fields.members,
+/** Replace an event's legacy JSON description with a clean tag. Migration only. */
+export async function rewriteEventTag(
+  googleEventId: string,
+  personId: string,
+  description = "",
+): Promise<void> {
+  await calendarApi(
+    `/${encodeURIComponent(googleEventId)}?sendUpdates=none`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        description,
+        extendedProperties: { private: { personId } },
       }),
-    ),
-  });
-}
-
-/** Remove the user from an anniversary's events; delete an event if nobody's left. */
-export async function leaveAnniversary(
-  id: string,
-  userEmail: string,
-): Promise<{ removed: number; deleted: number }> {
-  const email = userEmail.toLowerCase();
-  const grouped = await groupAnniversaries();
-  const group = grouped.get(id);
-  if (!group) return { removed: 0, deleted: 0 };
-
-  let removed = 0;
-  let deleted = 0;
-  for (const event of group.events) {
-    const remaining = attendeeEmails(event).filter((e) => e !== email);
-    if (remaining.length === attendeeEmails(event).length) continue;
-
-    if (remaining.length === 0) {
-      await calendarApi(`/${encodeURIComponent(event.id)}?sendUpdates=none`, {
-        method: "DELETE",
-      });
-      deleted++;
-    } else {
-      await calendarApi(`/${encodeURIComponent(event.id)}?sendUpdates=none`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          attendees: remaining.map((e) => ({ email: e, optional: true })),
-        }),
-      });
-      removed++;
-    }
-  }
-  return { removed, deleted };
-}
-
-export async function updateEvent(input: {
-  eventId: string;
-  name: string;
-  hebDateLabel: string;
-  date: string;
-  time?: string;
-  summary: string;
-}): Promise<void> {
-  const event = await calendarApi<GoogleEvent>(
-    `/${encodeURIComponent(input.eventId)}`,
+    },
   );
-  const time = input.time || (await getTsetHakohavimWithFallback(input.date));
-  const body = buildEventBody({
-    summary: input.summary,
-    description: encodeAnniversaryDescription(input.name, input.hebDateLabel),
-    date: input.date,
-    time,
-    attendees: attendeeEmails(event),
-  });
-  await calendarApi(`/${encodeURIComponent(input.eventId)}?sendUpdates=none`, {
-    method: "PATCH",
-    body: JSON.stringify(body),
-  });
 }

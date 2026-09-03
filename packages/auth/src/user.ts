@@ -1,6 +1,15 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
 /**
+ * The signed-in user's Clerk id, or `null` if not signed in. Server-only.
+ * Used to record who created a record.
+ */
+export async function getCurrentUserId(): Promise<string | null> {
+  const { userId } = await auth();
+  return userId ?? null;
+}
+
+/**
  * The signed-in user's primary email address, or `null` if not signed in.
  * Server-only. Used to invite the user to shared calendar events.
  */
