@@ -20,7 +20,7 @@ export function HebrewDateForm() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col items-start gap-4">
       <div dir="rtl" className="flex flex-wrap gap-4">
         <Select
           label="יום"
@@ -38,21 +38,23 @@ export function HebrewDateForm() {
         />
       </div>
 
-      <Button type="button" onClick={calculate}>
+      <Button type="button" dir="rtl" onClick={calculate}>
         חשב
       </Button>
 
       {result && (
-        <p className="text-lg">
-          Next occurrence:{" "}
-          <strong>{result.gregorian.toLocaleDateString()}</strong>
-          <span className="block text-sm opacity-70">
+        <p dir="rtl" className="text-lg">
+          התאריך הלועזי הבא:{" "}
+          <strong>{result.gregorian.toLocaleDateString("he-IL")}</strong>
+          <span dir="ltr" className="block text-sm opacity-70">
             {result.transliteration}
           </span>
         </p>
       )}
       {notFound && (
-        <p className="text-sm opacity-70">That Hebrew date doesn’t occur.</p>
+        <p dir="rtl" className="text-sm opacity-70">
+          תאריך עברי זה אינו קיים.
+        </p>
       )}
     </div>
   );
