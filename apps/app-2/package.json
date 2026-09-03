@@ -11,6 +11,8 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.0",
+    "@repo/auth": "workspace:*",
     "@repo/utils": "workspace:*",
     "next": "16.3.2",
     "react": "19.2.8",

@@ -13,6 +13,8 @@ Apps:
 - `app-2` (:3001) — placeholder (shows `@repo/utils` output). Slated for a Firestore feature.
 - `landing` (:3002) — index page linking to the other apps; app list hardcoded in `app/page.tsx` for now, to move to Firestore later.
 
+All three are gated behind Clerk auth — see the Auth section.
+
 All three apps use Tailwind v4 via the shared `@repo/tailwind-config` package: each app's `app/globals.css` is just `@import "@repo/tailwind-config";` and has a `postcss.config.mjs` with `@tailwindcss/postcss`. `packages/tailwind-config/styles.css` defines the palette as CSS vars under `:root` / `.dark` and exposes them via `@theme inline`, so `bg-background` / `text-foreground` follow the active theme with no extra classes. Light: `#ffe5cc` / `#000000`. Dark: `#000000` / `#ffffff`. Plus `--color-primary/-secondary/-accent` (placeholders). Dark mode is class-based (`<html class="dark">`); only app-1 toggles it (via `next-themes`) — app-2/landing stay light. Edit that one file to change the palette everywhere.
 
 GitHub: `IlanIsr/my-apps` (branch `main`). `gh` is installed and authenticated as `IlanIsr`; `gh auth setup-git` is configured, so git/gh over HTTPS work without prompting.
@@ -46,6 +48,7 @@ No test runner is configured — there is no `test` task in `turbo.json` or any 
 - `@repo/utils` — plain `.ts`, exports `./src/index.ts` directly. No build step or `dist/`; importers compile it. Editing it is picked up by both apps (and by deployed apps — this was tested).
 - `@repo/ui` — React components, exports per-file as `./src/*.tsx` (import as `@repo/ui/button`). Raw source. Starter-quality on purpose; leave it.
 - `@repo/tailwind-config` — shared Tailwind v4 base (`styles.css`, exported as `.`). See the styling note above.
+- `@repo/auth` — Clerk wiring shared by all apps. Exports `./proxy` (`clerkProxy` handler), `./provider` (`<AuthProvider>`), `./sign-in` (`<SignInView>`), `./nav` (`<AuthControl>`). See the Auth section below.
 - `@repo/eslint-config` — flat-config presets `./base`, `./next-js`, `./react-internal`. `base.js` includes `eslint-config-prettier`, `typescript-eslint`, `eslint-plugin-turbo`, and `eslint-plugin-only-warn` (downgrades every rule to a warning — combined with the apps' `--max-warnings 0`, warnings still block).
 - `@repo/typescript-config` — `base.json`, `nextjs.json`, `react-library.json`. Base is strict with `noUncheckedIndexedAccess` and `NodeNext` resolution.
 
@@ -60,6 +63,16 @@ Apps consume these via `workspace:*`. Changes to a package are seen directly by 
 ### app-1 i18n
 
 Hand-rolled, no library. `apps/app-1/i18n/`: `config.ts` (locales `en`/`he`/`fr`, dir, `Intl` tags), `context.tsx` (`I18nProvider` + `useI18n()` → `{ locale, setLocale, t, dir }`), and `messages/<locale>/` — one folder per language, each with `common.ts` / `home.ts` / `forms.ts` (split further as strings grow) composed into the full `Messages` object in that folder's `index.ts`. Partials are typed as `Messages["home"]` etc.; `index.ts` is where TS enforces the object is complete. Locale is persisted in `localStorage` (`app-1.locale`) and read via `useSyncExternalStore` (falls back to `navigator.language`, then `en`). An inline script in `layout.tsx` sets `<html lang/dir>` before paint to avoid an RTL flash — **keep its storage key and locale list in sync with `config.ts`**. Gregorian month names come from `Intl.DateTimeFormat`, not the message files. Add a UI string → add it to `types.ts` and the matching partial in all three locale folders.
+
+## Auth (Clerk)
+
+All three apps are **fully gated** — every route redirects to `/sign-in` without a session — via **one shared Clerk instance** (same keys everywhere), so a session on one app carries to the others.
+
+- **Cross-app SSO**: Clerk shares sessions across subdomains automatically and across `localhost` ports, so it works in local dev today. In production it only works once the apps are on subdomains of one domain (`*.ilanisr.is-a.dev`) — on the current `*.hosted.app` URLs each app is an isolated site and sessions won't carry. No satellite-domain config needed; just point all apps at the same Clerk **production** instance once the domains are live.
+- **Wiring per app**: `proxy.ts` (Next 16's renamed middleware — re-exports `clerkProxy`, but `config.matcher` must be a literal in the file), `<AuthProvider>` in the root layout, `<AuthControl>` in the header, `app/sign-in/[[...sign-in]]/page.tsx` rendering `<SignInView>`.
+- **`@clerk/nextjs` is v7 / "Core 3"** (March 2026): `<SignedIn>`/`<SignedOut>`/`<Protect>` are gone — use `<Show when="signed-in">`. `createRouteMatcher` is deprecated. The proxy does a plain `auth()` + `NextResponse.redirect` instead.
+- Social-only (Google + Apple) is configured in the Clerk dashboard, not code.
+- **Env**: each app needs its own `.env.local` (see `.env.example`) with `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` — same values in all three. Also set them in each App Hosting backend for production.
 
 ## Firebase
 

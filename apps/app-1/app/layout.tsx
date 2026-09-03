@@ -2,6 +2,8 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 
+import { AuthProvider } from "@repo/auth/provider";
+
 import { Navbar } from "./components/Navbar";
 import { Providers } from "./providers";
 
@@ -26,10 +28,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
         <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
-        <Providers>
-          <Navbar />
-          <main className="mx-auto max-w-2xl px-6 py-12">{children}</main>
-        </Providers>
+        <AuthProvider>
+          <Providers>
+            <Navbar />
+            <main className="mx-auto max-w-2xl px-6 py-12">{children}</main>
+          </Providers>
+        </AuthProvider>
       </body>
     </html>
   );

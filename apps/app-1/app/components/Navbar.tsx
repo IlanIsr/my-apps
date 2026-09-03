@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 
+import { AuthControl } from "@repo/auth/nav";
+
 import { useI18n } from "@/i18n/context";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeSwitcher } from "./ThemeSwitcher";
@@ -18,6 +20,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <ThemeSwitcher />
+          <AuthControl />
         </div>
       </nav>
     </header>
