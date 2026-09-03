@@ -68,6 +68,11 @@ export function calculateNextDates(
     if (month === "Adar II" && !isLeapYear(hebrewYear)) continue;
 
     try {
+      // `new HDate(...)` clamps an over-long day to the month's last day, so
+      // reject it explicitly (30th of a 29-day month, …).
+      const monthNum = HDate.monthFromName(month);
+      if (hebDay > HDate.daysInMonth(monthNum, hebrewYear)) continue;
+
       const greg = new HDate(hebDay, month, hebrewYear).greg();
       const eve = new Date(greg);
       eve.setDate(eve.getDate() - 1);
