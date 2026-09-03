@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
+import { LOCALE_TAG, useLanguage } from "@/i18n";
 
 export type AgendaTexts = {
   title: string;
@@ -18,8 +18,13 @@ export type AgendaItem = {
   htmlLink: string;
 };
 
-export function CalendarAgenda({ items }: { items: AgendaItem[] }) {
-  const t = useTranslations().agenda;
+export function CalendarAgenda({
+  items,
+  t,
+}: {
+  items: AgendaItem[];
+  t: AgendaTexts;
+}) {
   const { locale } = useLanguage();
 
   const fmt = (iso: string) =>

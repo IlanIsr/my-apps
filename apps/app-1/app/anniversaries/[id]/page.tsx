@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 
-import { AnniversaryDetail } from "../../components/anniversary/AnniversaryDetail";
-import { ConnectPrompt } from "../../components/anniversary/ConnectPrompt";
 import { getAnniversary, isGoogleCalendarConnected } from "@/server/calendar";
+import { AnniversaryDetailView } from "./AnniversaryDetailView";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +10,14 @@ export default async function AnniversaryPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  if (!(await isGoogleCalendarConnected())) {
-    return <ConnectPrompt />;
+  const connected = await isGoogleCalendarConnected();
+  if (!connected) {
+    return <AnniversaryDetailView connected={false} anniversary={null} />;
   }
 
   const { id } = await params;
   const anniversary = await getAnniversary(id);
   if (!anniversary) notFound();
 
-  return <AnniversaryDetail anniversary={anniversary} />;
+  return <AnniversaryDetailView connected anniversary={anniversary} />;
 }

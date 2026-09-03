@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
+import { LOCALE_TAG, useLanguage } from "@/i18n";
 import type { Anniversary } from "@/lib/anniversary";
 import {
   deleteAnniversaryAction,
@@ -29,10 +29,11 @@ export type AnniversaryDetailTexts = {
 
 export function AnniversaryDetail({
   anniversary,
+  t,
 }: {
   anniversary: Anniversary;
+  t: AnniversaryDetailTexts;
 }) {
-  const t = useTranslations().anniversaryDetail;
   const { locale } = useLanguage();
   const router = useRouter();
   const [pending, startTransition] = useTransition();

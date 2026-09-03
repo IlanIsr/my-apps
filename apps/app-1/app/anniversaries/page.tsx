@@ -1,14 +1,13 @@
-import { AnniversaryList } from "../components/anniversary/AnniversaryList";
-import { ConnectPrompt } from "../components/anniversary/ConnectPrompt";
 import { isGoogleCalendarConnected, listAnniversaries } from "@/server/calendar";
+import { AnniversariesView } from "./AnniversariesView";
 
 export const dynamic = "force-dynamic";
 
 export default async function AnniversariesPage() {
-  if (!(await isGoogleCalendarConnected())) {
-    return <ConnectPrompt />;
-  }
+  const connected = await isGoogleCalendarConnected();
+  const anniversaries = connected ? await listAnniversaries() : [];
 
-  const anniversaries = await listAnniversaries();
-  return <AnniversaryList anniversaries={anniversaries} />;
+  return (
+    <AnniversariesView connected={connected} anniversaries={anniversaries} />
+  );
 }

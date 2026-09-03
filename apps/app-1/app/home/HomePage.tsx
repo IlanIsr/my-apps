@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { useTranslations } from "@/i18n";
 import { Switch } from "../components/Switch";
 import {
   GregorianDateForm,
@@ -19,8 +18,7 @@ export type ConverterTexts = {
   gregorianForm: GregorianDateFormTexts;
 };
 
-export function HomePage() {
-  const t = useTranslations().converter;
+export function HomePage({ t }: { t: ConverterTexts }) {
   const [hebrewInput, setHebrewInput] = useState(true);
 
   return (

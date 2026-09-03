@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
-import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
+import { LOCALE_TAG, useLanguage } from "@/i18n";
 import type { Anniversary } from "@/lib/anniversary";
 
 export type AnniversariesTexts = {
@@ -20,10 +20,11 @@ export type AnniversariesTexts = {
 
 export function AnniversaryList({
   anniversaries,
+  t,
 }: {
   anniversaries: Anniversary[];
+  t: AnniversariesTexts;
 }) {
-  const t = useTranslations().anniversaries;
   const { locale } = useLanguage();
   const [query, setQuery] = useState("");
 

@@ -2,17 +2,13 @@
 
 import { SignOutButton } from "@clerk/nextjs";
 
-import { useTranslations } from "@/i18n";
-
 export type ConnectPromptTexts = {
   title: string;
   reconnect: string;
   signOut: string;
 };
 
-export function ConnectPrompt() {
-  const t = useTranslations().connectPrompt;
-
+export function ConnectPrompt({ t }: { t: ConnectPromptTexts }) {
   return (
     <div className="flex max-w-md flex-col items-start gap-4 py-8">
       <h1 className="text-xl font-bold">{t.title}</h1>

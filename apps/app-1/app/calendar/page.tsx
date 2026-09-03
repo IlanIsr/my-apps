@@ -1,15 +1,13 @@
-import {
-  CalendarAgenda,
-  type AgendaItem,
-} from "../components/anniversary/CalendarAgenda";
-import { ConnectPrompt } from "../components/anniversary/ConnectPrompt";
 import { isGoogleCalendarConnected, listAnniversaries } from "@/server/calendar";
+import type { AgendaItem } from "../components/anniversary/CalendarAgenda";
+import { AgendaView } from "./AgendaView";
 
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
-  if (!(await isGoogleCalendarConnected())) {
-    return <ConnectPrompt />;
+  const connected = await isGoogleCalendarConnected();
+  if (!connected) {
+    return <AgendaView connected={false} items={[]} />;
   }
 
   const today = new Date().toISOString().slice(0, 10);
@@ -26,5 +24,5 @@ export default async function CalendarPage() {
     .filter((item) => item.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  return <CalendarAgenda items={items} />;
+  return <AgendaView connected items={items} />;
 }

@@ -1,14 +1,9 @@
-"use client";
-
-import { useTranslations } from "@/i18n";
-
 export type NewAnniversaryHeaderTexts = {
   title: string;
   subtitle: string;
 };
 
-export function NewAnniversaryHeader() {
-  const t = useTranslations().newAnniversaryHeader;
+export function NewAnniversaryHeader({ t }: { t: NewAnniversaryHeaderTexts }) {
   return (
     <div>
       <h1 className="text-2xl font-bold">{t.title}</h1>

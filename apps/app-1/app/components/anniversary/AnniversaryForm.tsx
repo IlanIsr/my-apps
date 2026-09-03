@@ -9,7 +9,7 @@ import {
   type HebrewMonthKey,
 } from "@repo/hebcal";
 
-import { useLanguage, useTranslations } from "@/i18n";
+import { useLanguage } from "@/i18n";
 import { Button } from "../Button";
 import { Select } from "../Select";
 import { Switch } from "../Switch";
@@ -42,8 +42,7 @@ export type AnniversaryFormTexts = {
   months: Record<HebrewMonthKey, string>;
 };
 
-export function AnniversaryForm() {
-  const t = useTranslations().anniversaryForm;
+export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const { locale } = useLanguage();
   const router = useRouter();
 
