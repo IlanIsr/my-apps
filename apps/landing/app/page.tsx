@@ -1,14 +1,22 @@
 // Hardcoded for now — will be replaced with data from Firestore.
+// In dev the links point at the local dev servers so cross-app navigation
+// (and the shared Clerk session across localhost ports) works end to end.
+const isDev = process.env.NODE_ENV === "development";
+
 const apps = [
   {
     name: "App 1",
     description: "First app",
-    url: "https://app-1--my-app-1-312d0.europe-west4.hosted.app/",
+    url: isDev
+      ? "http://localhost:3000"
+      : "https://app-1--my-app-1-312d0.europe-west4.hosted.app/",
   },
   {
     name: "App 2",
     description: "Second app",
-    url: "https://my-apps-2--my-app-2-e72f1.europe-west4.hosted.app/",
+    url: isDev
+      ? "http://localhost:3001"
+      : "https://my-apps-2--my-app-2-e72f1.europe-west4.hosted.app/",
   },
 ];
 
