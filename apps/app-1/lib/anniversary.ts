@@ -1,4 +1,4 @@
-/** Shared types + Google Calendar "anniversary event" tagging. */
+/** Shared types + Google Calendar "anniversary event" tagging + identity. */
 
 export type AnniversaryEvent = {
   /** Google Calendar event id. */
@@ -11,18 +11,19 @@ export type AnniversaryEvent = {
   htmlLink: string;
   /** Start time `HH:MM` (tzeit hakochavim, or a custom time). */
   time?: string;
-  /** Attendee emails the event is shared with. */
-  shared: string[];
 };
 
 export type Anniversary = {
-  /** Slug of the normalized name; stable id used in URLs. */
+  /** URL-safe id derived from the name + Hebrew date. */
   id: string;
   name: string;
   hebDate: { day: number; month: string };
   /** e.g. "24 Kislev". */
   hebDateLabel: string;
-  shared: string[];
+  /** Everyone on the family list for this person (event attendees). */
+  members: string[];
+  /** Whether the current user is on the list. */
+  joined: boolean;
   /** All calendar events for this person, ascending by date. */
   events: AnniversaryEvent[];
 };
@@ -62,11 +63,15 @@ export function decodeAnniversaryDescription(
   return null;
 }
 
-/** URL-safe stable id for a person (keeps Latin + Hebrew letters). */
-export function anniversaryId(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9֐-׿-]/g, "");
+export function normalizeName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/**
+ * Identity of an anniversary — same normalized name + same Hebrew day/month is
+ * the same person. Also the URL slug.
+ */
+export function anniversaryKey(name: string, hebDay: number, hebMonth: string): string {
+  const slug = normalizeName(name).replace(/[^a-z0-9֐-׿]+/g, "-").replace(/^-|-$/g, "");
+  return `${slug || "x"}--${hebDay}-${hebMonth.trim().toLowerCase().replace(/\s+/g, "-")}`;
 }

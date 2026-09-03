@@ -1,7 +1,7 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
-const NOT_CONNECTED =
-  "L’accès au calendrier n’a pas été accordé. Déconnectez-vous et reconnectez-vous pour l’accorder.";
+const NOT_CONFIGURED =
+  "Le calendrier d’anniversaires partagé n’est pas encore configuré.";
 
 export const anniversaryForm = {
   name: "Nom",
@@ -24,7 +24,7 @@ export const anniversaryForm = {
   },
   nameRequired: "Le nom est requis.",
   emailInvalid: (email: string) => `Email invalide : ${email}`,
-  notConnected: NOT_CONNECTED,
+  notConfigured: NOT_CONFIGURED,
   error: (message: string) => `Une erreur est survenue : ${message}`,
   months: {
     Tishrei: "Tichri",

@@ -10,11 +10,12 @@ export type AnniversariesTexts = {
   listPage: { title: string; subtitle: string };
   add: string;
   search: string;
+  joined: string;
   empty: { hint: string; noResults: string };
   card: {
     nextEvent: string;
     events: (n: number) => string;
-    persons: (n: number) => string;
+    members: (n: number) => string;
   };
 };
 
@@ -76,7 +77,14 @@ export function AnniversaryList({
                 className="block rounded-lg border border-foreground/15 p-4 transition-colors hover:border-foreground/40 hover:bg-foreground/5"
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="font-medium">{anniversary.name}</span>
+                  <span className="font-medium">
+                    {anniversary.name}
+                    {anniversary.joined && (
+                      <span className="ml-2 rounded bg-foreground/10 px-1.5 py-0.5 text-xs font-normal opacity-80">
+                        {t.joined}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-sm opacity-60" dir="ltr">
                     {anniversary.hebDateLabel}
                   </span>
@@ -88,8 +96,8 @@ export function AnniversaryList({
                     </span>
                   )}
                   {t.card.events(anniversary.events.length)}
-                  {anniversary.shared.length > 0 && (
-                    <span> · {t.card.persons(anniversary.shared.length)}</span>
+                  {anniversary.members.length > 0 && (
+                    <span> · {t.card.members(anniversary.members.length)}</span>
                   )}
                 </div>
               </Link>

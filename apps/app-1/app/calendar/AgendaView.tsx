@@ -5,19 +5,19 @@ import {
   CalendarAgenda,
   type AgendaItem,
 } from "../components/anniversary/CalendarAgenda";
-import { ConnectPrompt } from "../components/anniversary/ConnectPrompt";
+import { CalendarUnavailable } from "../components/anniversary/CalendarUnavailable";
 
 export function AgendaView({
-  connected,
+  configured,
   items,
 }: {
-  connected: boolean;
+  configured: boolean;
   items: AgendaItem[];
 }) {
   const messages = useTranslations();
 
-  if (!connected) {
-    return <ConnectPrompt t={messages.connectPrompt} />;
+  if (!configured) {
+    return <CalendarUnavailable t={messages.calendarUnavailable} />;
   }
   return <CalendarAgenda items={items} t={messages.agenda} />;
 }

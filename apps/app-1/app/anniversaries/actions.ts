@@ -2,66 +2,64 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getCurrentUserEmail } from "@repo/auth/user";
+
 import { getDictionary, type Locale } from "@/i18n";
 import {
-  createAnniversaryEvents,
-  deleteAnniversaryEvents,
-  deleteEvent,
-  GoogleCalendarNotConnectedError,
-  updateAnniversaryEvent,
+  addAnniversary,
+  CalendarNotConfiguredError,
+  leaveAnniversary,
+  updateEvent,
 } from "@/server/calendar";
 
 export type ActionResult<T = undefined> =
   | ({ ok: true } & (T extends undefined ? object : { data: T }))
-  | { ok: false; error: "not-connected" | string };
+  | { ok: false; error: "not-configured" | "not-signed-in" | string };
 
-function fail(error: unknown): { ok: false; error: "not-connected" | string } {
-  if (error instanceof GoogleCalendarNotConnectedError) {
-    return { ok: false, error: "not-connected" };
+function fail(error: unknown): { ok: false; error: string } {
+  if (error instanceof CalendarNotConfiguredError) {
+    return { ok: false, error: "not-configured" };
   }
   return { ok: false, error: error instanceof Error ? error.message : "unknown" };
 }
 
-export async function createAnniversaryAction(input: {
+function refreshAnniversaries(id?: string) {
+  revalidatePath("/anniversaries");
+  revalidatePath("/calendar");
+  if (id) revalidatePath(`/anniversaries/${id}`);
+}
+
+export async function addAnniversaryAction(input: {
   name: string;
   hebDay: number;
   hebMonth: string;
-  shared: string[];
   years: number;
+  sharedEmails: string[];
   locale: Locale;
-}): Promise<ActionResult<{ count: number }>> {
+}): Promise<ActionResult<{ created: number; joined: boolean }>> {
   try {
+    const email = await getCurrentUserEmail();
+    if (!email) return { ok: false, error: "not-signed-in" };
+
     const summary = getDictionary(input.locale).eventSummary.format(input.name);
-    const created = await createAnniversaryEvents({ ...input, summary });
-    revalidatePath("/anniversaries");
-    return { ok: true, data: { count: created.length } };
+    const data = await addAnniversary({ ...input, summary }, email);
+    refreshAnniversaries();
+    return { ok: true, data };
   } catch (error) {
     return fail(error);
   }
 }
 
-export async function deleteAnniversaryAction(
+export async function leaveAnniversaryAction(
   id: string,
-): Promise<ActionResult<{ count: number }>> {
+): Promise<ActionResult<{ removed: number; deleted: number }>> {
   try {
-    const count = await deleteAnniversaryEvents(id);
-    revalidatePath("/anniversaries");
-    revalidatePath(`/anniversaries/${id}`);
-    return { ok: true, data: { count } };
-  } catch (error) {
-    return fail(error);
-  }
-}
+    const email = await getCurrentUserEmail();
+    if (!email) return { ok: false, error: "not-signed-in" };
 
-export async function deleteEventAction(
-  id: string,
-  eventId: string,
-): Promise<ActionResult> {
-  try {
-    await deleteEvent(eventId);
-    revalidatePath(`/anniversaries/${id}`);
-    revalidatePath("/anniversaries");
-    return { ok: true };
+    const data = await leaveAnniversary(id, email);
+    refreshAnniversaries(id);
+    return { ok: true, data };
   } catch (error) {
     return fail(error);
   }
@@ -74,14 +72,12 @@ export async function updateEventAction(input: {
   hebDateLabel: string;
   date: string;
   time?: string;
-  shared: string[];
   locale: Locale;
 }): Promise<ActionResult> {
   try {
     const summary = getDictionary(input.locale).eventSummary.format(input.name);
-    await updateAnniversaryEvent({ ...input, summary });
-    revalidatePath(`/anniversaries/${input.id}`);
-    revalidatePath("/anniversaries");
+    await updateEvent({ ...input, summary });
+    refreshAnniversaries(input.id);
     return { ok: true };
   } catch (error) {
     return fail(error);

@@ -1,29 +1,25 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 
-const NOT_CONNECTED =
-  "L’accès au calendrier n’a pas été accordé. Déconnectez-vous et reconnectez-vous pour l’accorder.";
-
 export const anniversaryDetail = {
   back: "← Tous les anniversaires",
   hebDate: "Date hébraïque",
-  sharedWith: "Partagé avec",
+  members: "Dans la liste",
   upcoming: "Événements à venir",
-  deleteAll: "Supprimer tous les événements",
-  delete: "Supprimer",
   edit: "Modifier",
   viewInCalendar: "Ouvrir dans Google Calendar →",
-  deleteConfirm: "Supprimer cet événement ?",
-  deleteAllConfirm: (name: string) =>
-    `Supprimer tous les événements pour ${name} ?`,
+  join: "Ajouter à ma liste",
+  joining: "Ajout…",
+  leave: "Retirer de ma liste",
+  leaving: "Retrait…",
+  leaveConfirm: "Vous retirer de cet anniversaire ?",
   error: (message: string) => `Une erreur est survenue : ${message}`,
   editForm: {
     date: "Date",
     time: "Heure (HH:MM)",
     timeHint: "Laisser vide pour la tombée de la nuit (tset hakochavim)",
-    shared: "Partagé avec (emails, séparés par des virgules)",
     save: "Enregistrer",
     saving: "Enregistrement…",
     cancel: "Annuler",
-    notConnected: NOT_CONNECTED,
+    error: (message: string) => `Une erreur est survenue : ${message}`,
   },
 } as const satisfies AnniversaryDetailTexts;

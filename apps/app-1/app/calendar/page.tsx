@@ -1,17 +1,22 @@
-import { isGoogleCalendarConnected, listAnniversaries } from "@/server/calendar";
+import { getCurrentUserEmail } from "@repo/auth/user";
+
+import { isCalendarConfigured, listAnniversaries } from "@/server/calendar";
 import type { AgendaItem } from "../components/anniversary/CalendarAgenda";
 import { AgendaView } from "./AgendaView";
 
 export const dynamic = "force-dynamic";
 
 export default async function CalendarPage() {
-  const connected = await isGoogleCalendarConnected();
-  if (!connected) {
-    return <AgendaView connected={false} items={[]} />;
+  const [configured, email] = await Promise.all([
+    isCalendarConfigured(),
+    getCurrentUserEmail(),
+  ]);
+  if (!configured || !email) {
+    return <AgendaView configured={false} items={[]} />;
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const items: AgendaItem[] = (await listAnniversaries())
+  const items: AgendaItem[] = (await listAnniversaries(email))
     .flatMap((anniversary) =>
       anniversary.events.map((event) => ({
         anniversaryId: anniversary.id,
@@ -24,5 +29,5 @@ export default async function CalendarPage() {
     .filter((item) => item.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  return <AgendaView connected items={items} />;
+  return <AgendaView configured items={items} />;
 }

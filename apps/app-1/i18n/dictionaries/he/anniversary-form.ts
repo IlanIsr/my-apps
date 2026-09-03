@@ -1,6 +1,6 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
-const NOT_CONNECTED = "גישה ליומן לא אושרה. התנתקו והתחברו מחדש כדי לאשר.";
+const NOT_CONFIGURED = "לוח ימי ההולדת המשותף עדיין לא מוגדר.";
 
 export const anniversaryForm = {
   name: "שם",
@@ -22,7 +22,7 @@ export const anniversaryForm = {
   },
   nameRequired: "יש להזין שם.",
   emailInvalid: (email: string) => `אימייל לא תקין: ${email}`,
-  notConnected: NOT_CONNECTED,
+  notConfigured: NOT_CONFIGURED,
   error: (message: string) => `משהו השתבש: ${message}`,
   months: {
     Tishrei: "תשרי",

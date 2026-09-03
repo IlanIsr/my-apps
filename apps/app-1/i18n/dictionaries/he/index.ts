@@ -3,7 +3,7 @@ import { agenda } from "./agenda";
 import { anniversaries } from "./anniversaries";
 import { anniversaryDetail } from "./anniversary-detail";
 import { anniversaryForm } from "./anniversary-form";
-import { connectPrompt } from "./connect-prompt";
+import { calendarUnavailable } from "./calendar-unavailable";
 import { converter } from "./converter";
 import { eventSummary } from "./event-summary";
 import { navbar } from "./navbar";
@@ -16,7 +16,7 @@ export const he = {
   anniversaryForm,
   newAnniversaryHeader,
   anniversaryDetail,
-  connectPrompt,
+  calendarUnavailable,
   agenda,
   eventSummary,
 } as const satisfies Messages;

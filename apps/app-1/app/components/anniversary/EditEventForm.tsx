@@ -10,11 +10,10 @@ export type EditEventFormTexts = {
   date: string;
   time: string;
   timeHint: string;
-  shared: string;
   save: string;
   saving: string;
   cancel: string;
-  notConnected: string;
+  error: (message: string) => string;
 };
 
 export function EditEventForm({
@@ -31,7 +30,6 @@ export function EditEventForm({
   const { locale } = useLanguage();
   const [date, setDate] = useState(event.date);
   const [time, setTime] = useState(event.time ?? "");
-  const [shared, setShared] = useState(event.shared.join(", "));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,15 +43,11 @@ export function EditEventForm({
       hebDateLabel: anniversary.hebDateLabel,
       date,
       time: time.trim() || undefined,
-      shared: shared
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
       locale,
     });
     setPending(false);
     if (!result.ok) {
-      setError(result.error === "not-connected" ? t.notConnected : result.error);
+      setError(t.error(result.error));
       return;
     }
     onDone();
@@ -82,14 +76,6 @@ export function EditEventForm({
           className={field}
         />
         <span className="opacity-60">{t.timeHint}</span>
-      </label>
-      <label className="flex flex-col gap-1">
-        <span>{t.shared}</span>
-        <input
-          value={shared}
-          onChange={(e) => setShared(e.target.value)}
-          className={field}
-        />
       </label>
 
       {error && <p className="text-red-500">{error}</p>}

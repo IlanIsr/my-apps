@@ -19,7 +19,7 @@ import {
   gregorianYearOptions,
   hebrewMonthOptions,
 } from "../../home/options";
-import { createAnniversaryAction } from "../../anniversaries/actions";
+import { addAnniversaryAction } from "../../anniversaries/actions";
 
 export type AnniversaryFormTexts = {
   name: string;
@@ -37,7 +37,7 @@ export type AnniversaryFormTexts = {
   toggle: { hebrew: string; gregorian: string; aria: string };
   nameRequired: string;
   emailInvalid: (email: string) => string;
-  notConnected: string;
+  notConfigured: string;
   error: (message: string) => string;
   months: Record<HebrewMonthKey, string>;
 };
@@ -102,11 +102,11 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
     }
 
     setPending(true);
-    const result = await createAnniversaryAction({
+    const result = await addAnniversaryAction({
       name: name.trim(),
       hebDay,
       hebMonth,
-      shared,
+      sharedEmails: shared,
       years: Number(years),
       locale,
     });
@@ -114,8 +114,8 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
 
     if (!result.ok) {
       setError(
-        result.error === "not-connected"
-          ? t.notConnected
+        result.error === "not-configured"
+          ? t.notConfigured
           : t.error(result.error),
       );
       return;

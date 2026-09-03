@@ -8,7 +8,7 @@
     "./provider": "./src/provider.tsx",
     "./sign-in": "./src/sign-in.tsx",
     "./nav": "./src/nav.tsx",
-    "./google": "./src/google.ts"
+    "./user": "./src/user.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",

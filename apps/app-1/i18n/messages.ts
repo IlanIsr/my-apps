@@ -2,7 +2,7 @@ import type { AgendaTexts } from "@/app/components/anniversary/CalendarAgenda";
 import type { AnniversariesTexts } from "@/app/components/anniversary/AnniversaryList";
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
-import type { ConnectPromptTexts } from "@/app/components/anniversary/ConnectPrompt";
+import type { CalendarUnavailableTexts } from "@/app/components/anniversary/CalendarUnavailable";
 import type { NewAnniversaryHeaderTexts } from "@/app/components/anniversary/NewAnniversaryHeader";
 import type { NavbarTexts } from "@/app/components/Navbar";
 import type { ConverterTexts } from "@/app/home/HomePage";
@@ -20,7 +20,7 @@ export type Messages = {
   anniversaryForm: AnniversaryFormTexts;
   newAnniversaryHeader: NewAnniversaryHeaderTexts;
   anniversaryDetail: AnniversaryDetailTexts;
-  connectPrompt: ConnectPromptTexts;
+  calendarUnavailable: CalendarUnavailableTexts;
   agenda: AgendaTexts;
   eventSummary: EventSummaryTexts;
 };

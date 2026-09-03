@@ -3,19 +3,19 @@
 import { useTranslations } from "@/i18n";
 import type { Anniversary } from "@/lib/anniversary";
 import { AnniversaryDetail } from "../../components/anniversary/AnniversaryDetail";
-import { ConnectPrompt } from "../../components/anniversary/ConnectPrompt";
+import { CalendarUnavailable } from "../../components/anniversary/CalendarUnavailable";
 
 export function AnniversaryDetailView({
-  connected,
+  configured,
   anniversary,
 }: {
-  connected: boolean;
+  configured: boolean;
   anniversary: Anniversary | null;
 }) {
   const messages = useTranslations();
 
-  if (!connected) {
-    return <ConnectPrompt t={messages.connectPrompt} />;
+  if (!configured) {
+    return <CalendarUnavailable t={messages.calendarUnavailable} />;
   }
   if (!anniversary) return null;
 

@@ -7,22 +7,23 @@ import { useRouter } from "next/navigation";
 import { LOCALE_TAG, useLanguage } from "@/i18n";
 import type { Anniversary } from "@/lib/anniversary";
 import {
-  deleteAnniversaryAction,
-  deleteEventAction,
+  addAnniversaryAction,
+  leaveAnniversaryAction,
 } from "../../anniversaries/actions";
 import { EditEventForm, type EditEventFormTexts } from "./EditEventForm";
 
 export type AnniversaryDetailTexts = {
   back: string;
   hebDate: string;
-  sharedWith: string;
+  members: string;
   upcoming: string;
-  deleteAll: string;
-  delete: string;
   edit: string;
   viewInCalendar: string;
-  deleteConfirm: string;
-  deleteAllConfirm: (name: string) => string;
+  join: string;
+  joining: string;
+  leave: string;
+  leaving: string;
+  leaveConfirm: string;
   error: (message: string) => string;
   editForm: EditEventFormTexts;
 };
@@ -43,10 +44,10 @@ export function AnniversaryDetail({
   const fmt = (iso: string) =>
     iso ? new Date(iso).toLocaleDateString(LOCALE_TAG[locale]) : "";
 
-  const handleDeleteAll = () => {
-    if (!confirm(t.deleteAllConfirm(anniversary.name))) return;
+  const handleLeave = () => {
+    if (!confirm(t.leaveConfirm)) return;
     startTransition(async () => {
-      const result = await deleteAnniversaryAction(anniversary.id);
+      const result = await leaveAnniversaryAction(anniversary.id);
       if (!result.ok) {
         setError(t.error(result.error));
         return;
@@ -55,12 +56,21 @@ export function AnniversaryDetail({
     });
   };
 
-  const handleDeleteEvent = (eventId: string) => {
-    if (!confirm(t.deleteConfirm)) return;
+  const handleJoin = () => {
     startTransition(async () => {
-      const result = await deleteEventAction(anniversary.id, eventId);
-      if (!result.ok) setError(t.error(result.error));
-      else router.refresh();
+      const result = await addAnniversaryAction({
+        name: anniversary.name,
+        hebDay: anniversary.hebDate.day,
+        hebMonth: anniversary.hebDate.month,
+        years: anniversary.events.length,
+        sharedEmails: [],
+        locale,
+      });
+      if (!result.ok) {
+        setError(t.error(result.error));
+        return;
+      }
+      router.refresh();
     });
   };
 
@@ -70,35 +80,43 @@ export function AnniversaryDetail({
         {t.back}
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-bold">{anniversary.name}</h1>
-        <p className="mt-1 text-sm opacity-70">
-          {t.hebDate}: <span dir="ltr">{anniversary.hebDateLabel}</span>
-          {anniversary.shared.length > 0 && (
-            <>
-              {" · "}
-              {t.sharedWith}: {anniversary.shared.join(", ")}
-            </>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">{anniversary.name}</h1>
+          <p className="mt-1 text-sm opacity-70">
+            {t.hebDate}: <span dir="ltr">{anniversary.hebDateLabel}</span>
+          </p>
+          {anniversary.members.length > 0 && (
+            <p className="mt-1 text-sm opacity-70">
+              {t.members}: {anniversary.members.join(", ")}
+            </p>
           )}
-        </p>
+        </div>
+        {anniversary.joined ? (
+          <button
+            type="button"
+            onClick={handleLeave}
+            disabled={pending}
+            className="shrink-0 rounded-lg border border-foreground/20 px-3 py-1.5 text-sm hover:bg-foreground/5 disabled:opacity-40"
+          >
+            {pending ? t.leaving : t.leave}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleJoin}
+            disabled={pending}
+            className="shrink-0 rounded-lg bg-foreground px-3 py-1.5 text-sm font-medium text-background hover:opacity-80 disabled:opacity-40"
+          >
+            {pending ? t.joining : t.join}
+          </button>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="font-medium">{t.upcoming}</h2>
-          {anniversary.events.length > 0 && (
-            <button
-              type="button"
-              onClick={handleDeleteAll}
-              disabled={pending}
-              className="text-sm text-red-500 hover:underline disabled:opacity-40"
-            >
-              {t.deleteAll}
-            </button>
-          )}
-        </div>
+        <h2 className="font-medium">{t.upcoming}</h2>
 
         <ul className="flex flex-col divide-y divide-foreground/10 rounded-lg border border-foreground/15">
           {anniversary.events.map((event) => (
@@ -130,14 +148,6 @@ export function AnniversaryDetail({
                     className="opacity-70 hover:opacity-100 disabled:opacity-40"
                   >
                     {t.edit}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteEvent(event.id)}
-                    disabled={pending}
-                    className="text-red-500 hover:underline disabled:opacity-40"
-                  >
-                    {t.delete}
                   </button>
                 </span>
               </div>
