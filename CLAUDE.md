@@ -9,7 +9,11 @@ See `TECHNICAL_RULES.md` for working preferences (conciseness, scope, styling).
 A personal pnpm + Turborepo monorepo holding **multiple independent web apps** plus shared packages. The apps are not one product and not one Next.js app with many routes — the separation is intentional. Each app is independently deployable, has its own Firebase project and Firestore resources, and will eventually have its own subdomain, while still consuming shared workspace packages.
 
 Apps:
-- `app-1` (:3000) — Hebrew-calendar tools. `/` is the **Hebrew Date Converter** (client-side, `@repo/hebcal`). `/anniversaries` is a **Hebrew-anniversary → Google Calendar manager** (ported from the `anniversaries-next` repo): reads anniversary events out of the signed-in user's Google Calendar, groups them by person, and lets you add people (creates events for the next N years — placed on the eve at tzeit hakochavim, shared emails as optional attendees) / delete. **Google Calendar is the source of truth — no local/Firestore storage.** Google access comes from Clerk's Google connection (see Auth). Server logic in `apps/app-1/server/calendar.ts` + `app/anniversaries/actions.ts`. Trilingual (en/he/fr).
+- `app-1` (:3000) — Hebrew-calendar tools. `/` redirects to `/anniversaries`; `/converter` is the **Hebrew Date Converter** (client-side, `@repo/hebcal`).
+  - **`/anniversaries`** — a family **Hebrew-anniversary → Google Calendar** manager. All events live on **one shared calendar** (`anniversaries.calendar@gmail.com`); the app authenticates AS that account with a stored refresh token (`google-auth-library`, server-side, in `apps/app-1/server/calendar.ts`). "Add an anniversary" either creates N years of events (eve + tzeit hakochavim) or — if it already exists (matched on normalized name + Hebrew day/month) — adds the signed-in user to the existing events and tops up missing years. Family members are **optional, hidden attendees** (`optional: true`, `guestsCanSeeOtherGuests: false`), so the event lands on their personal calendars without the app touching them. "Remove from my list" drops you from the attendees; the event is deleted only when the last person leaves.
+  - Per-user Google Calendar scope is **not** used — the app only needs the user's email (`@repo/auth/user` → `getCurrentUserEmail()`) to invite them.
+  - `/calendar` is a flat chronological agenda of every upcoming event.
+  - Trilingual (en/he/fr).
 - `app-2` (:3001) — placeholder (shows `@repo/utils` output). Slated for a Firestore feature.
 - `landing` (:3002) — index page linking to the other apps; app list hardcoded in `app/page.tsx` for now, to move to Firestore later.
 
@@ -85,16 +89,11 @@ All three apps are **fully gated** — every route redirects to `/sign-in` witho
 - Social-only (Google + Apple) is configured in the Clerk dashboard, not code.
 - **Keys**: put `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` in the root `.env` (see env note below). Set them per App Hosting backend for production.
 
-### Google Calendar access (for app-1 `/anniversaries`)
+### Shared Google Calendar (for app-1 `/anniversaries`)
 
-`@repo/auth/google` exposes `getGoogleAccessToken()` — the signed-in user's Google OAuth token, with whatever scopes are on Clerk's Google connection, kept fresh by Clerk. To grant Calendar:
+The app writes to **one calendar owned by `anniversaries.calendar@gmail.com`**, not per-user calendars. It authenticates with that account's OAuth refresh token — env vars in the **root `.env`**: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, optional `GOOGLE_CALENDAR_ID` (default `primary`). The client id/secret can be the same Google Cloud OAuth Web client used for Clerk's Google connection; the refresh token comes from a one-time OAuth consent by the bot account with scope `https://www.googleapis.com/auth/calendar`.
 
-1. Google Cloud Console: create an **OAuth 2.0 Client (Web application)**, enable the **Google Calendar API**, and on the OAuth consent screen add scope `https://www.googleapis.com/auth/calendar.events`. It's a *sensitive* scope — in "Testing" mode only listed test users can grant it (fine for personal use).
-2. Redirect URI = the one Clerk's Google-connection page shows.
-3. In Clerk's Google connection: enable **Use custom credentials**, paste the client ID/secret, add scope `https://www.googleapis.com/auth/calendar.events`.
-4. Existing users must sign out / back in to grant the new scope.
-
-`isGoogleCalendarConnected()` verifies with a real Calendar API call (a token can exist without the scope); the UI shows `<ConnectPrompt>` until it passes.
+`isCalendarConfigured()` does a real Calendar API call; the UI shows `<CalendarUnavailable>` until it passes. `@repo/auth/user` (`getCurrentUserEmail()`) gets the signed-in user's email to invite them. `@repo/auth/google` was removed — the per-user calendar scope / Clerk custom-credentials setup is no longer needed (Google sign-in for identity only).
 
 ## Firebase
 
