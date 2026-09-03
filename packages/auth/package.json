@@ -7,7 +7,8 @@
     "./proxy": "./src/proxy.ts",
     "./provider": "./src/provider.tsx",
     "./sign-in": "./src/sign-in.tsx",
-    "./nav": "./src/nav.tsx"
+    "./nav": "./src/nav.tsx",
+    "./google": "./src/google.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
