@@ -1,9 +1,27 @@
-/* Shared Tailwind base config for all apps. Placeholder values — will evolve. */
+/* Shared Tailwind base config for all apps. Placeholder palette — will evolve. */
 @import "tailwindcss";
 
-@theme {
-  --color-background: #ffe5cc;
-  --color-foreground: #000000;
+/* Class-based dark mode: set `class="dark"` on <html> (next-themes does this). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffe5cc;
+  --foreground: #000000;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+}
+
+/*
+ * `inline` makes utilities resolve the CSS var at the point of use, so the
+ * `.dark` overrides above take effect without any extra classes — `bg-background`
+ * and `text-foreground` just follow the active theme.
+ */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
   --color-primary: #ff7a00;
   --color-secondary: #1f2937;

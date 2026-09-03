@@ -8,9 +8,12 @@ See `TECHNICAL_RULES.md` for working preferences (conciseness, scope, styling).
 
 A personal pnpm + Turborepo monorepo holding **multiple independent web apps** plus shared packages. The apps are not one product and not one Next.js app with many routes — the separation is intentional. Each app is independently deployable, has its own Firebase project and Firestore resources, and will eventually have its own subdomain, while still consuming shared workspace packages.
 
-Apps: `app-1` (:3000), `app-2` (:3001), `landing` (:3002 — index page linking to the other apps). `landing`'s app list is hardcoded in `app/page.tsx` for now, to be replaced with Firestore data later.
+Apps:
+- `app-1` (:3000) — **Hebrew Date Converter**, a Hebrew ⇄ Gregorian date tool built on `@hebcal/core`. Pure client-side; no backend. Calendar logic is isolated in `apps/app-1/lib/hebcal.ts`.
+- `app-2` (:3001) — placeholder (shows `@repo/utils` output). Slated for a Firestore feature.
+- `landing` (:3002) — index page linking to the other apps; app list hardcoded in `app/page.tsx` for now, to move to Firestore later.
 
-All three apps use Tailwind v4 via the shared `@repo/tailwind-config` package: each app's `app/globals.css` is just `@import "@repo/tailwind-config";` and has a `postcss.config.mjs` with `@tailwindcss/postcss`. Shared theme tokens (`--color-background` `#ffe5cc`, `--color-foreground` `#000000`, `--color-primary`, `--color-secondary`, `--color-accent`) and a base layer setting body bg/fg live in `packages/tailwind-config/styles.css` — currently placeholder values. Edit that one file to change the palette everywhere.
+All three apps use Tailwind v4 via the shared `@repo/tailwind-config` package: each app's `app/globals.css` is just `@import "@repo/tailwind-config";` and has a `postcss.config.mjs` with `@tailwindcss/postcss`. `packages/tailwind-config/styles.css` defines the palette as CSS vars under `:root` / `.dark` and exposes them via `@theme inline`, so `bg-background` / `text-foreground` follow the active theme with no extra classes. Light: `#ffe5cc` / `#000000`. Dark: `#000000` / `#ffffff`. Plus `--color-primary/-secondary/-accent` (placeholders). Dark mode is class-based (`<html class="dark">`); only app-1 toggles it (via `next-themes`) — app-2/landing stay light. Edit that one file to change the palette everywhere.
 
 GitHub: `IlanIsr/my-apps` (branch `main`). `gh` is installed and authenticated as `IlanIsr`; `gh auth setup-git` is configured, so git/gh over HTTPS work without prompting.
 
@@ -51,8 +54,8 @@ Apps consume these via `workspace:*`. Changes to a package are seen directly by 
 ### Toolchain notes
 
 - TypeScript `7.0.2` (native compiler) across apps and packages. `@repo/eslint-config` additionally aliases `typescript` to `npm:@typescript/typescript6@6.0.2` for `typescript-eslint` compatibility.
-- ESLint 10 flat config only. Each app's `eslint.config.js` just re-exports `nextJsConfig` from `@repo/eslint-config/next-js`.
-- Both apps: Next.js 16 App Router (`app/` dir), React 19, `"type": "module"`.
+- ESLint 10 flat config only. Each app's `eslint.config.js` just re-exports `nextJsConfig` from `@repo/eslint-config/next-js`. Note `eslint-plugin-react-hooks` v7 flags the `useEffect(() => setMounted(true))` mount pattern — drive theme-dependent rendering off the `.dark` class in CSS instead.
+- All apps: Next.js 16 App Router, React 19, `"type": "module"`, root `app/` dir. app-1 also has a `lib/` dir and a `@/*` → `./*` tsconfig path alias (app-2/landing are too small to need one).
 
 ## Firebase
 
@@ -67,33 +70,21 @@ Backend name, repo name, Firebase project name, and Web App name are **separate 
 
 App Hosting deploys automatically from `main`. There is no `apphosting.yaml` in the repo — backend config (including production env vars) lives in the Firebase console. Path filters are configured per backend so an app-only change deploys only that app; changing `packages/**` (or root `package.json` / lockfile / `pnpm-workspace.yaml` / `turbo.json`) can deploy both. Keep this. Production env vars must be set in App Hosting *and redeployed* — missing them causes `FirebaseError: client is offline` / stuck "Loading...".
 
-`pnpm-workspace.yaml` `allowBuilds` (`@firebase/util`, `protobufjs`) was populated via `pnpm approve-builds` after installing Firebase — keep it.
+**Neither app currently uses Firebase in code.** app-1 was wired to Firestore, then reverted when it became the (backend-less) date tool. `apps/app-1/.env.local` still holds the old Firebase config (gitignored, unused — safe to delete). `pnpm-workspace.yaml` `allowBuilds` (`@firebase/util`, `protobufjs`) is left in place for when Firebase returns.
 
-### Firestore — per-app named database
+### Firestore — the pattern to reuse (from app-1's removed setup)
 
-Each app targets a **named** Firestore database equal to its app name, **not `(default)`**:
+When adding Firestore to an app, target a **named** database equal to the app name, **not `(default)`**:
 
 ```ts
-// apps/app-1/lib/firebase.ts
-export const db = getFirestore(firebaseApp, "app-1");
+export const db = getFirestore(firebaseApp, "app-2"); // NOT getFirestore(firebaseApp)
 ```
 
-Do not revert to `getFirestore(firebaseApp)` — that produces `Database '(default)' not found`.
+`getFirestore(firebaseApp)` produces `Database '(default)' not found`. Config comes from `NEXT_PUBLIC_FIREBASE_*` env vars in `apps/<app>/.env.local` (gitignored — never commit the values): `API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID`, `APP_ID`. The **same vars must also be set in App Hosting and redeployed**.
 
-Config comes from `NEXT_PUBLIC_FIREBASE_*` env vars in `apps/<app>/.env.local` (gitignored — never commit these values):
-`API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID`, `APP_ID`.
+Security rules must be published to the **named** database, not `(default)` — a `Missing or insufficient permissions` error usually means they landed on the wrong one. Never fix a permissions error by opening the database to public writes.
 
-Connectivity test data (`apps/app-1/app/page.tsx` reads `doc(db, "config", "main")` then `.data().text`):
-
-```
-<named db>
-└── config/main
-    └── text: "Hello from database <db name>"
-```
-
-Security rules: `config/main` is `allow read: if true; allow write: if false;`. If you hit `Missing or insufficient permissions`, verify the rules were published to the **named** database, not `(default)`. Never fix a permissions error by opening the database to public writes.
-
-**app-2 Firestore is not finished.** It needs its own Firebase project (`my-app-2`), named database `app-2`, `config/main` doc, its own Web App + `.env.local` + App Hosting env vars, and a `apps/app-2/lib/firebase.ts` mirroring app-1. app-2 must not point at app-1's project.
+**app-2's Firestore feature is not started.** It needs its own Firebase project (`my-app-2`), a named database `app-2`, its own Web App + `.env.local` + App Hosting env vars, and a `lib/firebase.ts`. It must not point at app-1's project.
 
 ## Custom domains (test/simulation — no domain purchased)
 
@@ -109,7 +100,7 @@ The root registration is PR [is-a-dev/register#50502](https://github.com/is-a-de
 
 ## Likely next tasks
 
-1. Finish Firestore for app-2 by mirroring app-1's working architecture (see above).
+1. Build app-2's Firestore feature using the pattern above.
 2. After PR #50502 merges: configure `app1`/`app2.ilanisr.is-a.dev` subdomains via Firebase App Hosting.
 
 Before changing anything Firebase/backend-related, inspect the actual current repo and Firebase state — naming cleanup may have progressed since this was written.
