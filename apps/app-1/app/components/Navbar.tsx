@@ -32,9 +32,9 @@ export function Navbar() {
 
   return (
     <header className="border-b border-foreground/10">
-      <nav className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-4 px-6 py-4">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
-          <Link href="/anniversaries" className="font-bold">
+      <nav className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-6 py-4">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+          <Link href="/anniversaries" className="font-bold whitespace-nowrap">
             {t.appName}
           </Link>
           {tabs.map((tab) => (
@@ -51,7 +51,7 @@ export function Navbar() {
             </Link>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <LanguageSwitcher label={t.languageLabel} />
           <ThemeSwitcher label={t.themeToggle} />
           <AuthControl />

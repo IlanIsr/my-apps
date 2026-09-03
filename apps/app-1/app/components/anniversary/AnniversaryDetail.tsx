@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { LOCALE_TAG, useLanguage } from "@/i18n";
@@ -10,6 +9,7 @@ import {
   addAnniversaryAction,
   leaveAnniversaryAction,
 } from "../../anniversaries/actions";
+import { BackLink } from "../BackLink";
 import { EditEventForm, type EditEventFormTexts } from "./EditEventForm";
 
 export type AnniversaryDetailTexts = {
@@ -76,41 +76,41 @@ export function AnniversaryDetail({
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/anniversaries" className="text-sm opacity-70 hover:opacity-100">
-        {t.back}
-      </Link>
+      <div className="flex flex-col gap-3">
+        <BackLink href="/anniversaries" label={t.back} />
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">{anniversary.name}</h1>
-          <p className="mt-1 text-sm opacity-70">
-            {t.hebDate}: <span dir="ltr">{anniversary.hebDateLabel}</span>
-          </p>
-          {anniversary.members.length > 0 && (
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">{anniversary.name}</h1>
             <p className="mt-1 text-sm opacity-70">
-              {t.members}: {anniversary.members.join(", ")}
+              {t.hebDate}: <span dir="ltr">{anniversary.hebDateLabel}</span>
             </p>
+            {anniversary.members.length > 0 && (
+              <p className="mt-1 text-sm opacity-70">
+                {t.members}: {anniversary.members.join(", ")}
+              </p>
+            )}
+          </div>
+          {anniversary.joined ? (
+            <button
+              type="button"
+              onClick={handleLeave}
+              disabled={pending}
+              className="shrink-0 rounded-lg border border-foreground/20 px-3 py-1.5 text-sm hover:bg-foreground/5 disabled:opacity-40"
+            >
+              {pending ? t.leaving : t.leave}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleJoin}
+              disabled={pending}
+              className="shrink-0 rounded-lg bg-foreground px-3 py-1.5 text-sm font-medium text-background hover:opacity-80 disabled:opacity-40"
+            >
+              {pending ? t.joining : t.join}
+            </button>
           )}
         </div>
-        {anniversary.joined ? (
-          <button
-            type="button"
-            onClick={handleLeave}
-            disabled={pending}
-            className="shrink-0 rounded-lg border border-foreground/20 px-3 py-1.5 text-sm hover:bg-foreground/5 disabled:opacity-40"
-          >
-            {pending ? t.leaving : t.leave}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleJoin}
-            disabled={pending}
-            className="shrink-0 rounded-lg bg-foreground px-3 py-1.5 text-sm font-medium text-background hover:opacity-80 disabled:opacity-40"
-          >
-            {pending ? t.joining : t.join}
-          </button>
-        )}
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}

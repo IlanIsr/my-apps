@@ -1,7 +1,7 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 
 export const anniversaryDetail = {
-  back: "← Tous les anniversaires",
+  back: "Tous les anniversaires",
   hebDate: "Date hébraïque",
   members: "Dans la liste",
   upcoming: "Événements à venir",

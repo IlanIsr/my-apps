@@ -14,7 +14,7 @@ export const anniversaryForm = {
   sharedEmails: "Partager avec (emails, séparés par des virgules)",
   sharedEmailsPlaceholder: "quelquun@example.com, autre@example.com",
   sharedEmailsHelp:
-    "Ils sont ajoutés comme participants optionnels, invisibles entre eux.",
+    "Vous êtes ajouté automatiquement. Les autres personnes ici deviennent des invités optionnels, invisibles entre eux.",
   submit: "Créer les événements",
   submitting: "Création…",
   toggle: {

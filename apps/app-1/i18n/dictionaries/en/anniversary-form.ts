@@ -14,7 +14,7 @@ export const anniversaryForm = {
   sharedEmails: "Share with (emails, comma-separated)",
   sharedEmailsPlaceholder: "someone@example.com, other@example.com",
   sharedEmailsHelp:
-    "They’re added as optional attendees, invisible to each other.",
+    "You’re added automatically. Anyone else here joins as an optional guest, invisible to the others.",
   submit: "Create events",
   submitting: "Creating…",
   toggle: {

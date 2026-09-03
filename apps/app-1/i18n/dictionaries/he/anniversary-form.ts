@@ -12,7 +12,8 @@ export const anniversaryForm = {
   years: "שנים קדימה",
   sharedEmails: "שיתוף עם (אימיילים, מופרדים בפסיקים)",
   sharedEmailsPlaceholder: "someone@example.com, other@example.com",
-  sharedEmailsHelp: "הם מתווספים כמוזמנים אופציונליים, בלתי נראים זה לזה.",
+  sharedEmailsHelp:
+    "אתה מתווסף אוטומטית. כל אחד אחר כאן מצטרף כאורח אופציונלי, בלתי נראה לאחרים.",
   submit: "יצירת אירועים",
   submitting: "יוצר…",
   toggle: {

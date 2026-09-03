@@ -1,7 +1,7 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 
 export const anniversaryDetail = {
-  back: "← כל ימי ההולדת",
+  back: "כל ימי ההולדת",
   hebDate: "תאריך עברי",
   members: "ברשימה",
   upcoming: "אירועים קרובים",

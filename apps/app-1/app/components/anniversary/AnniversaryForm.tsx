@@ -17,6 +17,7 @@ import {
   gregorianDayOptions,
   gregorianMonthOptions,
   gregorianYearOptions,
+  hebrewDayOptions,
   hebrewMonthOptions,
 } from "../../home/options";
 import { addAnniversaryAction } from "../../anniversaries/actions";
@@ -48,6 +49,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const router = useRouter();
 
   const months = useMemo(() => hebrewMonthOptions(t.months), [t.months]);
+  const days = useMemo(() => hebrewDayOptions(locale), [locale]);
   const gregDays = useMemo(() => gregorianDayOptions(), []);
   const gregMonths = useMemo(() => gregorianMonthOptions(locale), [locale]);
   const gregYears = useMemo(() => gregorianYearOptions(), []);
@@ -64,10 +66,6 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const dayOptions = Array.from({ length: 30 }, (_, i) => ({
-    key: String(i + 1),
-    label: String(i + 1),
-  }));
   const yearOptions = [5, 10, 15, 20, 30, 50].map((n) => ({
     key: String(n),
     label: String(n),
@@ -191,7 +189,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
         >
           <Select
             label={t.day}
-            options={dayOptions}
+            options={days}
             value={day}
             onChange={setDay}
           />
