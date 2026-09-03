@@ -5,6 +5,7 @@ export const calendar: CalendarMessages = {
     title: "חיבור יומן Google",
     subtitle: "אשרו גישה ליומן כדי ליצור ולנהל אירועי יום הולדת.",
     button: "חיבור יומן Google",
+    signOut: "התנתקות",
     connected: "מחובר",
     notConnected: "לא מחובר",
     required: "חברו את יומן Google כדי לנהל אירועים.",

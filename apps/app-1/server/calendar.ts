@@ -27,9 +27,22 @@ export class GoogleCalendarNotConnectedError extends Error {
   }
 }
 
-/** Whether the signed-in user has granted Google Calendar access. */
+/**
+ * Whether the signed-in user has actually granted Google Calendar access
+ * (a token can exist without the calendar scope if they signed in before it was
+ * configured). Verified with a cheap API call.
+ */
 export async function isGoogleCalendarConnected(): Promise<boolean> {
-  return (await getGoogleAccessToken()) !== null;
+  const token = await getGoogleAccessToken();
+  if (!token) return false;
+  try {
+    const response = await fetch(`${EVENTS_URL}?maxResults=1`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 type GoogleEvent = {

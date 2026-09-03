@@ -3,6 +3,7 @@ export const calendar = {
     title: "Connect Google Calendar",
     subtitle: "Grant calendar access to create and manage anniversary events.",
     button: "Connect Google Calendar",
+    signOut: "Sign out",
     connected: "Connected",
     notConnected: "Not connected",
     required: "Connect Google Calendar to manage events.",

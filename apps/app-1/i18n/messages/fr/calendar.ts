@@ -6,6 +6,7 @@ export const calendar: CalendarMessages = {
     subtitle:
       "Autorisez l’accès au calendrier pour créer et gérer les événements d’anniversaire.",
     button: "Connecter Google Calendar",
+    signOut: "Se déconnecter",
     connected: "Connecté",
     notConnected: "Non connecté",
     required: "Connectez Google Calendar pour gérer les événements.",
