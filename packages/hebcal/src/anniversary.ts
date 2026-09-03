@@ -47,6 +47,9 @@ export function calculateNextDates(
   hebMonth: string,
   count = 10,
 ): string[] {
+  count = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0;
+  if (count === 0) return [];
+
   const month = normalizeMonth(hebMonth);
 
   const today = new Date();

@@ -32,6 +32,13 @@ export class CalendarNotConfiguredError extends Error {
   }
 }
 
+export class NoSuchHebrewDateError extends Error {
+  constructor() {
+    super("no-such-hebrew-date");
+    this.name = "NoSuchHebrewDateError";
+  }
+}
+
 let cachedClient: OAuth2Client | null = null;
 
 function botClient(): OAuth2Client {
@@ -261,10 +268,15 @@ export async function addAnniversary(
   const grouped = await groupAnniversaries();
   const existing = grouped.get(key);
 
+  // Guard against a missing/garbage `years` producing a silent no-op.
+  const years = Math.min(
+    50,
+    Math.max(1, Number.isFinite(input.years) ? Math.floor(input.years) : 1),
+  );
   const wantedDates = calculateNextDates(
     input.hebDay,
     input.hebMonth,
-    input.years,
+    years,
   );
 
   if (existing) {
@@ -296,7 +308,9 @@ export async function addAnniversary(
     return { created, joined: true };
   }
 
-  // Brand new anniversary.
+  // Brand new anniversary — if the date never occurs there's nothing to create.
+  if (wantedDates.length === 0) throw new NoSuchHebrewDateError();
+
   const members = [
     ...new Set([email, ...input.sharedEmails.map((e) => e.toLowerCase())]),
   ];

@@ -25,6 +25,7 @@ export const anniversaryForm = {
   nameRequired: "Le nom est requis.",
   emailInvalid: (email: string) => `Email invalide : ${email}`,
   notConfigured: NOT_CONFIGURED,
+  noSuchDate: "Cette date hébraïque n’existe pas (ex. le 30 d’un mois de 29 jours).",
   error: (message: string) => `Une erreur est survenue : ${message}`,
   months: {
     Tishrei: "Tichri",

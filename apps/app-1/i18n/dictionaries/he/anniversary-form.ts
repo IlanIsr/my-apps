@@ -23,6 +23,7 @@ export const anniversaryForm = {
   nameRequired: "יש להזין שם.",
   emailInvalid: (email: string) => `אימייל לא תקין: ${email}`,
   notConfigured: NOT_CONFIGURED,
+  noSuchDate: "תאריך עברי זה אינו קיים (למשל ה-30 בחודש בן 29 יום).",
   error: (message: string) => `משהו השתבש: ${message}`,
   months: {
     Tishrei: "תשרי",

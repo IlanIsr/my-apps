@@ -9,16 +9,23 @@ import {
   addAnniversary,
   CalendarNotConfiguredError,
   leaveAnniversary,
+  NoSuchHebrewDateError,
   updateEvent,
 } from "@/server/calendar";
 
 export type ActionResult<T = undefined> =
   | ({ ok: true } & (T extends undefined ? object : { data: T }))
-  | { ok: false; error: "not-configured" | "not-signed-in" | string };
+  | {
+      ok: false;
+      error: "not-configured" | "not-signed-in" | "no-such-date" | string;
+    };
 
 function fail(error: unknown): { ok: false; error: string } {
   if (error instanceof CalendarNotConfiguredError) {
     return { ok: false, error: "not-configured" };
+  }
+  if (error instanceof NoSuchHebrewDateError) {
+    return { ok: false, error: "no-such-date" };
   }
   return { ok: false, error: error instanceof Error ? error.message : "unknown" };
 }

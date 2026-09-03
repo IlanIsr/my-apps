@@ -38,6 +38,7 @@ export type AnniversaryFormTexts = {
   nameRequired: string;
   emailInvalid: (email: string) => string;
   notConfigured: string;
+  noSuchDate: string;
   error: (message: string) => string;
   months: Record<HebrewMonthKey, string>;
 };
@@ -116,7 +117,9 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
       setError(
         result.error === "not-configured"
           ? t.notConfigured
-          : t.error(result.error),
+          : result.error === "no-such-date"
+            ? t.noSuchDate
+            : t.error(result.error),
       );
       return;
     }
