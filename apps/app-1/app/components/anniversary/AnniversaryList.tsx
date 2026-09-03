@@ -3,16 +3,28 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
-import { useI18n } from "@/i18n/context";
-import { LOCALE_TAG } from "@/i18n/config";
+import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 import type { Anniversary } from "@/lib/anniversary";
+
+export type AnniversariesTexts = {
+  listPage: { title: string; subtitle: string };
+  add: string;
+  search: string;
+  empty: { hint: string; noResults: string };
+  card: {
+    nextEvent: string;
+    events: (n: number) => string;
+    persons: (n: number) => string;
+  };
+};
 
 export function AnniversaryList({
   anniversaries,
 }: {
   anniversaries: Anniversary[];
 }) {
-  const { t, locale } = useI18n();
+  const t = useTranslations().anniversaries;
+  const { locale } = useLanguage();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -29,14 +41,14 @@ export function AnniversaryList({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{t.anniversary.listPage.title}</h1>
-          <p className="text-sm opacity-70">{t.anniversary.listPage.subtitle}</p>
+          <h1 className="text-2xl font-bold">{t.listPage.title}</h1>
+          <p className="text-sm opacity-70">{t.listPage.subtitle}</p>
         </div>
         <Link
           href="/anniversaries/new"
           className="shrink-0 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-80"
         >
-          {t.anniversary.add}
+          {t.add}
         </Link>
       </div>
 
@@ -45,16 +57,14 @@ export function AnniversaryList({
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={t.anniversary.search}
+          placeholder={t.search}
           className="rounded-lg border border-foreground/20 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/50"
         />
       )}
 
       {filtered.length === 0 ? (
         <p className="text-sm opacity-70">
-          {anniversaries.length === 0
-            ? t.anniversary.empty.hint
-            : t.anniversary.empty.noResults}
+          {anniversaries.length === 0 ? t.empty.hint : t.empty.noResults}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -73,13 +83,12 @@ export function AnniversaryList({
                 <div className="mt-1 text-sm opacity-70">
                   {anniversary.events[0] && (
                     <span>
-                      {t.anniversary.card.nextEvent}:{" "}
-                      {fmt(anniversary.events[0].date)} ·{" "}
+                      {t.card.nextEvent}: {fmt(anniversary.events[0].date)} ·{" "}
                     </span>
                   )}
-                  {t.anniversary.card.events(anniversary.events.length)}
+                  {t.card.events(anniversary.events.length)}
                   {anniversary.shared.length > 0 && (
-                    <span> · {t.anniversary.card.persons(anniversary.shared.length)}</span>
+                    <span> · {t.card.persons(anniversary.shared.length)}</span>
                   )}
                 </div>
               </Link>

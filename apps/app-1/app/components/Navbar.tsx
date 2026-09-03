@@ -5,18 +5,29 @@ import { usePathname } from "next/navigation";
 
 import { AuthControl } from "@repo/auth/nav";
 
-import { useI18n } from "@/i18n/context";
+import { useTranslations } from "@/i18n";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
+export type NavbarTexts = {
+  appName: string;
+  tabs: {
+    anniversaries: string;
+    agenda: string;
+    converter: string;
+  };
+  languageLabel: string;
+  themeToggle: string;
+};
+
 export function Navbar() {
-  const { t } = useI18n();
+  const t = useTranslations().navbar;
   const pathname = usePathname();
 
   const tabs = [
-    { href: "/anniversaries", label: t.anniversary.nav },
-    { href: "/calendar", label: t.calendar.nav },
-    { href: "/converter", label: t.home.nav },
+    { href: "/anniversaries", label: t.tabs.anniversaries },
+    { href: "/calendar", label: t.tabs.agenda },
+    { href: "/converter", label: t.tabs.converter },
   ];
 
   return (
@@ -26,24 +37,23 @@ export function Navbar() {
           <Link href="/anniversaries" className="font-bold">
             {t.appName}
           </Link>
-          {tabs.map((tab) => {
-            const active = pathname.startsWith(tab.href);
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className={
-                  active ? "font-medium" : "opacity-60 hover:opacity-100"
-                }
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
+          {tabs.map((tab) => (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={
+                pathname.startsWith(tab.href)
+                  ? "font-medium"
+                  : "opacity-60 hover:opacity-100"
+              }
+            >
+              {tab.label}
+            </Link>
+          ))}
         </div>
         <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          <ThemeSwitcher />
+          <LanguageSwitcher label={t.languageLabel} />
+          <ThemeSwitcher label={t.themeToggle} />
           <AuthControl />
         </div>
       </nav>

@@ -2,7 +2,7 @@
 
 import { ThemeProvider } from "next-themes";
 
-import { I18nProvider } from "@/i18n/context";
+import { I18nProvider } from "@/i18n";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

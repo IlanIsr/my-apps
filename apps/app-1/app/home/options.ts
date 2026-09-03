@@ -1,6 +1,6 @@
-import { HEBREW_MONTH_KEYS } from "@repo/hebcal";
-import { LOCALE_TAG, type Locale } from "@/i18n/config";
-import type { Messages } from "@/i18n/types";
+import { HEBREW_MONTH_KEYS, type HebrewMonthKey } from "@repo/hebcal";
+
+import { LOCALE_TAG, type Locale } from "@/i18n";
 import type { Option } from "../components/Select";
 
 const HEBREW_DAY_LETTERS = [
@@ -17,8 +17,10 @@ export function hebrewDayOptions(locale: Locale): Option[] {
   }));
 }
 
-export function hebrewMonthOptions(t: Messages): Option[] {
-  return HEBREW_MONTH_KEYS.map((key) => ({ key, label: t.hebrewMonths[key] }));
+export function hebrewMonthOptions(
+  months: Record<HebrewMonthKey, string>,
+): Option[] {
+  return HEBREW_MONTH_KEYS.map((key) => ({ key, label: months[key] }));
 }
 
 export function gregorianDayOptions(): Option[] {

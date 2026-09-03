@@ -2,35 +2,51 @@
 
 import { useState } from "react";
 
-import { useI18n } from "@/i18n/context";
+import { useTranslations } from "@/i18n";
 import { Switch } from "../components/Switch";
-import { GregorianDateForm } from "./GregorianDateForm";
-import { HebrewDateForm } from "./HebrewDateForm";
+import {
+  GregorianDateForm,
+  type GregorianDateFormTexts,
+} from "./GregorianDateForm";
+import { HebrewDateForm, type HebrewDateFormTexts } from "./HebrewDateForm";
+
+export type ConverterTexts = {
+  question: string;
+  gregorian: string;
+  hebrew: string;
+  toggleCalendar: string;
+  hebrewForm: HebrewDateFormTexts;
+  gregorianForm: GregorianDateFormTexts;
+};
 
 export function HomePage() {
-  const { t } = useI18n();
+  const t = useTranslations().converter;
   const [hebrewInput, setHebrewInput] = useState(true);
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <h1 className="text-2xl font-bold">{t.home.question}</h1>
+        <h1 className="text-2xl font-bold">{t.question}</h1>
         <div className="flex items-center gap-3 text-sm">
           <span className={hebrewInput ? "opacity-50" : "font-medium"}>
-            {t.home.gregorian}
+            {t.gregorian}
           </span>
           <Switch
             checked={hebrewInput}
             onChange={setHebrewInput}
-            aria-label={t.home.toggleCalendar}
+            aria-label={t.toggleCalendar}
           />
           <span className={hebrewInput ? "font-medium" : "opacity-50"}>
-            {t.home.hebrew}
+            {t.hebrew}
           </span>
         </div>
       </div>
 
-      {hebrewInput ? <HebrewDateForm /> : <GregorianDateForm />}
+      {hebrewInput ? (
+        <HebrewDateForm t={t.hebrewForm} />
+      ) : (
+        <GregorianDateForm t={t.gregorianForm} />
+      )}
     </div>
   );
 }

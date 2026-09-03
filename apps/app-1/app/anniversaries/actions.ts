@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { MESSAGES } from "@/i18n/messages";
-import type { Locale } from "@/i18n/config";
+import { getDictionary, type Locale } from "@/i18n";
 import {
   createAnniversaryEvents,
   deleteAnniversaryEvents,
@@ -32,7 +31,7 @@ export async function createAnniversaryAction(input: {
   locale: Locale;
 }): Promise<ActionResult<{ count: number }>> {
   try {
-    const summary = MESSAGES[input.locale].calendar.eventSummary(input.name);
+    const summary = getDictionary(input.locale).eventSummary.format(input.name);
     const created = await createAnniversaryEvents({ ...input, summary });
     revalidatePath("/anniversaries");
     return { ok: true, data: { count: created.length } };
@@ -79,7 +78,7 @@ export async function updateEventAction(input: {
   locale: Locale;
 }): Promise<ActionResult> {
   try {
-    const summary = MESSAGES[input.locale].calendar.eventSummary(input.name);
+    const summary = getDictionary(input.locale).eventSummary.format(input.name);
     await updateAnniversaryEvent({ ...input, summary });
     revalidatePath(`/anniversaries/${input.id}`);
     revalidatePath("/anniversaries");

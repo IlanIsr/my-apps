@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 
-import { useI18n } from "@/i18n/context";
-import { LOCALE_TAG } from "@/i18n/config";
+import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
+
+export type AgendaTexts = {
+  title: string;
+  subtitle: string;
+  empty: string;
+};
 
 export type AgendaItem = {
   anniversaryId: string;
@@ -14,7 +19,8 @@ export type AgendaItem = {
 };
 
 export function CalendarAgenda({ items }: { items: AgendaItem[] }) {
-  const { t, locale } = useI18n();
+  const t = useTranslations().agenda;
+  const { locale } = useLanguage();
 
   const fmt = (iso: string) =>
     new Date(iso).toLocaleDateString(LOCALE_TAG[locale], {
@@ -26,12 +32,12 @@ export function CalendarAgenda({ items }: { items: AgendaItem[] }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold">{t.calendar.agenda.title}</h1>
-        <p className="text-sm opacity-70">{t.calendar.agenda.subtitle}</p>
+        <h1 className="text-2xl font-bold">{t.title}</h1>
+        <p className="text-sm opacity-70">{t.subtitle}</p>
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm opacity-70">{t.calendar.agenda.empty}</p>
+        <p className="text-sm opacity-70">{t.empty}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-foreground/10 rounded-lg border border-foreground/15">
           {items.map((item) => (
