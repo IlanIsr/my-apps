@@ -66,9 +66,14 @@ Apps consume these via `workspace:*`. Changes to a package are seen directly by 
 - ESLint 10 flat config only. Each app's `eslint.config.js` just re-exports `nextJsConfig` from `@repo/eslint-config/next-js`. Note `eslint-plugin-react-hooks` v7 flags the `useEffect(() => setMounted(true))` mount pattern — drive theme-dependent rendering off the `.dark` class in CSS instead.
 - All apps: Next.js 16 App Router, React 19, `"type": "module"`, root `app/` dir. app-1 also has `lib/` and `i18n/` dirs and a `@/*` → `./*` tsconfig path alias (app-2/landing are too small to need one).
 
-### app-1 i18n
+### app-1 i18n (component-owned text types)
 
-Hand-rolled, no library. `apps/app-1/i18n/`: `config.ts` (locales `en`/`he`/`fr`, dir, `Intl` tags), `context.tsx` (`I18nProvider` + `useI18n()` → `{ locale, setLocale, t, dir }`), and `messages/<locale>/` — one folder per language, each with `common.ts` / `home.ts` / `forms.ts` (split further as strings grow) composed into the full `Messages` object in that folder's `index.ts`. Partials are typed as `Messages["home"]` etc.; `index.ts` is where TS enforces the object is complete. Locale is persisted in `localStorage` (`app-1.locale`) and read via `useSyncExternalStore` (falls back to `navigator.language`, then `en`). An inline script in `layout.tsx` sets `<html lang/dir>` before paint to avoid an RTL flash — **keep its storage key and locale list in sync with `config.ts`**. Gregorian month names come from `Intl.DateTimeFormat`, not the message files. Add a UI string → add it to `types.ts` and the matching partial in all three locale folders.
+Hand-rolled, no library, pattern borrowed from the `exam_training` repo. **Each component exports its own `XxxTexts` type and takes a `t: XxxTexts` prop.** Only feature-root ("boundary") client components call `useTranslations()` and pass slices down. `i18n/messages.ts` assembles the `Messages` type by importing every component's `XxxTexts`; each `i18n/dictionaries/<locale>/<feature>.ts` does `export const x = {…} as const satisfies XxxTexts`, and `<locale>/index.ts` does `satisfies Messages`.
+
+- `i18n/`: `config.ts` (locales `en`/`he`/`fr`, dir, `Intl` tags), `language-context.ts` / `language-provider.tsx` (`I18nProvider`), `use-language.ts` (`useLanguage()` → `{ locale, dir, setLocale }`), `use-translations.ts` (`useTranslations()` → `Messages`), `index.ts` (barrel — import from `@/i18n`), `dictionaries/<locale>/*`.
+- Locale is persisted in `localStorage` (`app-1.locale`), read via `useSyncExternalStore` (falls back to `navigator.language`, then `en`). An inline script in `layout.tsx` sets `<html lang/dir>` before paint — **keep its storage key + locale list in sync with `config.ts`**.
+- Gregorian month names come from `Intl.DateTimeFormat`, not the dictionaries. The event-title text lives in `lib/event-summary.ts` (`EventSummaryTexts`) so server actions can use it via `getDictionary(locale)`.
+- **Add a UI string**: add it to the owning component's `XxxTexts` type, then to that feature's file in all three `dictionaries/<locale>/`.
 
 ## Auth (Clerk)
 
