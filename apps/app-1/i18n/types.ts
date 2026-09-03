@@ -1,4 +1,4 @@
-import type { HebrewMonthKey } from "@/lib/hebcal";
+import type { HebrewMonthKey } from "@repo/hebcal";
 
 export type Messages = {
   appName: string;

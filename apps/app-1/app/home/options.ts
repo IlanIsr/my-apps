@@ -1,4 +1,4 @@
-import { HEBREW_MONTH_KEYS } from "@/lib/hebcal";
+import { HEBREW_MONTH_KEYS } from "@repo/hebcal";
 import { LOCALE_TAG, type Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/types";
 import type { Option } from "../components/Select";

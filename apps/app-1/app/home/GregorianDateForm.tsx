@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { useI18n } from "@/i18n/context";
-import { calculateHebrewDate, type HebrewResult } from "@/lib/hebcal";
+import { calculateHebrewDate, type HebrewResult } from "@repo/hebcal";
 import { Button } from "../components/Button";
 import { Select } from "../components/Select";
 import {

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import { LOCALE_TAG } from "@/i18n/config";
 import { useI18n } from "@/i18n/context";
-import { findNextHebrewDate, type HebrewResult } from "@/lib/hebcal";
+import { findNextHebrewDate, type HebrewResult } from "@repo/hebcal";
 import { Button } from "../components/Button";
 import { Select } from "../components/Select";
 import { hebrewDayOptions, hebrewMonthOptions } from "./options";
