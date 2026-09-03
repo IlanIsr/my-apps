@@ -12,6 +12,7 @@ export const anniversaryDetail = {
   leave: "Retirer de ma liste",
   leaving: "Retrait…",
   leaveConfirm: "Vous retirer de cet anniversaire ?",
+  rateLimited: "Google Agenda est occupé pour le moment — patientez puis réessayez.",
   error: (message: string) => `Une erreur est survenue : ${message}`,
   editForm: {
     date: "Date",

@@ -26,6 +26,7 @@ export const anniversaryForm = {
   emailInvalid: (email: string) => `Not a valid email: ${email}`,
   notConfigured: NOT_CONFIGURED,
   noSuchDate: "That Hebrew date doesn’t occur (e.g. the 30th of a 29-day month).",
+  rateLimited: "Google Calendar is busy right now — wait a moment and try again.",
   error: (message: string) => `Something went wrong: ${message}`,
   months: {
     Tishrei: "Tishrei",

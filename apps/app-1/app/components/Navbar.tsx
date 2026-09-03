@@ -32,7 +32,7 @@ export function Navbar() {
 
   return (
     <header className="border-b border-foreground/10">
-      <nav className="mx-auto flex max-w-2xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4 text-sm">
+      <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4 text-sm">
         <Link href="/anniversaries" className="font-bold whitespace-nowrap">
           {t.appName}
         </Link>

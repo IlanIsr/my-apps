@@ -28,6 +28,32 @@ export class CalendarNotConfiguredError extends Error {
   }
 }
 
+export class CalendarRateLimitError extends Error {
+  constructor() {
+    super("calendar-rate-limited");
+    this.name = "CalendarRateLimitError";
+  }
+}
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Run `fn` over `items`, at most `limit` at a time. */
+async function pool<T>(
+  limit: number,
+  items: readonly T[],
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  const queue = items.slice();
+  const worker = async () => {
+    for (let item = queue.shift(); item !== undefined; item = queue.shift()) {
+      await fn(item);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker),
+  );
+}
+
 let cachedClient: OAuth2Client | null = null;
 
 function botClient(): OAuth2Client {
@@ -50,23 +76,43 @@ async function botToken(): Promise<string> {
   return token;
 }
 
-async function calendarApi<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${eventsUrl}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${await botToken()}`,
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    throw new Error(
-      `Google Calendar API ${response.status}: ${await response.text()}`,
-    );
+function isRateLimited(status: number, body: string): boolean {
+  if (status === 429) return true;
+  if (status === 403) {
+    return /rateLimitExceeded|userRateLimitExceeded|quotaExceeded/i.test(body);
   }
-  return response.status === 204
-    ? (undefined as T)
-    : ((await response.json()) as T);
+  return status >= 500;
+}
+
+async function calendarApi<T>(path: string, init?: RequestInit): Promise<T> {
+  const MAX_ATTEMPTS = 5;
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(`${eventsUrl}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${await botToken()}`,
+        "Content-Type": "application/json",
+        ...init?.headers,
+      },
+    });
+    if (response.ok) {
+      return response.status === 204
+        ? (undefined as T)
+        : ((await response.json()) as T);
+    }
+
+    const body = await response.text();
+    if (
+      attempt < MAX_ATTEMPTS - 1 &&
+      isRateLimited(response.status, body)
+    ) {
+      // Exponential backoff with jitter: ~0.6s, 1.4s, 3s, 6s.
+      await sleep(2 ** attempt * 600 + Math.random() * 400);
+      continue;
+    }
+    if (isRateLimited(response.status, body)) throw new CalendarRateLimitError();
+    throw new Error(`Google Calendar API ${response.status}: ${body}`);
+  }
 }
 
 /** Whether the shared bot calendar is configured and reachable. */
@@ -171,27 +217,32 @@ export type SyncResult = {
   events: SyncedEvent[];
   /** Emails that declined on the shared calendar — treat as "left". */
   declined: string[];
+  /** True if the Calendar API rate-limited us before every event was synced. */
+  rateLimited: boolean;
 };
+
+/** Gap between Calendar writes — the API throttles bursts to a single calendar. */
+const WRITE_GAP_MS = 150;
 
 /** Reconcile a person's Google Calendar events to match `input`. */
 export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
-  // 1. Fetch the events we think already exist.
+  // 1. Fetch the events we think already exist (reads — safe to parallelise).
   const existing = new Map<string, GoogleEvent>();
-  await Promise.all(
-    input.events
-      .filter((e) => e.googleEventId)
-      .map(async (e) => {
-        try {
-          existing.set(
-            e.googleEventId,
-            await calendarApi<GoogleEvent>(
-              `/${encodeURIComponent(e.googleEventId)}`,
-            ),
-          );
-        } catch {
-          // deleted on the calendar — it'll be recreated below
-        }
-      }),
+  await pool(
+    4,
+    input.events.filter((e) => e.googleEventId),
+    async (e) => {
+      try {
+        existing.set(
+          e.googleEventId,
+          await calendarApi<GoogleEvent>(
+            `/${encodeURIComponent(e.googleEventId)}`,
+          ),
+        );
+      } catch {
+        // deleted on the calendar — it'll be recreated below
+      }
+    },
   );
 
   // 2. Anyone who declined on any existing event has left.
@@ -207,25 +258,39 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
     ...new Set(input.members.map((m) => m.toLowerCase())),
   ].filter((m) => !declined.has(m));
 
-  // 3. Reconcile each desired event.
-  const events = await Promise.all(
-    input.events.map(async (want): Promise<SyncedEvent> => {
-      const time = want.time || (await getTsetHakohavimWithFallback(want.date));
-      const found = want.googleEventId
-        ? existing.get(want.googleEventId)
-        : undefined;
+  // 3. Resolve start times up front (hits hebcal.com, not Google).
+  const times = new Map<number, string>();
+  await pool(4, input.events, async (want) => {
+    times.set(
+      want.year,
+      want.time || (await getTsetHakohavimWithFallback(want.date)),
+    );
+  });
 
-      const priorStatus = new Map<string, string>();
-      for (const a of found?.attendees ?? []) {
-        if (a.email && a.responseStatus) {
-          priorStatus.set(a.email.toLowerCase(), a.responseStatus);
-        }
+  // 4. Reconcile each event — SEQUENTIAL: the Calendar API rate-limits bursts
+  //    of writes to one calendar. Stop early on a rate limit and report what
+  //    got done so the caller can persist it and retry the rest.
+  const events: SyncedEvent[] = [];
+  let rateLimited = false;
+
+  for (const want of input.events) {
+    const time = times.get(want.year) ?? "18:00";
+    const found = want.googleEventId
+      ? existing.get(want.googleEventId)
+      : undefined;
+
+    const priorStatus = new Map<string, string>();
+    for (const a of found?.attendees ?? []) {
+      if (a.email && a.responseStatus) {
+        priorStatus.set(a.email.toLowerCase(), a.responseStatus);
       }
-      const attendees: AttendeeInput[] = memberEmails.map((email) => {
-        const responseStatus = priorStatus.get(email);
-        return responseStatus ? { email, responseStatus } : { email };
-      });
+    }
+    const attendees: AttendeeInput[] = memberEmails.map((email) => {
+      const responseStatus = priorStatus.get(email);
+      return responseStatus ? { email, responseStatus } : { email };
+    });
 
+    try {
       if (found) {
         const patched = await calendarApi<GoogleEvent>(
           `/${encodeURIComponent(found.id)}?sendUpdates=none`,
@@ -242,39 +307,47 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
             ),
           },
         );
-        return {
+        events.push({
           year: want.year,
           date: want.date,
           time,
           googleEventId: found.id,
           htmlLink: patched.htmlLink ?? found.htmlLink ?? "",
-        };
+        });
+      } else {
+        const created = await calendarApi<GoogleEvent>("?sendUpdates=none", {
+          method: "POST",
+          body: JSON.stringify(
+            buildEventBody({
+              summary: input.summary ?? input.summaryFallback,
+              description: input.description ?? "",
+              date: want.date,
+              time,
+              attendees,
+              personId: input.personId,
+            }),
+          ),
+        });
+        events.push({
+          year: want.year,
+          date: want.date,
+          time,
+          googleEventId: created.id,
+          htmlLink: created.htmlLink ?? "",
+        });
       }
+    } catch (error) {
+      if (error instanceof CalendarRateLimitError) {
+        rateLimited = true;
+        break;
+      }
+      throw error;
+    }
 
-      const created = await calendarApi<GoogleEvent>("?sendUpdates=none", {
-        method: "POST",
-        body: JSON.stringify(
-          buildEventBody({
-            summary: input.summary ?? input.summaryFallback,
-            description: input.description ?? "",
-            date: want.date,
-            time,
-            attendees,
-            personId: input.personId,
-          }),
-        ),
-      });
-      return {
-        year: want.year,
-        date: want.date,
-        time,
-        googleEventId: created.id,
-        htmlLink: created.htmlLink ?? "",
-      };
-    }),
-  );
+    await sleep(WRITE_GAP_MS);
+  }
 
-  return { events, declined: [...declined] };
+  return { events, declined: [...declined], rateLimited };
 }
 
 /** Delete one Google Calendar event. Throws if the API rejects it. */
@@ -282,19 +355,6 @@ export async function deleteEvent(id: string): Promise<void> {
   await calendarApi(`/${encodeURIComponent(id)}?sendUpdates=none`, {
     method: "DELETE",
   });
-}
-
-/** Delete the given Google Calendar events; ignores ones already gone. */
-export async function deletePersonEvents(ids: string[]): Promise<void> {
-  await Promise.all(
-    ids.filter(Boolean).map(async (id) => {
-      try {
-        await deleteEvent(id);
-      } catch {
-        // already deleted
-      }
-    }),
-  );
 }
 
 /** Patch a single event's date/time/title (a manual per-event edit). */

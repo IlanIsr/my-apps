@@ -12,6 +12,7 @@ export const anniversaryDetail = {
   leave: "הסרה מהרשימה שלי",
   leaving: "מסיר…",
   leaveConfirm: "להסיר את עצמך מיום הולדת זה?",
+  rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
   error: (message: string) => `משהו השתבש: ${message}`,
   editForm: {
     date: "תאריך",

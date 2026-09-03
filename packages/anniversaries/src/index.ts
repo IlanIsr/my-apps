@@ -15,6 +15,7 @@ export {
   updateEvent,
   NoSuchHebrewDateError,
   CalendarNotConfiguredError,
+  CalendarRateLimitError,
   StoreNotConfiguredError,
   type AddAnniversaryInput,
   type UpdateEventInput,

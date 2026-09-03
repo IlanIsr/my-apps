@@ -14,6 +14,7 @@ import {
 } from "@repo/hebcal";
 
 import {
+  CalendarRateLimitError,
   isCalendarReachable,
   patchEvent,
   syncPersonEvents,
@@ -36,7 +37,7 @@ import {
   type StoredEvent,
 } from "./store";
 
-export { CalendarNotConfiguredError } from "./calendar";
+export { CalendarNotConfiguredError, CalendarRateLimitError } from "./calendar";
 export { StoreNotConfiguredError } from "./store";
 
 export class NoSuchHebrewDateError extends Error {
@@ -219,6 +220,7 @@ export async function addAnniversary(
       members: finalMembers,
       events: applySynced(base, sync.events),
     });
+    if (sync.rateLimited) throw new CalendarRateLimitError();
     return {
       created: sync.events.length,
       joined: finalMembers.includes(email),
@@ -252,6 +254,7 @@ export async function addAnniversary(
     members: finalMembers,
     events: applySynced(base, sync.events),
   });
+  if (sync.rateLimited) throw new CalendarRateLimitError();
   const created = sync.events.filter(
     (e) => !priorIds.has(e.googleEventId),
   ).length;
@@ -293,9 +296,12 @@ export async function leaveAnniversary(
   const finalMembers = members.filter((m) => !sync.declined.includes(m));
 
   await updatePerson(id, {
-    members: finalMembers,
+    // On a partial sync, keep the old member list so a retry re-runs the whole
+    // removal rather than skipping it (the early `includes(email)` check).
+    members: sync.rateLimited ? person.members : finalMembers,
     events: applySynced(person.events, sync.events),
   });
+  if (sync.rateLimited) throw new CalendarRateLimitError();
   return { removed: 1, deleted: 0 };
 }
 

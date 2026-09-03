@@ -8,6 +8,7 @@ import { getDictionary, type Locale } from "@/i18n";
 import {
   addAnniversary,
   CalendarNotConfiguredError,
+  CalendarRateLimitError,
   leaveAnniversary,
   NoSuchHebrewDateError,
   StoreNotConfiguredError,
@@ -30,6 +31,9 @@ function fail(error: unknown): { ok: false; error: string } {
   }
   if (error instanceof NoSuchHebrewDateError) {
     return { ok: false, error: "no-such-date" };
+  }
+  if (error instanceof CalendarRateLimitError) {
+    return { ok: false, error: "rate-limited" };
   }
   return { ok: false, error: error instanceof Error ? error.message : "unknown" };
 }

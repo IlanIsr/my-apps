@@ -12,6 +12,7 @@ export const anniversaryDetail = {
   leave: "Remove from my list",
   leaving: "Removing…",
   leaveConfirm: "Remove yourself from this anniversary?",
+  rateLimited: "Google Calendar is busy right now — wait a moment and try again.",
   error: (message: string) => `Something went wrong: ${message}`,
   editForm: {
     date: "Date",

@@ -24,6 +24,7 @@ export type AnniversaryDetailTexts = {
   leave: string;
   leaving: string;
   leaveConfirm: string;
+  rateLimited: string;
   error: (message: string) => string;
   editForm: EditEventFormTexts;
 };
@@ -44,12 +45,15 @@ export function AnniversaryDetail({
   const fmt = (iso: string) =>
     iso ? new Date(iso).toLocaleDateString(LOCALE_TAG[locale]) : "";
 
+  const showError = (code: string) =>
+    setError(code === "rate-limited" ? t.rateLimited : t.error(code));
+
   const handleLeave = () => {
     if (!confirm(t.leaveConfirm)) return;
     startTransition(async () => {
       const result = await leaveAnniversaryAction(anniversary.id);
       if (!result.ok) {
-        setError(t.error(result.error));
+        showError(result.error);
         return;
       }
       router.push("/anniversaries");
@@ -67,7 +71,7 @@ export function AnniversaryDetail({
         locale,
       });
       if (!result.ok) {
-        setError(t.error(result.error));
+        showError(result.error);
         return;
       }
       router.refresh();
