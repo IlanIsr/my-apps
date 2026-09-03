@@ -8,7 +8,9 @@ See `TECHNICAL_RULES.md` for working preferences (conciseness, scope, styling).
 
 A personal pnpm + Turborepo monorepo holding **multiple independent web apps** plus shared packages. The apps are not one product and not one Next.js app with many routes — the separation is intentional. Each app is independently deployable, has its own Firebase project and Firestore resources, and will eventually have its own subdomain, while still consuming shared workspace packages.
 
-Apps: `app-1` (:3000), `app-2` (:3001), `landing` (:3002 — index page linking to the other apps). `landing` uses Tailwind v4 (`@import "tailwindcss"` in `app/globals.css`, `@tailwindcss/postcss`); its app list is hardcoded in `app/page.tsx` for now, to be replaced with Firestore data later.
+Apps: `app-1` (:3000), `app-2` (:3001), `landing` (:3002 — index page linking to the other apps). `landing`'s app list is hardcoded in `app/page.tsx` for now, to be replaced with Firestore data later.
+
+All three apps use Tailwind v4 via the shared `@repo/tailwind-config` package: each app's `app/globals.css` is just `@import "@repo/tailwind-config";` and has a `postcss.config.mjs` with `@tailwindcss/postcss`. Shared theme tokens (`--color-background` `#ffe5cc`, `--color-foreground` `#000000`, `--color-primary`, `--color-secondary`, `--color-accent`) and a base layer setting body bg/fg live in `packages/tailwind-config/styles.css` — currently placeholder values. Edit that one file to change the palette everywhere.
 
 GitHub: `IlanIsr/my-apps` (branch `main`). `gh` is installed and authenticated as `IlanIsr`; `gh auth setup-git` is configured, so git/gh over HTTPS work without prompting.
 
@@ -40,6 +42,7 @@ No test runner is configured — there is no `test` task in `turbo.json` or any 
 
 - `@repo/utils` — plain `.ts`, exports `./src/index.ts` directly. No build step or `dist/`; importers compile it. Editing it is picked up by both apps (and by deployed apps — this was tested).
 - `@repo/ui` — React components, exports per-file as `./src/*.tsx` (import as `@repo/ui/button`). Raw source. Starter-quality on purpose; leave it.
+- `@repo/tailwind-config` — shared Tailwind v4 base (`styles.css`, exported as `.`). See the styling note above.
 - `@repo/eslint-config` — flat-config presets `./base`, `./next-js`, `./react-internal`. `base.js` includes `eslint-config-prettier`, `typescript-eslint`, `eslint-plugin-turbo`, and `eslint-plugin-only-warn` (downgrades every rule to a warning — combined with the apps' `--max-warnings 0`, warnings still block).
 - `@repo/typescript-config` — `base.json`, `nextjs.json`, `react-library.json`. Base is strict with `noUncheckedIndexedAccess` and `NodeNext` resolution.
 

@@ -17,7 +17,7 @@ export default function Page() {
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-8 px-6 py-16">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">My Apps</h1>
-        <p className="mt-1 text-neutral-500">A collection of small independent apps.</p>
+        <p className="mt-1 opacity-70">A collection of small independent apps.</p>
       </header>
 
       <ul className="flex flex-col gap-3">
@@ -27,10 +27,10 @@ export default function Page() {
               href={app.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block rounded-lg border border-neutral-200 p-4 transition-colors hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:border-neutral-600 dark:hover:bg-neutral-900"
+              className="block rounded-lg border border-foreground/15 p-4 transition-colors hover:border-foreground/40 hover:bg-foreground/5"
             >
               <span className="font-medium">{app.name}</span>
-              <span className="mt-0.5 block text-sm text-neutral-500">
+              <span className="mt-0.5 block text-sm opacity-70">
                 {app.description}
               </span>
             </a>

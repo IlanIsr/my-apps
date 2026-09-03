@@ -1,0 +1,18 @@
+/* Shared Tailwind base config for all apps. Placeholder values — will evolve. */
+@import "tailwindcss";
+
+@theme {
+  --color-background: #ffe5cc;
+  --color-foreground: #000000;
+
+  --color-primary: #ff7a00;
+  --color-secondary: #1f2937;
+  --color-accent: #ffb066;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
