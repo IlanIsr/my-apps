@@ -1,6 +1,7 @@
 import type { CalendarMessages } from "../en/calendar";
 
 export const calendar: CalendarMessages = {
+  nav: "Agenda",
   connect: {
     title: "Connecter Google Calendar",
     subtitle:
@@ -23,6 +24,13 @@ export const calendar: CalendarMessages = {
     viewInCalendar: "Ouvrir dans Google Calendar →",
     deleteConfirm: "Supprimer cet événement ?",
     deleteAllConfirm: (name) => `Supprimer tous les événements pour ${name} ?`,
+    edit: "Modifier",
+    editTime: "Heure (HH:MM)",
+    editTimeHint: "Laisser vide pour la tombée de la nuit (tset hakochavim)",
+    editShared: "Partagé avec (emails, séparés par des virgules)",
+    save: "Enregistrer",
+    cancel: "Annuler",
+    saving: "Enregistrement…",
   },
   actions: {
     create: "Créer les événements",
@@ -30,6 +38,11 @@ export const calendar: CalendarMessages = {
     deleteAll: "Supprimer tous les événements",
     deleting: "Suppression…",
     delete: "Supprimer",
+  },
+  agenda: {
+    title: "Agenda",
+    subtitle: "Tous les prochains événements d’anniversaire, par date.",
+    empty: "Aucun événement d’anniversaire à venir.",
   },
   eventSummary: (name) => `Anniversaire de ${name}`,
 };

@@ -20,6 +20,20 @@ function isLeapYear(hebrewYear: number): boolean {
 }
 
 /**
+ * Normalize a Hebrew month name (as `gregorianToHebrew` / hebcal return it) to
+ * the key form used by `HEBREW_MONTH_KEYS` — `"Sh'vat"` → `"Shvat"`,
+ * `"Adar I"` → `"Adar"`, `"Adar II"` → `"Adar2"`.
+ */
+export function toHebrewMonthKey(name: string): string {
+  const n = name.trim();
+  const lower = n.toLowerCase();
+  if (lower === "shvat" || lower === "sh'vat") return "Shvat";
+  if (lower === "adar" || lower === "adar i") return "Adar";
+  if (lower === "adar ii") return "Adar2";
+  return n;
+}
+
+/**
  * The next `count` Gregorian dates on which a Hebrew day + month recurs,
  * **shifted one day earlier** so a calendar event lands on the eve — the Jewish
  * day begins at nightfall, so an anniversary "on" a Hebrew date is observed the

@@ -11,6 +11,7 @@ import {
   deleteAnniversaryAction,
   deleteEventAction,
 } from "../../anniversaries/actions";
+import { EditEventForm } from "./EditEventForm";
 
 export function AnniversaryDetail({
   anniversary,
@@ -21,6 +22,7 @@ export function AnniversaryDetail({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fmt = (iso: string) =>
     iso ? new Date(iso).toLocaleDateString(LOCALE_TAG[locale]) : "";
@@ -85,36 +87,56 @@ export function AnniversaryDetail({
 
         <ul className="flex flex-col divide-y divide-foreground/10 rounded-lg border border-foreground/15">
           {anniversary.events.map((event) => (
-            <li
-              key={event.id}
-              className="flex items-center justify-between gap-3 p-3 text-sm"
-            >
-              <span>
-                {fmt(event.date)}
-                {event.time && (
-                  <span className="opacity-60"> · {event.time}</span>
-                )}
-              </span>
-              <span className="flex items-center gap-3">
-                {event.htmlLink && (
-                  <a
-                    href={event.htmlLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="opacity-70 hover:opacity-100"
+            <li key={event.id} className="flex flex-col">
+              <div className="flex items-center justify-between gap-3 p-3 text-sm">
+                <span>
+                  {fmt(event.date)}
+                  {event.time && (
+                    <span className="opacity-60"> · {event.time}</span>
+                  )}
+                </span>
+                <span className="flex items-center gap-3">
+                  {event.htmlLink && (
+                    <a
+                      href={event.htmlLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="opacity-70 hover:opacity-100"
+                    >
+                      {t.calendar.events.viewInCalendar}
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingId(editingId === event.id ? null : event.id)
+                    }
+                    disabled={pending}
+                    className="opacity-70 hover:opacity-100 disabled:opacity-40"
                   >
-                    {t.calendar.events.viewInCalendar}
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleDeleteEvent(event.id)}
-                  disabled={pending}
-                  className="text-red-500 hover:underline disabled:opacity-40"
-                >
-                  {t.calendar.actions.delete}
-                </button>
-              </span>
+                    {t.calendar.events.edit}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEvent(event.id)}
+                    disabled={pending}
+                    className="text-red-500 hover:underline disabled:opacity-40"
+                  >
+                    {t.calendar.actions.delete}
+                  </button>
+                </span>
+              </div>
+
+              {editingId === event.id && (
+                <EditEventForm
+                  anniversary={anniversary}
+                  event={event}
+                  onDone={() => {
+                    setEditingId(null);
+                    router.refresh();
+                  }}
+                />
+              )}
             </li>
           ))}
         </ul>

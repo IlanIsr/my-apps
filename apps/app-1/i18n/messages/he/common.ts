@@ -1,7 +1,7 @@
 import type { Messages } from "../../types";
 
 export const common: Pick<Messages, "appName" | "theme" | "language"> = {
-  appName: "ממיר תאריכים עברי",
+  appName: "ימי הולדת עבריים",
   theme: { toggle: "החלפת ערכת נושא" },
   language: { label: "שפה" },
 };

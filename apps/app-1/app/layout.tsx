@@ -8,8 +8,8 @@ import { Navbar } from "./components/Navbar";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Hebrew Date Converter",
-  description: "Convert dates between the Hebrew and Gregorian calendars.",
+  title: "Hebrew Anniversaries",
+  description: "Hebrew-calendar anniversaries in your Google Calendar.",
 };
 
 // Runs before paint: set <html lang/dir> from the stored / preferred language

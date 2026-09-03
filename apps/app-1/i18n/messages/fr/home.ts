@@ -5,4 +5,5 @@ export const home: Messages["home"] = {
   gregorian: "Grégorien",
   hebrew: "Hébreu",
   toggleCalendar: "Changer le calendrier de saisie",
+  nav: "Convertisseur",
 };

@@ -5,4 +5,5 @@ export const home: Messages["home"] = {
   gregorian: "לועזי",
   hebrew: "עברי",
   toggleCalendar: "החלפת לוח השנה להזנה",
+  nav: "המרת תאריכים",
 };

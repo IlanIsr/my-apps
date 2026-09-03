@@ -1,6 +1,7 @@
 import type { CalendarMessages } from "../en/calendar";
 
 export const calendar: CalendarMessages = {
+  nav: "סדר יום",
   connect: {
     title: "חיבור יומן Google",
     subtitle: "אשרו גישה ליומן כדי ליצור ולנהל אירועי יום הולדת.",
@@ -21,6 +22,13 @@ export const calendar: CalendarMessages = {
     viewInCalendar: "פתיחה ביומן Google →",
     deleteConfirm: "למחוק את האירוע הזה?",
     deleteAllConfirm: (name) => `למחוק את כל האירועים של ${name}?`,
+    edit: "עריכה",
+    editTime: "שעה (HH:MM)",
+    editTimeHint: "השאירו ריק לצאת הכוכבים",
+    editShared: "משותף עם (אימיילים, מופרדים בפסיקים)",
+    save: "שמירה",
+    cancel: "ביטול",
+    saving: "שומר…",
   },
   actions: {
     create: "יצירת אירועים",
@@ -28,6 +36,11 @@ export const calendar: CalendarMessages = {
     deleteAll: "מחיקת כל האירועים",
     deleting: "מוחק…",
     delete: "מחיקה",
+  },
+  agenda: {
+    title: "סדר יום",
+    subtitle: "כל אירועי ימי ההולדת הקרובים, לפי תאריך.",
+    empty: "אין אירועי ימי הולדת קרובים.",
   },
   eventSummary: (name) => `יום הולדת של ${name}`,
 };

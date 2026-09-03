@@ -1,6 +1,12 @@
 import "@repo/env/load";
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  async redirects() {
+    return [
+      { source: "/", destination: "/anniversaries", permanent: false },
+    ];
+  },
+};
 
 export default nextConfig;

@@ -9,6 +9,8 @@ export type Messages = {
   anniversary: AnniversaryMessages;
   calendar: CalendarMessages;
   home: {
+    /** Converter — navbar tab label. */
+    nav: string;
     question: string;
     gregorian: string;
     hebrew: string;

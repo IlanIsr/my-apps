@@ -3,20 +3,36 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { gregorianToHebrew, toHebrewMonthKey } from "@repo/hebcal";
+
 import { useI18n } from "@/i18n/context";
 import { Button } from "../Button";
 import { Select } from "../Select";
-import { hebrewMonthOptions } from "../../home/options";
+import { Switch } from "../Switch";
+import {
+  gregorianDayOptions,
+  gregorianMonthOptions,
+  gregorianYearOptions,
+  hebrewMonthOptions,
+} from "../../home/options";
 import { createAnniversaryAction } from "../../anniversaries/actions";
 
 export function AnniversaryForm() {
   const { t, locale } = useI18n();
   const router = useRouter();
+
   const months = useMemo(() => hebrewMonthOptions(t), [t]);
+  const gregDays = useMemo(() => gregorianDayOptions(), []);
+  const gregMonths = useMemo(() => gregorianMonthOptions(locale), [locale]);
+  const gregYears = useMemo(() => gregorianYearOptions(), []);
 
   const [name, setName] = useState("");
+  const [fromGregorian, setFromGregorian] = useState(false);
   const [day, setDay] = useState("1");
   const [month, setMonth] = useState("Tishrei");
+  const [gDay, setGDay] = useState("1");
+  const [gMonth, setGMonth] = useState("0");
+  const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));
   const [years, setYears] = useState("10");
   const [sharedRaw, setSharedRaw] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +47,12 @@ export function AnniversaryForm() {
     label: String(n),
   }));
 
+  // Derived Hebrew date when the user is entering a Gregorian birth date.
+  const converted = useMemo(() => {
+    if (!fromGregorian) return null;
+    return gregorianToHebrew(Number(gYear), Number(gMonth) + 1, Number(gDay));
+  }, [fromGregorian, gYear, gMonth, gDay]);
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -39,11 +61,21 @@ export function AnniversaryForm() {
       setError(t.anniversary.validation.nameRequired);
       return;
     }
+
+    const hebDay = converted ? converted.day : Number(day);
+    const hebMonth = converted ? toHebrewMonthKey(converted.month) : month;
+    if (!hebDay || !hebMonth) {
+      setError(t.anniversary.validation.nameRequired);
+      return;
+    }
+
     const shared = sharedRaw
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const badEmail = shared.find((e) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+    const badEmail = shared.find(
+      (e) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e),
+    );
     if (badEmail) {
       setError(t.anniversary.validation.emailInvalid(badEmail));
       return;
@@ -52,8 +84,8 @@ export function AnniversaryForm() {
     setPending(true);
     const result = await createAnniversaryAction({
       name: name.trim(),
-      hebDay: Number(day),
-      hebMonth: month,
+      hebDay,
+      hebMonth,
       shared,
       years: Number(years),
       locale,
@@ -83,20 +115,68 @@ export function AnniversaryForm() {
         />
       </label>
 
-      <div className="flex flex-wrap gap-4" dir={locale === "he" ? "rtl" : "ltr"}>
-        <Select
-          label={t.anniversary.form.day}
-          options={dayOptions}
-          value={day}
-          onChange={setDay}
+      <div className="flex items-center gap-3 text-sm">
+        <span className={fromGregorian ? "opacity-50" : "font-medium"}>
+          {t.home.hebrew}
+        </span>
+        <Switch
+          checked={fromGregorian}
+          onChange={setFromGregorian}
+          aria-label={t.home.toggleCalendar}
         />
-        <Select
-          label={t.anniversary.form.month}
-          options={months}
-          value={month}
-          onChange={setMonth}
-        />
+        <span className={fromGregorian ? "font-medium" : "opacity-50"}>
+          {t.home.gregorian}
+        </span>
       </div>
+
+      {fromGregorian ? (
+        <>
+          <div className="flex flex-wrap gap-4">
+            <Select
+              label={t.anniversary.form.day}
+              options={gregDays}
+              value={gDay}
+              onChange={setGDay}
+            />
+            <Select
+              label={t.anniversary.form.month}
+              options={gregMonths}
+              value={gMonth}
+              onChange={setGMonth}
+            />
+            <Select
+              label={t.gregorianForm.year}
+              options={gregYears}
+              value={gYear}
+              onChange={setGYear}
+            />
+          </div>
+          {converted && (
+            <p className="text-sm opacity-70">
+              {t.anniversary.form.hebDate}: {converted.day}{" "}
+              <span dir="ltr">{converted.month}</span>
+            </p>
+          )}
+        </>
+      ) : (
+        <div
+          className="flex flex-wrap gap-4"
+          dir={locale === "he" ? "rtl" : "ltr"}
+        >
+          <Select
+            label={t.anniversary.form.day}
+            options={dayOptions}
+            value={day}
+            onChange={setDay}
+          />
+          <Select
+            label={t.anniversary.form.month}
+            options={months}
+            value={month}
+            onChange={setMonth}
+          />
+        </div>
+      )}
 
       <Select
         label={t.anniversary.form.years}

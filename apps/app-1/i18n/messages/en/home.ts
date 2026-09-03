@@ -5,4 +5,5 @@ export const home: Messages["home"] = {
   gregorian: "Gregorian",
   hebrew: "Hebrew",
   toggleCalendar: "Toggle input calendar",
+  nav: "Converter",
 };
