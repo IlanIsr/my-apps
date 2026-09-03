@@ -9,7 +9,7 @@ See `TECHNICAL_RULES.md` for working preferences (conciseness, scope, styling).
 A personal pnpm + Turborepo monorepo holding **multiple independent web apps** plus shared packages. The apps are not one product and not one Next.js app with many routes — the separation is intentional. Each app is independently deployable, has its own Firebase project and Firestore resources, and will eventually have its own subdomain, while still consuming shared workspace packages.
 
 Apps:
-- `app-1` (:3000) — **Hebrew Date Converter**, a Hebrew ⇄ Gregorian date tool built on `@repo/hebcal`. Pure client-side. Trilingual (en/he/fr) — see i18n note below. (Being expanded into a Hebrew-anniversary → Google Calendar manager, ported from the `anniversaries-next` repo.)
+- `app-1` (:3000) — Hebrew-calendar tools. `/` is the **Hebrew Date Converter** (client-side, `@repo/hebcal`). `/anniversaries` is a **Hebrew-anniversary → Google Calendar manager** (ported from the `anniversaries-next` repo): reads anniversary events out of the signed-in user's Google Calendar, groups them by person, and lets you add people (creates events for the next N years — placed on the eve at tzeit hakochavim, shared emails as optional attendees) / delete. **Google Calendar is the source of truth — no local/Firestore storage.** Google access comes from Clerk's Google connection (see Auth). Server logic in `apps/app-1/server/calendar.ts` + `app/anniversaries/actions.ts`. Trilingual (en/he/fr).
 - `app-2` (:3001) — placeholder (shows `@repo/utils` output). Slated for a Firestore feature.
 - `landing` (:3002) — index page linking to the other apps; app list hardcoded in `app/page.tsx` for now, to move to Firestore later.
 
@@ -54,7 +54,7 @@ Next only reads `.env*` from an app's own directory. `@repo/env/load` (imported 
 - `@repo/tailwind-config` — shared Tailwind v4 base (`styles.css`, exported as `.`). See the styling note above.
 - `@repo/auth` — Clerk wiring shared by all apps. Exports `./proxy` (`clerkProxy` handler), `./provider` (`<AuthProvider>`), `./sign-in` (`<SignInView>`), `./nav` (`<AuthControl>`). See the Auth section below.
 - `@repo/env` — `./load` (a side-effect JS module) backfills env vars from the root `.env`; imported by each app's `next.config.js`. See the Env vars note.
-- `@repo/hebcal` — Hebrew ⇄ Gregorian date logic (wraps `@hebcal/core`): `findNextHebrewDate`, `calculateHebrewDate`, `HEBREW_MONTH_KEYS`, `HebrewMonthKey`. app-1's converter is built on it.
+- `@repo/hebcal` — Hebrew ⇄ Gregorian date logic (wraps `@hebcal/core`). `convert.ts`: `findNextHebrewDate`, `calculateHebrewDate`, `HEBREW_MONTH_KEYS`. `anniversary.ts`: `calculateNextDates` (N future Gregorian dates for a Hebrew day/month, shifted to the eve), `gregorianToHebrew`, `hebrewToGregorian`. `parse.ts`, `zmanim.ts` (`getTsetHakohavim` from hebcal.com). Its own tsconfig uses `moduleResolution: Bundler` so multi-file relative imports need no `.js` extension.
 - `@repo/eslint-config` — flat-config presets `./base`, `./next-js`, `./react-internal`. `base.js` includes `eslint-config-prettier`, `typescript-eslint`, `eslint-plugin-turbo`, and `eslint-plugin-only-warn` (downgrades every rule to a warning — combined with the apps' `--max-warnings 0`, warnings still block).
 - `@repo/typescript-config` — `base.json`, `nextjs.json`, `react-library.json`. Base is strict with `noUncheckedIndexedAccess` and `NodeNext` resolution.
 
@@ -79,6 +79,17 @@ All three apps are **fully gated** — every route redirects to `/sign-in` witho
 - **`@clerk/nextjs` is v7 / "Core 3"** (March 2026): `<SignedIn>`/`<SignedOut>`/`<Protect>` are gone — use `<Show when="signed-in">`. `createRouteMatcher` is deprecated. The proxy does a plain `auth()` + `NextResponse.redirect` instead.
 - Social-only (Google + Apple) is configured in the Clerk dashboard, not code.
 - **Keys**: put `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` in the root `.env` (see env note below). Set them per App Hosting backend for production.
+
+### Google Calendar access (for app-1 `/anniversaries`)
+
+`@repo/auth/google` exposes `getGoogleAccessToken()` — the signed-in user's Google OAuth token, with whatever scopes are on Clerk's Google connection, kept fresh by Clerk. To grant Calendar:
+
+1. Google Cloud Console: create an **OAuth 2.0 Client (Web application)**, enable the **Google Calendar API**, and on the OAuth consent screen add scope `https://www.googleapis.com/auth/calendar.events`. It's a *sensitive* scope — in "Testing" mode only listed test users can grant it (fine for personal use).
+2. Redirect URI = the one Clerk's Google-connection page shows.
+3. In Clerk's Google connection: enable **Use custom credentials**, paste the client ID/secret, add scope `https://www.googleapis.com/auth/calendar.events`.
+4. Existing users must sign out / back in to grant the new scope.
+
+`isGoogleCalendarConnected()` verifies with a real Calendar API call (a token can exist without the scope); the UI shows `<ConnectPrompt>` until it passes.
 
 ## Firebase
 
