@@ -5,12 +5,11 @@ type Props = {
   options: Option[];
   value: string;
   onChange: (value: string) => void;
-  dir?: "ltr" | "rtl";
 };
 
-export function Select({ label, options, value, onChange, dir = "ltr" }: Props) {
+export function Select({ label, options, value, onChange }: Props) {
   return (
-    <label className="flex flex-col gap-1 text-sm" dir={dir}>
+    <label className="flex flex-col gap-1 text-sm">
       <span className="font-medium">{label}</span>
       <select
         className="rounded-lg border border-foreground/20 bg-background px-3 py-2 text-foreground outline-none focus:border-foreground/50"

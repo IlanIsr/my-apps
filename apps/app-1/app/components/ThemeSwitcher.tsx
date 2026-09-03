@@ -2,13 +2,16 @@
 
 import { useTheme } from "next-themes";
 
+import { useI18n } from "@/i18n/context";
+
 export function ThemeSwitcher() {
   const { resolvedTheme, setTheme } = useTheme();
+  const { t } = useI18n();
 
   return (
     <button
       type="button"
-      aria-label="Toggle theme"
+      aria-label={t.theme.toggle}
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
       className="flex h-9 w-9 items-center justify-center rounded-lg border border-foreground/20 transition-colors hover:bg-foreground/10"
     >

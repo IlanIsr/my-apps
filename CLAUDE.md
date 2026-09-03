@@ -9,7 +9,7 @@ See `TECHNICAL_RULES.md` for working preferences (conciseness, scope, styling).
 A personal pnpm + Turborepo monorepo holding **multiple independent web apps** plus shared packages. The apps are not one product and not one Next.js app with many routes — the separation is intentional. Each app is independently deployable, has its own Firebase project and Firestore resources, and will eventually have its own subdomain, while still consuming shared workspace packages.
 
 Apps:
-- `app-1` (:3000) — **Hebrew Date Converter**, a Hebrew ⇄ Gregorian date tool built on `@hebcal/core`. Pure client-side; no backend. Calendar logic is isolated in `apps/app-1/lib/hebcal.ts`.
+- `app-1` (:3000) — **Hebrew Date Converter**, a Hebrew ⇄ Gregorian date tool built on `@hebcal/core`. Pure client-side; no backend. Calendar logic is isolated in `apps/app-1/lib/hebcal.ts`. Trilingual (en/he/fr) — see i18n note below.
 - `app-2` (:3001) — placeholder (shows `@repo/utils` output). Slated for a Firestore feature.
 - `landing` (:3002) — index page linking to the other apps; app list hardcoded in `app/page.tsx` for now, to move to Firestore later.
 
@@ -55,7 +55,11 @@ Apps consume these via `workspace:*`. Changes to a package are seen directly by 
 
 - TypeScript `7.0.2` (native compiler) across apps and packages. `@repo/eslint-config` additionally aliases `typescript` to `npm:@typescript/typescript6@6.0.2` for `typescript-eslint` compatibility.
 - ESLint 10 flat config only. Each app's `eslint.config.js` just re-exports `nextJsConfig` from `@repo/eslint-config/next-js`. Note `eslint-plugin-react-hooks` v7 flags the `useEffect(() => setMounted(true))` mount pattern — drive theme-dependent rendering off the `.dark` class in CSS instead.
-- All apps: Next.js 16 App Router, React 19, `"type": "module"`, root `app/` dir. app-1 also has a `lib/` dir and a `@/*` → `./*` tsconfig path alias (app-2/landing are too small to need one).
+- All apps: Next.js 16 App Router, React 19, `"type": "module"`, root `app/` dir. app-1 also has `lib/` and `i18n/` dirs and a `@/*` → `./*` tsconfig path alias (app-2/landing are too small to need one).
+
+### app-1 i18n
+
+Hand-rolled, no library. `apps/app-1/i18n/`: `config.ts` (locales `en`/`he`/`fr`, dir, `Intl` tags), `messages/{en,he,fr}.ts` typed against `types.ts`, `context.tsx` (`I18nProvider` + `useI18n()` → `{ locale, setLocale, t, dir }`). Locale is persisted in `localStorage` (`app-1.locale`) and read via `useSyncExternalStore` (falls back to `navigator.language`, then `en`). An inline script in `layout.tsx` sets `<html lang/dir>` before paint to avoid an RTL flash — **keep its storage key and locale list in sync with `config.ts`**. Gregorian month names come from `Intl.DateTimeFormat`, not the message files. Add a UI string → add it to `types.ts` and all three message files (TS enforces completeness).
 
 ## Firebase
 

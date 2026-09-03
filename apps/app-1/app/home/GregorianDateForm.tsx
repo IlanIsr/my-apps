@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
+import { useI18n } from "@/i18n/context";
+import { calculateHebrewDate, type HebrewResult } from "@/lib/hebcal";
 import { Button } from "../components/Button";
 import { Select } from "../components/Select";
-import { calculateHebrewDate, type HebrewResult } from "@/lib/hebcal";
-import { GREGORIAN_DAYS, GREGORIAN_MONTHS, GREGORIAN_YEARS } from "./months";
+import {
+  gregorianDayOptions,
+  gregorianMonthOptions,
+  gregorianYearOptions,
+} from "./options";
 
 export function GregorianDateForm() {
+  const { t, locale } = useI18n();
+  const days = useMemo(() => gregorianDayOptions(), []);
+  const months = useMemo(() => gregorianMonthOptions(locale), [locale]);
+  const years = useMemo(() => gregorianYearOptions(), []);
+
   const [day, setDay] = useState("1");
   const [month, setMonth] = useState("0");
   const [year, setYear] = useState(() => String(new Date().getFullYear()));
@@ -21,41 +31,43 @@ export function GregorianDateForm() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col items-start gap-4">
       <div className="flex flex-wrap gap-4">
         <Select
-          label="Day"
-          options={GREGORIAN_DAYS}
+          label={t.gregorianForm.day}
+          options={days}
           value={day}
           onChange={setDay}
         />
         <Select
-          label="Month"
-          options={GREGORIAN_MONTHS}
+          label={t.gregorianForm.month}
+          options={months}
           value={month}
           onChange={setMonth}
         />
         <Select
-          label="Year"
-          options={GREGORIAN_YEARS}
+          label={t.gregorianForm.year}
+          options={years}
           value={year}
           onChange={setYear}
         />
       </div>
 
       <Button type="button" onClick={calculate}>
-        Calculate
+        {t.gregorianForm.calculate}
       </Button>
 
       {result && (
         <p className="text-lg">
           <strong dir="rtl">{result.hebrew}</strong>
-          <span className="block text-sm opacity-70">
+          <span dir="ltr" className="block text-sm opacity-70">
             {result.transliteration}
           </span>
         </p>
       )}
-      {invalid && <p className="text-sm opacity-70">That’s not a valid date.</p>}
+      {invalid && (
+        <p className="text-sm opacity-70">{t.gregorianForm.invalidDate}</p>
+      )}
     </div>
   );
 }

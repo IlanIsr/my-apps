@@ -1,13 +1,33 @@
 import { HDate, months } from "@hebcal/core";
 
+/** The Hebrew month keys the UI offers, in display order. */
+export const HEBREW_MONTH_KEYS = [
+  "Tishrei",
+  "Cheshvan",
+  "Kislev",
+  "Tevet",
+  "Shvat",
+  "Adar",
+  "Adar1",
+  "Adar2",
+  "Nisan",
+  "Iyyar",
+  "Sivan",
+  "Tamuz",
+  "Av",
+  "Elul",
+] as const;
+
+export type HebrewMonthKey = (typeof HEBREW_MONTH_KEYS)[number];
+
 /**
- * UI month keys → canonical @hebcal/core month numbers.
+ * Month key → canonical @hebcal/core month number.
  *
  * A regular Hebrew year has a single Adar (month 12). A leap year splits it into
  * Adar I (12) and Adar II (13). The plain "Adar" key maps to month 12, which
  * @hebcal renders as "Adar" in a regular year and "Adar I" in a leap year.
  */
-const MONTH_NUMBER: Record<string, number> = {
+const MONTH_NUMBER: Record<HebrewMonthKey, number> = {
   Tishrei: months.TISHREI,
   Cheshvan: months.CHESHVAN,
   Kislev: months.KISLEV,
@@ -23,8 +43,6 @@ const MONTH_NUMBER: Record<string, number> = {
   Av: months.AV,
   Elul: months.ELUL,
 };
-
-export type HebrewDateKey = keyof typeof MONTH_NUMBER;
 
 export type HebrewResult = {
   /** Gregorian date, at local midnight. */
@@ -64,6 +82,7 @@ export function findNextHebrewDate(
 ): HebrewResult | null {
   if (!Number.isInteger(day) || day < 1 || day > 30) return null;
   if (!(monthKey in MONTH_NUMBER)) return null;
+  const key = monthKey as HebrewMonthKey;
 
   const today = new HDate();
   const startYear = today.getFullYear();
@@ -72,9 +91,9 @@ export function findNextHebrewDate(
   const MAX_YEARS = 300;
 
   for (let year = startYear; year <= startYear + MAX_YEARS; year++) {
-    if (!monthExistsInYear(monthKey, year)) continue;
+    if (!monthExistsInYear(key, year)) continue;
 
-    const month = MONTH_NUMBER[monthKey]!;
+    const month = MONTH_NUMBER[key];
     if (day > HDate.daysInMonth(month, year)) continue;
 
     const candidate = new HDate(day, month, year);

@@ -1,15 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
+import { LOCALE_TAG } from "@/i18n/config";
+import { useI18n } from "@/i18n/context";
+import { findNextHebrewDate, type HebrewResult } from "@/lib/hebcal";
 import { Button } from "../components/Button";
 import { Select } from "../components/Select";
-import { findNextHebrewDate, type HebrewResult } from "@/lib/hebcal";
-import { HEBREW_DAYS, HEBREW_MONTHS } from "./months";
+import { hebrewDayOptions, hebrewMonthOptions } from "./options";
 
 export function HebrewDateForm() {
-  const [day, setDay] = useState(HEBREW_DAYS[0]!.key);
-  const [month, setMonth] = useState(HEBREW_MONTHS[0]!.key);
+  const { t, locale } = useI18n();
+  const days = useMemo(() => hebrewDayOptions(locale), [locale]);
+  const months = useMemo(() => hebrewMonthOptions(t), [t]);
+
+  const [day, setDay] = useState("1");
+  const [month, setMonth] = useState("Tishrei");
   const [result, setResult] = useState<HebrewResult | null>(null);
   const [notFound, setNotFound] = useState(false);
 
@@ -21,40 +27,38 @@ export function HebrewDateForm() {
 
   return (
     <div className="flex flex-col items-start gap-4">
-      <div dir="rtl" className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4">
         <Select
-          label="יום"
-          dir="rtl"
-          options={HEBREW_DAYS}
+          label={t.hebrewForm.day}
+          options={days}
           value={day}
           onChange={setDay}
         />
         <Select
-          label="חודש"
-          dir="rtl"
-          options={HEBREW_MONTHS}
+          label={t.hebrewForm.month}
+          options={months}
           value={month}
           onChange={setMonth}
         />
       </div>
 
-      <Button type="button" dir="rtl" onClick={calculate}>
-        חשב
+      <Button type="button" onClick={calculate}>
+        {t.hebrewForm.calculate}
       </Button>
 
       {result && (
-        <p dir="rtl" className="text-lg">
-          התאריך הלועזי הבא:{" "}
-          <strong>{result.gregorian.toLocaleDateString("he-IL")}</strong>
+        <p className="text-lg">
+          {t.hebrewForm.nextGregorianDate}{" "}
+          <strong>
+            {result.gregorian.toLocaleDateString(LOCALE_TAG[locale])}
+          </strong>
           <span dir="ltr" className="block text-sm opacity-70">
             {result.transliteration}
           </span>
         </p>
       )}
       {notFound && (
-        <p dir="rtl" className="text-sm opacity-70">
-          תאריך עברי זה אינו קיים.
-        </p>
+        <p className="text-sm opacity-70">{t.hebrewForm.noSuchDate}</p>
       )}
     </div>
   );
