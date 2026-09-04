@@ -6,17 +6,23 @@ const NOT_CONFIGURED =
 export const anniversaryForm = {
   name: "Nom",
   namePlaceholder: "Ilan Israel Bellaiche",
+  type: "De quoi s’agit-il ?",
+  types: { birthday: "Anniversaire", yahrzeit: "Yahrzeit" },
   hebDate: "Date hébraïque",
+  calendar: "Calendrier",
   day: "Jour",
   month: "Mois",
   year: "Année",
+  hebYear: "Année hébraïque",
+  optional: "facultatif",
   years: "Années à venir",
-  sharedEmails: "Partager avec (emails, séparés par des virgules)",
+  sharedEmails: "Partager avec",
   sharedEmailsPlaceholder: "quelquun@example.com, autre@example.com",
   sharedEmailsHelp:
     "Vous êtes ajouté automatiquement. Les autres personnes ici deviennent des invités optionnels, invisibles entre eux.",
-  submit: "Créer les événements",
+  submit: "Créer l’anniversaire",
   submitting: "Création…",
+  cancel: "Annuler",
   toggle: {
     hebrew: "Hébreu",
     gregorian: "Grégorien",
@@ -25,8 +31,10 @@ export const anniversaryForm = {
   nameRequired: "Le nom est requis.",
   emailInvalid: (email: string) => `Email invalide : ${email}`,
   notConfigured: NOT_CONFIGURED,
-  noSuchDate: "Cette date hébraïque n’existe pas (ex. le 30 d’un mois de 29 jours).",
-  rateLimited: "Google Agenda est occupé pour le moment — patientez puis réessayez.",
+  noSuchDate:
+    "Cette date hébraïque n’existe pas (ex. le 30 d’un mois de 29 jours).",
+  rateLimited:
+    "Google Agenda est occupé pour le moment — patientez puis réessayez.",
   error: (message: string) => `Une erreur est survenue : ${message}`,
   months: {
     Tishrei: "Tichri",

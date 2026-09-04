@@ -24,6 +24,7 @@ import {
   anniversaryKey,
   type Anniversary,
   type AnniversaryEvent,
+  type AnniversaryType,
 } from "./person";
 import {
   createPerson,
@@ -49,6 +50,27 @@ export class NoSuchHebrewDateError extends Error {
 
 const MAX_YEARS = 50;
 
+const DEFAULT_ADMIN_EMAIL = "anniversaries.calendar@gmail.com";
+
+/** Google Calendar colour id per anniversary type. */
+function colorIdFor(type: AnniversaryType): string {
+  return type === "yahrzeit" ? "9" : "6"; // Blueberry / Tangerine
+}
+
+/**
+ * Whether `email` belongs to an anniversaries admin (the shared account).
+ * Configured via `ANNIVERSARIES_ADMIN_EMAILS` (comma-separated); defaults to
+ * the shared bot account.
+ */
+export function isAnniversariesAdmin(email: string): boolean {
+  const raw = process.env.ANNIVERSARIES_ADMIN_EMAILS || DEFAULT_ADMIN_EMAIL;
+  const admins = raw
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return admins.includes(email.trim().toLowerCase());
+}
+
 function unique(emails: string[]): string[] {
   return [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
 }
@@ -66,6 +88,7 @@ function toAnniversary(
   viewerEmail: string,
 ): Anniversary {
   const email = viewerEmail.toLowerCase();
+  const admin = isAnniversariesAdmin(viewerEmail);
   const today = todayISO();
   const events: AnniversaryEvent[] = record.events
     .filter((e) => e.googleEventId && e.date >= today)
@@ -80,12 +103,16 @@ function toAnniversary(
   return {
     id: record.id,
     name: record.name,
+    type: record.type,
     hebrewName: record.hebrewName,
     origin: record.origin,
+    hebYear: record.hebYear,
     hebDate: record.hebDate,
     hebDateLabel: formatHebDateLabel(record.hebDate),
-    members: [...record.members].sort(),
+    // Never hand other members' addresses to a non-admin viewer.
+    members: admin ? [...record.members].sort() : [],
     joined: record.members.includes(email),
+    admin,
     events,
   };
 }
@@ -161,6 +188,7 @@ export async function getAnniversary(
 
 export type AddAnniversaryInput = {
   name: string;
+  type: AnniversaryType;
   hebDay: number;
   hebMonth: string;
   years: number;
@@ -168,6 +196,8 @@ export type AddAnniversaryInput = {
   sharedEmails: string[];
   hebrewName?: string;
   origin?: string;
+  /** Hebrew year of birth / passing. Optional. */
+  hebYear?: number;
   /** Pre-translated event title. */
   summary: string;
   /** Clerk id of the signed-in user. */
@@ -190,7 +220,13 @@ export async function addAnniversary(
     MAX_YEARS,
     Math.max(1, Number.isFinite(input.years) ? Math.floor(input.years) : 1),
   );
-  const key = anniversaryKey(input.name, input.hebDay, input.hebMonth);
+  const colorId = colorIdFor(input.type);
+  const key = anniversaryKey(
+    input.name,
+    input.hebDay,
+    input.hebMonth,
+    input.type,
+  );
   const existing = await findByKey(key);
 
   if (!existing) {
@@ -200,8 +236,10 @@ export async function addAnniversary(
     const members = unique([email, ...shared]);
     const record = await createPerson({
       name: input.name.trim(),
+      type: input.type,
       hebrewName: input.hebrewName?.trim() || undefined,
       origin: input.origin?.trim() || undefined,
+      hebYear: input.hebYear,
       hebDate: { day: input.hebDay, month: input.hebMonth as HebrewMonthKey },
       members,
       createdBy: input.createdBy,
@@ -212,6 +250,7 @@ export async function addAnniversary(
       summary: input.summary,
       summaryFallback: record.name,
       description: "",
+      colorId,
       members,
       events: base.map(toDesired),
     });
@@ -243,6 +282,7 @@ export async function addAnniversary(
     summary: input.summary,
     summaryFallback: existing.name,
     description: "",
+    colorId,
     members,
     events: base.map(toDesired),
   });
@@ -290,6 +330,7 @@ export async function leaveAnniversary(
   const sync = await syncPersonEvents({
     personId: id,
     summaryFallback: person.name,
+    colorId: colorIdFor(person.type),
     members,
     events: person.events.map(toDesired),
   });

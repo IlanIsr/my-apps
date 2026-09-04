@@ -172,6 +172,7 @@ async function main() {
 
     const record = await createPerson({
       name: group.name.trim(),
+      type: "birthday", // legacy data predates the birthday/yahrzeit split
       hebDate: { day: group.hebDay, month: group.hebMonth },
       members: [...group.members],
       createdBy: "migration",

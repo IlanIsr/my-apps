@@ -3,5 +3,6 @@
  * still part of the message tree so it's translated and server-usable.
  */
 export type EventSummaryTexts = {
-  format: (name: string) => string;
+  birthday: (name: string) => string;
+  yahrzeit: (name: string) => string;
 };

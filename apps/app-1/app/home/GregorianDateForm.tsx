@@ -6,6 +6,7 @@ import { calculateHebrewDate, type HebrewResult } from "@repo/hebcal";
 
 import { useLanguage } from "@/i18n";
 import { Button } from "../components/Button";
+import { Ornament } from "../components/Ornament";
 import { Select } from "../components/Select";
 import {
   gregorianDayOptions,
@@ -41,7 +42,7 @@ export function GregorianDateForm({ t }: { t: GregorianDateFormTexts }) {
 
   return (
     <div className="flex flex-col items-start gap-4">
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-3">
         <Select label={t.day} options={days} value={day} onChange={setDay} />
         <Select
           label={t.month}
@@ -62,14 +63,22 @@ export function GregorianDateForm({ t }: { t: GregorianDateFormTexts }) {
       </Button>
 
       {result && (
-        <p className="text-lg">
-          <strong dir="rtl">{result.hebrew}</strong>
-          <span dir="ltr" className="block text-sm opacity-70">
+        <div className="w-full max-w-sm rounded-card border border-border bg-card p-5 text-center shadow-sm">
+          <div
+            dir="rtl"
+            className="font-display text-3xl leading-tight text-card-foreground"
+          >
+            {result.hebrew}
+          </div>
+          <div dir="ltr" className="mt-1 font-display text-sm text-birthday">
             {result.transliteration}
-          </span>
-        </p>
+          </div>
+          <Ornament className="mt-3" />
+        </div>
       )}
-      {invalid && <p className="text-sm opacity-70">{t.invalidDate}</p>}
+      {invalid && (
+        <p className="text-sm text-muted-foreground">{t.invalidDate}</p>
+      )}
     </div>
   );
 }

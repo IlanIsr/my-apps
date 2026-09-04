@@ -9,10 +9,12 @@ type Props = {
 
 export function Select({ label, options, value, onChange }: Props) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium">{label}</span>
+    <label className="flex flex-col gap-1.5 text-sm">
+      <span className="font-mono text-[10.5px] font-medium tracking-[0.12em] text-subtle-foreground uppercase">
+        {label}
+      </span>
       <select
-        className="rounded-lg border border-foreground/20 bg-background px-3 py-2 text-foreground outline-none focus:border-foreground/50"
+        className="min-h-[44px] rounded-field border border-border bg-card px-3 text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >

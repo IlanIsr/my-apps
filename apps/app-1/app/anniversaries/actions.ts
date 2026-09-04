@@ -13,7 +13,17 @@ import {
   NoSuchHebrewDateError,
   StoreNotConfiguredError,
   updateEvent,
+  type AnniversaryType,
 } from "@repo/anniversaries";
+
+function eventSummaryFor(
+  locale: Locale,
+  type: AnniversaryType,
+  name: string,
+): string {
+  const t = getDictionary(locale).eventSummary;
+  return type === "yahrzeit" ? t.yahrzeit(name) : t.birthday(name);
+}
 
 export type ActionResult<T = undefined> =
   | ({ ok: true } & (T extends undefined ? object : { data: T }))
@@ -46,12 +56,14 @@ function refreshAnniversaries(id?: string) {
 
 export async function addAnniversaryAction(input: {
   name: string;
+  type: AnniversaryType;
   hebDay: number;
   hebMonth: string;
   years: number;
   sharedEmails: string[];
   hebrewName?: string;
   origin?: string;
+  hebYear?: number;
   locale: Locale;
 }): Promise<ActionResult<{ created: number; joined: boolean }>> {
   try {
@@ -61,7 +73,7 @@ export async function addAnniversaryAction(input: {
     ]);
     if (!email || !userId) return { ok: false, error: "not-signed-in" };
 
-    const summary = getDictionary(input.locale).eventSummary.format(input.name);
+    const summary = eventSummaryFor(input.locale, input.type, input.name);
     const data = await addAnniversary(
       { ...input, summary, createdBy: userId },
       email,
@@ -92,13 +104,14 @@ export async function updateEventAction(input: {
   id: string;
   eventId: string;
   name: string;
+  type: AnniversaryType;
   hebDateLabel: string;
   date: string;
   time?: string;
   locale: Locale;
 }): Promise<ActionResult> {
   try {
-    const summary = getDictionary(input.locale).eventSummary.format(input.name);
+    const summary = eventSummaryFor(input.locale, input.type, input.name);
     await updateEvent({ ...input, summary });
     refreshAnniversaries(input.id);
     return { ok: true };

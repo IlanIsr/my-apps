@@ -1,18 +1,22 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 
 export const anniversaryDetail = {
-  back: "כל ימי ההולדת",
+  back: "כל ימי השנה",
+  eyebrow: { birthday: "יום הולדת", yahrzeit: "אזכרה" },
   hebDate: "תאריך עברי",
-  members: "ברשימה",
+  family: "המשפחה בתאריך זה",
   upcoming: "אירועים קרובים",
   edit: "עריכה",
-  viewInCalendar: "פתיחה ביומן Google →",
+  viewInCalendar: "יומן Google ↗",
+  nightfall: "צאת הכוכבים",
   join: "הוספה לרשימה שלי",
   joining: "מוסיף…",
-  leave: "הסרה מהרשימה שלי",
+  leave: "יציאה מהרשימה",
   leaving: "מסיר…",
-  leaveConfirm: "להסיר את עצמך מיום הולדת זה?",
+  leaveConfirm: "להסיר את עצמך מיום שנה זה?",
   rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
+  age: (n: number) => `מלאו ${n}`,
+  since: (n: number) => `שנה ${n} לפטירה`,
   error: (message: string) => `משהו השתבש: ${message}`,
   editForm: {
     date: "תאריך",

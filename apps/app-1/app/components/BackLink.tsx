@@ -10,7 +10,7 @@ export function BackLink({ href, label }: { href: string; label?: string }) {
   return (
     <Link
       href={href}
-      className="-ms-0.5 inline-flex items-center gap-1.5 text-sm opacity-70 hover:opacity-100"
+      className="-ms-0.5 inline-flex items-center gap-1.5 text-sm text-subtle-foreground hover:text-foreground"
     >
       <svg
         viewBox="0 0 10 16"

@@ -31,25 +31,33 @@ export function Navbar() {
   ];
 
   return (
-    <header className="border-b border-foreground/10">
-      <nav className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4 text-sm">
-        <Link href="/anniversaries" className="font-bold whitespace-nowrap">
+    <header className="border-b border-border bg-card">
+      <nav className="mx-auto flex max-w-2xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 text-sm">
+        <Link
+          href="/anniversaries"
+          className="min-w-0 truncate font-display text-base font-semibold whitespace-nowrap"
+        >
           {t.appName}
         </Link>
-        {tabs.map((tab) => (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={`whitespace-nowrap ${
-              pathname.startsWith(tab.href)
-                ? "font-medium"
-                : "opacity-60 hover:opacity-100"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        ))}
-        <div className="flex shrink-0 items-center gap-2 ms-auto">
+        <div className="flex min-w-0 gap-0.5">
+          {tabs.map((tab) => {
+            const active = pathname.startsWith(tab.href);
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`rounded-pill px-2.5 py-1.5 font-medium whitespace-nowrap transition-colors ${
+                  active
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
+        </div>
+        <div className="ms-auto flex shrink-0 items-center gap-2">
           <LanguageSwitcher label={t.languageLabel} />
           <ThemeSwitcher label={t.themeToggle} />
           <AuthControl />

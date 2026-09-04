@@ -2,19 +2,25 @@ import type { AnniversariesTexts } from "@/app/components/anniversary/Anniversar
 
 export const anniversaries = {
   listPage: {
-    title: "ימי הולדת עבריים",
-    subtitle: "ימי הולדת ואזכרות בלוח העברי, משותפים למשפחה",
+    title: "ימי שנה עבריים",
+    subtitle: (people: number, mine: number) =>
+      `${people} אנשים · ${mine} ברשימה שלך`,
   },
-  add: "הוספת יום הולדת",
-  search: "חיפוש…",
+  add: "הוספת יום שנה",
+  search: "חיפוש לפי שם או תאריך עברי",
   joined: "ברשימה שלי",
+  eyebrow: { birthday: "יום הולדת", yahrzeit: "אזכרה" },
   empty: {
-    hint: "הוסיפו מישהו — היומן המשפחתי מקבל אירועים לשנים הבאות, ואתם מוזמנים אליהם.",
+    title: "אין עדיין ימי שנה",
+    body: "הוסיפו יום הולדת או אזכרה, והם יופיעו כאן עם התאריך העברי והשנים הקרובות.",
+    cta: "הוספת הראשון",
     noResults: "אין תוצאות לחיפוש.",
   },
   card: {
     nextEvent: "הבא",
-    events: (n: number) => `${n} אירועים`,
-    members: (n: number) => `${n} ${n === 1 ? "אדם" : "אנשים"}`,
+    events: (n: number) => `${n} מועדים`,
+    members: (n: number) => `${n} חברים`,
+    age: (n: number) => `גיל ${n}`,
+    since: (n: number) => `שנה ${n}`,
   },
 } as const satisfies AnniversariesTexts;

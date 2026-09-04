@@ -152,6 +152,7 @@ function buildEventBody(fields: {
   time: string;
   attendees: AttendeeInput[];
   personId?: string;
+  colorId?: string;
 }): Record<string, unknown> {
   const [hour = 0, minute = 0] = fields.time.split(":").map(Number);
   const endTotal = minute + EVENT_DURATION_MIN;
@@ -171,7 +172,7 @@ function buildEventBody(fields: {
     guestsCanModify: false,
     guestsCanInviteOthers: false,
     guestsCanSeeOtherGuests: false,
-    colorId: EVENT_COLOR_ID,
+    colorId: fields.colorId ?? EVENT_COLOR_ID,
   };
   if (fields.summary !== undefined) body.summary = fields.summary;
   if (fields.description !== undefined) body.description = fields.description;
@@ -207,6 +208,8 @@ export type SyncInput = {
   summaryFallback: string;
   /** Event description. Omit to leave it untouched. */
   description?: string;
+  /** Google Calendar colour id for the events. */
+  colorId?: string;
   /** Family member emails (any case). */
   members: string[];
   /** The events that should exist, after applying manual overrides. */
@@ -303,6 +306,7 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
                 date: want.date,
                 time,
                 attendees,
+                colorId: input.colorId,
               }),
             ),
           },
@@ -325,6 +329,7 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
               time,
               attendees,
               personId: input.personId,
+              colorId: input.colorId,
             }),
           ),
         });

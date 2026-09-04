@@ -40,6 +40,7 @@ export function EditEventForm({
       id: anniversary.id,
       eventId: event.id,
       name: anniversary.name,
+      type: anniversary.type,
       hebDateLabel: anniversary.hebDateLabel,
       date,
       time: time.trim() || undefined,
@@ -54,12 +55,12 @@ export function EditEventForm({
   };
 
   const field =
-    "rounded-lg border border-foreground/20 bg-background px-2 py-1 outline-none focus:border-foreground/50";
+    "rounded-pill border border-border bg-card px-2.5 py-1.5 outline-none focus:border-ring focus:ring-2 focus:ring-ring/20";
 
   return (
-    <div className="flex flex-col gap-3 border-t border-foreground/10 bg-foreground/5 p-3 text-xs">
+    <div className="flex flex-col gap-3 border-t border-hairline bg-sunken p-3.5 text-xs">
       <label className="flex flex-col gap-1">
-        <span>{t.date}</span>
+        <span className="text-subtle-foreground">{t.date}</span>
         <input
           type="date"
           value={date}
@@ -68,24 +69,24 @@ export function EditEventForm({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span>{t.time}</span>
+        <span className="text-subtle-foreground">{t.time}</span>
         <input
           value={time}
           onChange={(e) => setTime(e.target.value)}
           placeholder="HH:MM"
           className={field}
         />
-        <span className="opacity-60">{t.timeHint}</span>
+        <span className="text-subtle-foreground">{t.timeHint}</span>
       </label>
 
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="button"
           onClick={save}
           disabled={pending}
-          className="rounded-lg bg-foreground px-3 py-1 font-medium text-background disabled:opacity-40"
+          className="rounded-pill bg-primary px-3 py-1.5 font-semibold text-primary-foreground disabled:opacity-40"
         >
           {pending ? t.saving : t.save}
         </button>
@@ -93,7 +94,7 @@ export function EditEventForm({
           type="button"
           onClick={onDone}
           disabled={pending}
-          className="rounded-lg border border-foreground/20 px-3 py-1"
+          className="rounded-pill border border-border px-3 py-1.5"
         >
           {t.cancel}
         </button>

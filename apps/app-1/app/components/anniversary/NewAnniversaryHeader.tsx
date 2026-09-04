@@ -7,12 +7,12 @@ export type NewAnniversaryHeaderTexts = {
 
 export function NewAnniversaryHeader({ t }: { t: NewAnniversaryHeaderTexts }) {
   return (
-    <div>
-      <div className="flex gap-4">
-        <BackLink href="/anniversaries" />
-        <h1 className="text-2xl font-bold">{t.title}</h1>
-      </div>
-      <p className="mt-1 text-sm opacity-70">{t.subtitle}</p>
+    <div className="flex flex-col gap-2">
+      <BackLink href="/anniversaries" />
+      <h1 className="font-display text-3xl font-semibold tracking-tight">
+        {t.title}
+      </h1>
+      <p className="text-sm text-muted-foreground">{t.subtitle}</p>
     </div>
   );
 }

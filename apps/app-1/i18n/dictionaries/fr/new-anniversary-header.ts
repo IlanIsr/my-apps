@@ -1,7 +1,7 @@
 import type { NewAnniversaryHeaderTexts } from "@/app/components/anniversary/NewAnniversaryHeader";
 
 export const newAnniversaryHeader = {
-  title: "Nouvel anniversaire",
+  title: "Ajouter un anniversaire",
   subtitle:
-    "Ses prochaines années d’événements seront ajoutées à votre Google Calendar.",
+    "Ses prochaines années d’événements iront sur le calendrier familial partagé.",
 } as const satisfies NewAnniversaryHeaderTexts;

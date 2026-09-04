@@ -10,6 +10,7 @@ import {
 
 import { LOCALE_TAG, useLanguage } from "@/i18n";
 import { Button } from "../components/Button";
+import { Ornament } from "../components/Ornament";
 import { Select } from "../components/Select";
 import { hebrewDayOptions, hebrewMonthOptions } from "./options";
 
@@ -40,7 +41,7 @@ export function HebrewDateForm({ t }: { t: HebrewDateFormTexts }) {
 
   return (
     <div className="flex flex-col items-start gap-4">
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-3">
         <Select label={t.day} options={days} value={day} onChange={setDay} />
         <Select
           label={t.month}
@@ -55,17 +56,22 @@ export function HebrewDateForm({ t }: { t: HebrewDateFormTexts }) {
       </Button>
 
       {result && (
-        <p className="text-lg">
-          {t.nextGregorianDate}{" "}
-          <strong>
+        <div className="w-full max-w-sm rounded-card border border-border bg-card p-5 text-center shadow-sm">
+          <div className="font-mono text-[10.5px] tracking-[0.12em] text-subtle-foreground uppercase">
+            {t.nextGregorianDate}
+          </div>
+          <div className="mt-1.5 font-display text-2xl text-card-foreground">
             {result.gregorian.toLocaleDateString(LOCALE_TAG[locale])}
-          </strong>
-          <span dir="ltr" className="block text-sm opacity-70">
+          </div>
+          <div dir="ltr" className="mt-1 font-display text-sm text-birthday">
             {result.transliteration}
-          </span>
-        </p>
+          </div>
+          <Ornament className="mt-3" />
+        </div>
       )}
-      {notFound && <p className="text-sm opacity-70">{t.noSuchDate}</p>}
+      {notFound && (
+        <p className="text-sm text-muted-foreground">{t.noSuchDate}</p>
+      )}
     </div>
   );
 }

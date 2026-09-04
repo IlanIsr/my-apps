@@ -18,7 +18,7 @@ import {
 
 import type { HebrewMonthKey } from "@repo/hebcal";
 
-import { anniversaryKey } from "./person";
+import { anniversaryKey, type AnniversaryType } from "./person";
 
 export class StoreNotConfiguredError extends Error {
   constructor() {
@@ -46,8 +46,10 @@ export type StoredEvent = {
 export type PersonRecord = {
   id: string;
   name: string;
+  type: AnniversaryType;
   hebrewName?: string;
   origin?: string;
+  hebYear?: number;
   hebDate: { day: number; month: HebrewMonthKey };
   key: string;
   members: string[];
@@ -57,8 +59,10 @@ export type PersonRecord = {
 
 export type NewPerson = {
   name: string;
+  type: AnniversaryType;
   hebrewName?: string;
   origin?: string;
+  hebYear?: number;
   hebDate: { day: number; month: HebrewMonthKey };
   members: string[];
   createdBy: string;
@@ -120,8 +124,10 @@ function toRecord(id: string, data: DocumentData): PersonRecord {
   return {
     id,
     name: String(data.name ?? ""),
+    type: data.type === "yahrzeit" ? "yahrzeit" : "birthday",
     hebrewName: data.hebrewName ? String(data.hebrewName) : undefined,
     origin: data.origin ? String(data.origin) : undefined,
+    hebYear: Number(data.hebYear) || undefined,
     hebDate: {
       day: Number(data.hebDay) || 0,
       month: String(data.hebMonth ?? "") as HebrewMonthKey,
@@ -176,9 +182,11 @@ export async function createPerson(input: NewPerson): Promise<PersonRecord> {
     input.name,
     input.hebDate.day,
     input.hebDate.month,
+    input.type,
   );
   const data: DocumentData = {
     name: input.name,
+    type: input.type,
     key,
     hebDay: input.hebDate.day,
     hebMonth: input.hebDate.month,
@@ -190,12 +198,15 @@ export async function createPerson(input: NewPerson): Promise<PersonRecord> {
   };
   if (input.hebrewName) data.hebrewName = input.hebrewName;
   if (input.origin) data.origin = input.origin;
+  if (input.hebYear) data.hebYear = input.hebYear;
   await ref.set(data);
   return {
     id: ref.id,
     name: input.name,
+    type: input.type,
     hebrewName: input.hebrewName,
     origin: input.origin,
+    hebYear: input.hebYear,
     hebDate: input.hebDate,
     key,
     members: input.members,

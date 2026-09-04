@@ -10,7 +10,7 @@ export function ThemeSwitcher({ label }: { label: string }) {
       type="button"
       aria-label={label}
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-foreground/20 transition-colors hover:bg-foreground/10"
+      className="flex h-9 w-9 items-center justify-center rounded-pill border border-border transition-colors hover:bg-muted"
     >
       {/*
        * Which icon shows is driven purely by the `.dark` class on <html> (set by

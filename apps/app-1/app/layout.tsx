@@ -1,11 +1,46 @@
 import "./globals.css";
 
 import type { Metadata } from "next";
+import {
+  Assistant,
+  Frank_Ruhl_Libre,
+  JetBrains_Mono,
+  Spectral,
+} from "next/font/google";
 
 import { AuthProvider } from "@repo/auth/provider";
 
 import { Navbar } from "./components/Navbar";
 import { Providers } from "./providers";
+
+// Spectral (Latin serif) for names/dates/titles; Frank Ruhl Libre is its Hebrew
+// counterpart — Spectral has no Hebrew glyphs, so Hebrew text in `font-display`
+// falls through to it automatically. Assistant carries all UI text (Hebrew +
+// Latin + French); JetBrains Mono is for eyebrows and counts.
+const spectral = Spectral({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-spectral",
+  display: "swap",
+});
+const frankRuhl = Frank_Ruhl_Libre({
+  subsets: ["hebrew", "latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-frank-ruhl",
+  display: "swap",
+});
+const assistant = Assistant({
+  subsets: ["hebrew", "latin"],
+  variable: "--font-assistant",
+  display: "swap",
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
+
+const fontVars = `${spectral.variable} ${frankRuhl.variable} ${assistant.variable} ${jetbrainsMono.variable}`;
 
 export const metadata: Metadata = {
   title: "Hebrew Anniversaries",
@@ -25,7 +60,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className="antialiased">
         <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
         <AuthProvider>

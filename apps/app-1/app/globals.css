@@ -1,1 +1,100 @@
 @import "@repo/tailwind-config";
+
+/*
+ * app-1 "Hebrew Anniversaries" visual identity. Parchment ground, ink-brown
+ * type, amber (birthday) / dusk-blue (yahrzeit) accents. Overrides the shared
+ * placeholder palette for this app only — app-2 / landing keep the shared one.
+ * Class-based dark mode (`<html class="dark">`, set by next-themes).
+ */
+
+:root {
+  --background: #f6f0e4;
+  --foreground: #241e17;
+  --card: #fdfbf5;
+  --card-foreground: #241e17;
+  --sunken: #efe7d7;
+  --muted: #efe6d5;
+  --muted-foreground: #6b6055;
+  --subtle-foreground: #8b8172;
+  --border: #e2d9c7;
+  --border-strong: #c9bda3;
+  --hairline: #f0e7d6;
+  --primary: #8a4a2b;
+  --primary-foreground: #fdfbf5;
+  --ring: #8a4a2b;
+  --birthday: #b5732e;
+  --birthday-soft: #f2e4cb;
+  --birthday-soft-border: #e6d2ae;
+  --birthday-soft-foreground: #5a4a2f;
+  --yahrzeit: #4b5a82;
+  --yahrzeit-soft: #e3e6ef;
+  --yahrzeit-foreground: #2c2a2e;
+  --ornament: #cbb98f;
+  --destructive: #9b3b2e;
+}
+
+.dark {
+  --background: #17140f;
+  --foreground: #f2ede2;
+  --card: #241f18;
+  --card-foreground: #f2ede2;
+  --sunken: #131519;
+  --muted: #2b251d;
+  --muted-foreground: #a79c8c;
+  --subtle-foreground: #8b8172;
+  --border: #342e25;
+  --border-strong: #4a4238;
+  --hairline: #2c261e;
+  --primary: #d89a72;
+  --primary-foreground: #1a1611;
+  --ring: #d89a72;
+  --birthday: #e0a96d;
+  --birthday-soft: #3a2b1c;
+  --birthday-soft-border: #4c3823;
+  --birthday-soft-foreground: #e9d4b4;
+  --yahrzeit: #93a3ce;
+  --yahrzeit-soft: #23283a;
+  --yahrzeit-foreground: #e6e7ec;
+  --ornament: #5a5142;
+  --destructive: #e08573;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-sunken: var(--sunken);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-hairline: var(--hairline);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-birthday: var(--birthday);
+  --color-birthday-soft: var(--birthday-soft);
+  --color-birthday-soft-border: var(--birthday-soft-border);
+  --color-birthday-soft-foreground: var(--birthday-soft-foreground);
+  --color-yahrzeit: var(--yahrzeit);
+  --color-yahrzeit-soft: var(--yahrzeit-soft);
+  --color-yahrzeit-foreground: var(--yahrzeit-foreground);
+  --color-ornament: var(--ornament);
+  --color-destructive: var(--destructive);
+
+  --font-display: var(--font-spectral), var(--font-frank-ruhl), Georgia, serif;
+  --font-sans: var(--font-assistant), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --radius-pill: 0.5rem; /* 8px  — chips, small buttons */
+  --radius-field: 0.625rem; /* 10px — fields, buttons */
+  --radius-card: 0.75rem; /* 12px — cards, panels */
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+  }
+}

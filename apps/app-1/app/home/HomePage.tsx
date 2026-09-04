@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Switch } from "../components/Switch";
+import { Segmented } from "../components/Segmented";
 import {
   GregorianDateForm,
   type GregorianDateFormTexts,
@@ -24,20 +24,18 @@ export function HomePage({ t }: { t: ConverterTexts }) {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <h1 className="text-2xl font-bold">{t.question}</h1>
-        <div className="flex items-center gap-3 text-sm">
-          <span className={hebrewInput ? "opacity-50" : "font-medium"}>
-            {t.gregorian}
-          </span>
-          <Switch
-            checked={hebrewInput}
-            onChange={setHebrewInput}
-            aria-label={t.toggleCalendar}
-          />
-          <span className={hebrewInput ? "font-medium" : "opacity-50"}>
-            {t.hebrew}
-          </span>
-        </div>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">
+          {t.question}
+        </h1>
+        <Segmented
+          aria-label={t.toggleCalendar}
+          value={hebrewInput ? "hebrew" : "gregorian"}
+          onChange={(v) => setHebrewInput(v === "hebrew")}
+          options={[
+            { value: "gregorian", label: t.gregorian },
+            { value: "hebrew", label: t.hebrew },
+          ]}
+        />
       </div>
 
       {hebrewInput ? (

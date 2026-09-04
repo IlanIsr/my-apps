@@ -21,6 +21,9 @@ export default async function CalendarPage() {
       anniversary.events.map((event) => ({
         anniversaryId: anniversary.id,
         name: anniversary.name,
+        type: anniversary.type,
+        year: event.year,
+        hebYear: anniversary.hebYear,
         date: event.date,
         time: event.time,
         htmlLink: event.htmlLink,

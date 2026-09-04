@@ -1,21 +1,27 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
-const NOT_CONFIGURED = "לוח ימי ההולדת המשותף עדיין לא מוגדר.";
+const NOT_CONFIGURED = "לוח ימי השנה המשותף עדיין לא מוגדר.";
 
 export const anniversaryForm = {
   name: "שם",
   namePlaceholder: "אילן ישראל בלייש",
+  type: "מהו האירוע?",
+  types: { birthday: "יום הולדת", yahrzeit: "אזכרה" },
   hebDate: "תאריך עברי",
+  calendar: "לוח שנה",
   day: "יום",
   month: "חודש",
   year: "שנה",
+  hebYear: "שנה עברית",
+  optional: "רשות",
   years: "שנים קדימה",
-  sharedEmails: "שיתוף עם (אימיילים, מופרדים בפסיקים)",
+  sharedEmails: "שיתוף עם",
   sharedEmailsPlaceholder: "someone@example.com, other@example.com",
   sharedEmailsHelp:
     "אתה מתווסף אוטומטית. כל אחד אחר כאן מצטרף כאורח אופציונלי, בלתי נראה לאחרים.",
-  submit: "יצירת אירועים",
+  submit: "יצירת יום שנה",
   submitting: "יוצר…",
+  cancel: "ביטול",
   toggle: {
     hebrew: "עברי",
     gregorian: "לועזי",

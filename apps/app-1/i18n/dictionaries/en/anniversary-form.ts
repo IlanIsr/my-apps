@@ -1,22 +1,27 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
-const NOT_CONFIGURED =
-  "The shared anniversaries calendar isn’t set up yet.";
+const NOT_CONFIGURED = "The shared anniversaries calendar isn’t set up yet.";
 
 export const anniversaryForm = {
   name: "Name",
   namePlaceholder: "Ilan Israel Bellaiche",
+  type: "What is it?",
+  types: { birthday: "Birthday", yahrzeit: "Yahrzeit" },
   hebDate: "Hebrew date",
+  calendar: "Calendar",
   day: "Day",
   month: "Month",
   year: "Year",
+  hebYear: "Hebrew year",
+  optional: "optional",
   years: "Years ahead",
-  sharedEmails: "Share with (emails, comma-separated)",
+  sharedEmails: "Share with",
   sharedEmailsPlaceholder: "someone@example.com, other@example.com",
   sharedEmailsHelp:
     "You’re added automatically. Anyone else here joins as an optional guest, invisible to the others.",
-  submit: "Create events",
+  submit: "Create anniversary",
   submitting: "Creating…",
+  cancel: "Cancel",
   toggle: {
     hebrew: "Hebrew",
     gregorian: "Gregorian",
