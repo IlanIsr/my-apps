@@ -1,4 +1,12 @@
 env:
+  # Clerk publishable key — public (ships to every browser), so it lives here in
+  # plain text. NEXT_PUBLIC_* is inlined at build, hence availability: BUILD.
+  - variable: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+    value: pk_test_bW9yZS1kb3J5LTkxOTUuY2xlcmsuYWNjb3VudHMuZGV2JA
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: FIREBASE_PRIVATE_KEY
     secret: FIREBASE_PRIVATE_KEY
 

@@ -90,7 +90,7 @@ All three apps are **fully gated** — every route redirects to `/sign-in` witho
 - **Wiring per app**: `proxy.ts` (Next 16's renamed middleware — re-exports `clerkProxy`, but `config.matcher` must be a literal in the file), `<AuthProvider>` in the root layout, `<AuthControl>` in the header, `app/sign-in/[[...sign-in]]/page.tsx` rendering `<SignInView>`.
 - **`@clerk/nextjs` is v7 / "Core 3"** (March 2026): `<SignedIn>`/`<SignedOut>`/`<Protect>` are gone — use `<Show when="signed-in">`. `createRouteMatcher` is deprecated. The proxy does a plain `auth()` + `NextResponse.redirect` instead.
 - Social-only (Google + Apple) is configured in the Clerk dashboard, not code.
-- **Keys**: put `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` in the root `.env` (see env note below). Set them per App Hosting backend for production.
+- **Keys**: put `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` in the root `.env` (see env note below). For app-1 production they're in `apps/app-1/apphosting.yaml` — the publishable key as a plain `value:` (it's public; needs `availability: [BUILD, RUNTIME]` since `NEXT_PUBLIC_*` is inlined at build), `CLERK_SECRET_KEY` as a Secret Manager `secret:`. `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` missing at build → `@clerk/nextjs: Missing publishableKey` → every gated route 500s.
 
 ### app-1 `/anniversaries` — storage + calendar
 
