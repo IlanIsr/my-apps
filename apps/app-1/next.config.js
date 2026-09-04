@@ -1,5 +1,8 @@
 import "@repo/env/load";
 
+// Redeploy trigger: 2026-09-04 — rebuild after setting Clerk env vars on the
+// App Hosting backend (NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is baked in at build).
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Don't let `next dev` write apps/app-1/AGENTS.md + CLAUDE.md — this repo's
