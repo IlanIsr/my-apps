@@ -61,6 +61,14 @@ function botClient(): OAuth2Client {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
   if (!clientId || !clientSecret || !refreshToken) {
+    const missing = [
+      !clientId && "GOOGLE_CLIENT_ID",
+      !clientSecret && "GOOGLE_CLIENT_SECRET",
+      !refreshToken && "GOOGLE_REFRESH_TOKEN",
+    ]
+      .filter(Boolean)
+      .join(", ");
+    console.error(`[anniversaries] Google Calendar not configured: missing ${missing}`);
     throw new CalendarNotConfiguredError();
   }
   if (!cachedClient) {
@@ -121,8 +129,15 @@ export async function isCalendarReachable(): Promise<boolean> {
     const response = await fetch(`${eventsUrl}?maxResults=1`, {
       headers: { Authorization: `Bearer ${await botToken()}` },
     });
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error(
+        `[anniversaries] Google Calendar check failed: HTTP ${response.status} ${body}`,
+      );
+    }
     return response.ok;
-  } catch {
+  } catch (error) {
+    console.error("[anniversaries] Google Calendar unreachable:", error);
     return false;
   }
 }

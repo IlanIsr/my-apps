@@ -32,6 +32,7 @@ import {
   getPerson,
   isStoreConfigured,
   listPersons,
+  storeConfigIssues,
   updatePerson,
   StoreNotConfiguredError,
   type PersonRecord,
@@ -163,7 +164,11 @@ function applySynced(
 
 /** Whether both the store and the shared calendar are configured and reachable. */
 export async function isCalendarConfigured(): Promise<boolean> {
-  if (!isStoreConfigured()) return false;
+  const missing = storeConfigIssues();
+  if (missing.length > 0) {
+    console.error(`[anniversaries] Firestore not configured: missing ${missing.join(", ")}`);
+    return false;
+  }
   return isCalendarReachable();
 }
 

@@ -80,12 +80,17 @@ const APP_NAME = "anniversaries";
 
 let cachedDb: Firestore | null = null;
 
+/** Names of the Firestore env vars that are missing, if any. */
+export function storeConfigIssues(): string[] {
+  return [
+    !process.env.FIREBASE_PROJECT_ID && "FIREBASE_PROJECT_ID",
+    !process.env.FIREBASE_CLIENT_EMAIL && "FIREBASE_CLIENT_EMAIL",
+    !process.env.FIREBASE_PRIVATE_KEY && "FIREBASE_PRIVATE_KEY",
+  ].filter((v): v is string => Boolean(v));
+}
+
 export function isStoreConfigured(): boolean {
-  return Boolean(
-    process.env.FIREBASE_PROJECT_ID &&
-      process.env.FIREBASE_CLIENT_EMAIL &&
-      process.env.FIREBASE_PRIVATE_KEY,
-  );
+  return storeConfigIssues().length === 0;
 }
 
 function db(): Firestore {
