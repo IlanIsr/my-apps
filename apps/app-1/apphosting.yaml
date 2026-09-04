@@ -7,3 +7,6 @@ env:
 
   - variable: GOOGLE_REFRESH_TOKEN
     secret: GOOGLE_REFRESH_TOKEN
+
+  - variable: CLERK_SECRET_KEY
+    secret: CLERK_SECRET_KEY
