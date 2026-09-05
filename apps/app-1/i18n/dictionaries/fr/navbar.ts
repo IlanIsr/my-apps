@@ -6,6 +6,7 @@ export const navbar = {
     anniversaries: "Anniversaires",
     agenda: "Agenda",
     converter: "Convertisseur",
+    admin: "Admin",
   },
   languageLabel: "Langue",
   themeToggle: "Changer de thème",

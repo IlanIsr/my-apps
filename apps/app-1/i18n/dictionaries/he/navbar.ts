@@ -6,6 +6,7 @@ export const navbar = {
     anniversaries: "ימי הולדת",
     agenda: "סדר יום",
     converter: "המרת תאריכים",
+    admin: "ניהול",
   },
   languageLabel: "שפה",
   themeToggle: "החלפת ערכת נושא",

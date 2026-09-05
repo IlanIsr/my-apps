@@ -1,4 +1,5 @@
 import type { Messages } from "../../messages";
+import { admin } from "./admin";
 import { agenda } from "./agenda";
 import { anniversaries } from "./anniversaries";
 import { anniversaryDetail } from "./anniversary-detail";
@@ -18,5 +19,6 @@ export const fr = {
   anniversaryDetail,
   calendarUnavailable,
   agenda,
+  admin,
   eventSummary,
 } as const satisfies Messages;

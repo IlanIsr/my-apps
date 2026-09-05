@@ -15,12 +15,13 @@ export type NavbarTexts = {
     anniversaries: string;
     agenda: string;
     converter: string;
+    admin: string;
   };
   languageLabel: string;
   themeToggle: string;
 };
 
-export function Navbar() {
+export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
   const t = useTranslations().navbar;
   const pathname = usePathname();
 
@@ -28,6 +29,7 @@ export function Navbar() {
     { href: "/anniversaries", label: t.tabs.anniversaries },
     { href: "/calendar", label: t.tabs.agenda },
     { href: "/converter", label: t.tabs.converter },
+    ...(isAdmin ? [{ href: "/admin", label: t.tabs.admin }] : []),
   ];
 
   return (

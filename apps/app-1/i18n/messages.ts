@@ -1,3 +1,4 @@
+import type { AdminTexts } from "@/app/admin/AdminView";
 import type { AgendaTexts } from "@/app/components/anniversary/CalendarAgenda";
 import type { AnniversariesTexts } from "@/app/components/anniversary/AnniversaryList";
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
@@ -22,5 +23,6 @@ export type Messages = {
   anniversaryDetail: AnniversaryDetailTexts;
   calendarUnavailable: CalendarUnavailableTexts;
   agenda: AgendaTexts;
+  admin: AdminTexts;
   eventSummary: EventSummaryTexts;
 };

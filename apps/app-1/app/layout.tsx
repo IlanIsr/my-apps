@@ -9,6 +9,8 @@ import {
 } from "next/font/google";
 
 import { AuthProvider } from "@repo/auth/provider";
+import { getCurrentUserEmail } from "@repo/auth/user";
+import { isAnniversariesAdmin } from "@repo/anniversaries";
 
 import { Navbar } from "./components/Navbar";
 import { Providers } from "./providers";
@@ -56,16 +58,19 @@ const LANG_INIT = `(function(){try{
   d.lang=l;d.dir=(l==='he')?'rtl':'ltr';
 }catch(e){}})();`;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const email = await getCurrentUserEmail();
+  const isAdmin = email ? isAnniversariesAdmin(email) : false;
+
   return (
     <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className="antialiased">
         <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
         <AuthProvider>
           <Providers>
-            <Navbar />
+            <Navbar isAdmin={isAdmin} />
             <main className="mx-auto max-w-2xl px-6 py-12">{children}</main>
           </Providers>
         </AuthProvider>
