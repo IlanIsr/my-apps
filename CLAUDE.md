@@ -113,7 +113,22 @@ All three apps are **fully gated** — every route redirects to `/sign-in` witho
 
 Backend name, repo name, Firebase project name, and Web App name are **separate concepts**. The first app-1 backend was auto-named `my-apps` (the repo name); a rename toward the table above was in progress. **Check the current Firebase state before assuming the cleanup is done.**
 
-App Hosting deploys automatically from `main`. `apps/app-1/apphosting.yaml` maps the **secret** env vars (`FIREBASE_PRIVATE_KEY`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`) to Cloud Secret Manager secrets of the same name — those secrets must exist and the backend service account needs `roles/secretmanager.secretAccessor` on each. The **plain** env vars (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `GOOGLE_CLIENT_ID`, `ANNIVERSARIES_ADMIN_EMAILS`, optional `FIREBASE_DATABASE_ID` / `GOOGLE_CALENDAR_ID`) are set in the Firebase console per backend, not in the yaml. app-2 has no `apphosting.yaml`. Path filters are configured per backend so an app-only change deploys only that app; changing `packages/**` (or root `package.json` / lockfile / `pnpm-workspace.yaml` / `turbo.json`) can deploy both. Keep this. Production env vars must be set (console + secrets) *and redeployed* — missing them causes `FirebaseError: client is offline` / stuck "Loading...".
+**Two environments for app-1** (branch → App Hosting backend → Firebase project):
+
+| Env | Branch | Firebase project | Firestore | Notes |
+|---|---|---|---|---|
+| pre-prod | `preprod` | `my-app-1-preprod` (own project) | own named DB `app-1` + own service account | shares the prod **Clerk instance** and the prod **shared Google Calendar** (same bot account / OAuth client / refresh token) — test events land on the real calendar, so use throwaway names |
+| prod | `main` | `my-app-1` (`my-app-1-312d0`) | named DB `app-1` | |
+
+**Flow:** feature work → merge to `preprod` → verify on the pre-prod URL → merge `preprod` into `main` → prod deploys. Both are fast-forward when kept linear.
+
+`apps/app-1/apphosting.yaml` is **identical on both branches** — it maps the **secret** env vars (`FIREBASE_PRIVATE_KEY`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, `CLERK_SECRET_KEY`) to Cloud Secret Manager secrets *by name* (each backend resolves them in its own project, so the two `FIREBASE_PRIVATE_KEY` secrets hold different service-account keys) and pins the public `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` as a plain `value:` with `availability: [BUILD, RUNTIME]` (`NEXT_PUBLIC_*` is inlined at build). Those secrets must exist in **each** project and the backend service account needs `roles/secretmanager.secretAccessor` on each.
+
+The **plain** env vars (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `GOOGLE_CLIENT_ID`, `ANNIVERSARIES_ADMIN_EMAILS`, optional `FIREBASE_DATABASE_ID` / `GOOGLE_CALENDAR_ID`) are set in the Firebase console **per backend** — this is where prod and pre-prod diverge (different `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL`; `GOOGLE_*` are the same). app-2 has no `apphosting.yaml`.
+
+The **Google Calendar API must be enabled** in every project that runs this (`…/apis/api/calendar-json.googleapis.com/overview?project=<number>`) — a disabled API surfaces as the `<CalendarUnavailable>` screen, with `[anniversaries] Google Calendar check failed: HTTP 403 …` in Cloud Logging.
+
+Path filters are configured per backend so an app-only change deploys only that app; changing `packages/**` (or root `package.json` / lockfile / `pnpm-workspace.yaml` / `turbo.json`) can deploy both. Production env vars must be set (console + secrets) *and redeployed* — missing them causes `FirebaseError: client is offline` / stuck "Loading…" / a 500 (`@clerk/nextjs: Missing publishableKey` if the Clerk key isn't present at build).
 
 **app-1 `/anniversaries` uses Firestore via the Admin SDK** (see the app-1 storage section above) — a **named** database `app-1` in project `my-app-1`, service-account creds in the root `.env`. app-2 does not use Firebase yet. `pnpm-workspace.yaml` `allowBuilds` covers `@firebase/util`, `protobufjs`, `esbuild` (the last for `tsx`, used by the migration script).
 
@@ -147,7 +162,7 @@ The root registration is PR [is-a-dev/register#50502](https://github.com/is-a-de
 
 ## Likely next tasks
 
-1. Anniversaries → Firestore + visual identity + birthday/yahrzeit (branch `firestore-anniversaries`): `FIREBASE_*` set in `apps/app-1/.env`, calendar wiped, starting fresh. Remaining: user smoke-tests locally, then merge to `main` + set `FIREBASE_*` **and `ANNIVERSARIES_ADMIN_EMAILS`** in the app-1 App Hosting backend and redeploy.
+1. Anniversaries → Firestore + visual identity + birthday/yahrzeit + member-only list: **merged to `main` and deployed** (2026-09-05). `firestore-anniversaries` branch is done — future work goes on `preprod`. Pre-prod project + App Hosting backend + secrets are being set up (see the two-environments table above).
 2. Phase 5: `origin` / `hebrewName` UI on the create form + person editing (backend stores them; `type` / `hebYear` are already wired end-to-end).
 3. Build app-2's Firestore feature using the client-SDK pattern above.
 4. After PR #50502 merges: configure `app1`/`app2.ilanisr.is-a.dev` subdomains via Firebase App Hosting.
