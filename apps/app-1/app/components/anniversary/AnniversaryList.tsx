@@ -12,7 +12,7 @@ import { Ornament } from "../Ornament";
 export type AnniversariesTexts = {
   listPage: {
     title: string;
-    subtitle: (people: number, mine: number) => string;
+    subtitle: (count: number, admin: boolean) => string;
   };
   add: string;
   search: string;
@@ -57,7 +57,7 @@ export function AnniversaryList({
       day: "numeric",
     });
 
-  const mine = anniversaries.filter((a) => a.joined).length;
+  const admin = anniversaries.some((a) => a.admin);
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,7 +67,7 @@ export function AnniversaryList({
             {t.listPage.title}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {t.listPage.subtitle(anniversaries.length, mine)}
+            {t.listPage.subtitle(anniversaries.length, admin)}
           </p>
         </div>
         <Link

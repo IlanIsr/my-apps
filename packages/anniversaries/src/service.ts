@@ -73,7 +73,9 @@ export function isAnniversariesAdmin(email: string): boolean {
 }
 
 function unique(emails: string[]): string[] {
-  return [...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean))];
+  return [
+    ...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)),
+  ];
 }
 
 function todayISO(): string {
@@ -84,10 +86,7 @@ function todayISO(): string {
   ).padStart(2, "0")}`;
 }
 
-function toAnniversary(
-  record: PersonRecord,
-  viewerEmail: string,
-): Anniversary {
+function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
   const email = viewerEmail.toLowerCase();
   const admin = isAnniversariesAdmin(viewerEmail);
   const today = todayISO();
@@ -146,7 +145,13 @@ function desiredStored(
 
 function applySynced(
   base: StoredEvent[],
-  synced: { year: number; date: string; time: string; googleEventId: string; htmlLink: string }[],
+  synced: {
+    year: number;
+    date: string;
+    time: string;
+    googleEventId: string;
+    htmlLink: string;
+  }[],
 ): StoredEvent[] {
   const byYear = new Map(synced.map((s) => [s.year, s]));
   return base.map((e) => {
@@ -166,17 +171,31 @@ function applySynced(
 export async function isCalendarConfigured(): Promise<boolean> {
   const missing = storeConfigIssues();
   if (missing.length > 0) {
-    console.error(`[anniversaries] Firestore not configured: missing ${missing.join(", ")}`);
+    console.error(
+      `[anniversaries] Firestore not configured: missing ${missing.join(", ")}`,
+    );
     return false;
   }
   return isCalendarReachable();
 }
 
+/**
+ * The anniversaries a viewer may see in the list / agenda: only the ones they're
+ * on the family list for. The admin (shared account) sees all of them — that's
+ * what the member counts / "Family on this date" view are for.
+ *
+ * Direct access to a single person by id ({@link getAnniversary}) is *not*
+ * filtered, so a shared link still lets someone open and join an existing
+ * person.
+ */
 export async function listAnniversaries(
   viewerEmail: string,
 ): Promise<Anniversary[]> {
+  const email = viewerEmail.toLowerCase();
+  const admin = isAnniversariesAdmin(viewerEmail);
   const records = await listPersons();
   return records
+    .filter((r) => admin || r.members.includes(email))
     .map((r) => toAnniversary(r, viewerEmail))
     .sort((a, b) =>
       (a.events[0]?.date ?? "").localeCompare(b.events[0]?.date ?? ""),

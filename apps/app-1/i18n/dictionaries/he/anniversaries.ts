@@ -3,8 +3,8 @@ import type { AnniversariesTexts } from "@/app/components/anniversary/Anniversar
 export const anniversaries = {
   listPage: {
     title: "ימי שנה עבריים",
-    subtitle: (people: number, mine: number) =>
-      `${people} אנשים · ${mine} ברשימה שלך`,
+    subtitle: (count: number, admin: boolean) =>
+      admin ? `${count} אנשים` : `${count} ברשימה שלי`,
   },
   add: "הוספת יום שנה",
   search: "חיפוש לפי שם או תאריך עברי",

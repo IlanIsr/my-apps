@@ -18,8 +18,10 @@ function ordinal(n: number): string {
 export const anniversaries = {
   listPage: {
     title: "Hebrew Anniversaries",
-    subtitle: (people: number, mine: number) =>
-      `${people} ${people === 1 ? "person" : "people"} · ${mine} on your list`,
+    subtitle: (count: number, admin: boolean) =>
+      admin
+        ? `${count} ${count === 1 ? "person" : "people"}`
+        : `${count} on your list`,
   },
   add: "Add anniversary",
   search: "Search by name or Hebrew date",

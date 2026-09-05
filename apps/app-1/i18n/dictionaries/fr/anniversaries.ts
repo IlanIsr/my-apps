@@ -3,8 +3,10 @@ import type { AnniversariesTexts } from "@/app/components/anniversary/Anniversar
 export const anniversaries = {
   listPage: {
     title: "Anniversaires hébraïques",
-    subtitle: (people: number, mine: number) =>
-      `${people} personne${people === 1 ? "" : "s"} · ${mine} dans ma liste`,
+    subtitle: (count: number, admin: boolean) =>
+      admin
+        ? `${count} personne${count === 1 ? "" : "s"}`
+        : `${count} dans ma liste`,
   },
   add: "Ajouter un anniversaire",
   search: "Rechercher par nom ou date hébraïque",
