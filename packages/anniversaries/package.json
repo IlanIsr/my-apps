@@ -11,7 +11,8 @@
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "migrate": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/migrate-to-firestore.ts",
-    "clear-calendar": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/clear-calendar.ts"
+    "clear-calendar": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/clear-calendar.ts",
+    "delete-person": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/delete-person.ts"
   },
   "dependencies": {
     "@repo/hebcal": "workspace:*",
