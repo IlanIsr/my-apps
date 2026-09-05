@@ -28,10 +28,14 @@ import {
 } from "./person";
 import {
   createPerson,
+  currentProjectId,
   findByKey,
   getPerson,
   isStoreConfigured,
   listPersons,
+  listRawPersonsFrom,
+  prodSourceCreds,
+  replaceAllPersons,
   storeConfigIssues,
   updatePerson,
   StoreNotConfiguredError,
@@ -405,4 +409,41 @@ export async function updateEvent(input: UpdateEventInput): Promise<void> {
       : e,
   );
   await updatePerson(input.id, { events });
+}
+
+// --- prod → pre-prod data sync (admin only) ---
+
+export class ProdSyncNotConfiguredError extends Error {
+  constructor() {
+    super("prod-sync-not-configured");
+    this.name = "ProdSyncNotConfiguredError";
+  }
+}
+
+/**
+ * Whether this deployment can pull data from production — i.e. `PROD_FIREBASE_*`
+ * is set and its own store is configured. Only true on the pre-prod backend.
+ */
+export function canSyncFromProd(): boolean {
+  return prodSourceCreds() !== null && isStoreConfigured();
+}
+
+/**
+ * Replace this environment's `persons` with an exact copy of production's.
+ * Calendar events aren't touched — pre-prod shares the prod shared calendar, so
+ * the copied `googleEventId`s already resolve.
+ */
+export async function syncFromProd(): Promise<{
+  written: number;
+  deleted: number;
+}> {
+  const creds = prodSourceCreds();
+  if (!creds) throw new ProdSyncNotConfiguredError();
+  if (!isStoreConfigured()) throw new StoreNotConfiguredError();
+  if (creds.projectId === currentProjectId()) {
+    throw new Error("prod-sync: source and target are the same project");
+  }
+
+  const source = await listRawPersonsFrom(creds);
+  return replaceAllPersons(source);
 }

@@ -16,10 +16,13 @@ export {
   addAnniversary,
   leaveAnniversary,
   updateEvent,
+  canSyncFromProd,
+  syncFromProd,
   NoSuchHebrewDateError,
   CalendarNotConfiguredError,
   CalendarRateLimitError,
   StoreNotConfiguredError,
+  ProdSyncNotConfiguredError,
   type AddAnniversaryInput,
   type UpdateEventInput,
 } from "./service";

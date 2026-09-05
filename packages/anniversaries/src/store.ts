@@ -114,6 +114,88 @@ function db(): Firestore {
   return cachedDb;
 }
 
+/** The project id this deployment's Firestore lives in. */
+export function currentProjectId(): string | undefined {
+  return process.env.FIREBASE_PROJECT_ID;
+}
+
+// --- reading another project's Firestore (prod → pre-prod data sync) ---
+
+export type FirestoreCreds = {
+  projectId: string;
+  clientEmail: string;
+  privateKey: string;
+  databaseId: string;
+};
+
+export type RawPersonDoc = { id: string; data: DocumentData };
+
+/**
+ * Read-only credentials for a *source* Firestore (production), from
+ * `PROD_FIREBASE_*`. `null` unless all three are set — which is only the case
+ * on the pre-prod backend, so the prod-sync feature is naturally pre-prod-only.
+ */
+export function prodSourceCreds(): FirestoreCreds | null {
+  const projectId = process.env.PROD_FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.PROD_FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.PROD_FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  if (!projectId || !clientEmail || !privateKey) return null;
+  return {
+    projectId,
+    clientEmail,
+    privateKey,
+    databaseId: process.env.PROD_FIREBASE_DATABASE_ID ?? "app-1",
+  };
+}
+
+const SOURCE_APP_NAME = "anniversaries-source";
+
+function sourceDb(creds: FirestoreCreds): Firestore {
+  const app: App =
+    getApps().find((a) => a.name === SOURCE_APP_NAME) ??
+    initializeApp(
+      {
+        credential: cert({
+          projectId: creds.projectId,
+          clientEmail: creds.clientEmail,
+          privateKey: creds.privateKey,
+        }),
+      },
+      SOURCE_APP_NAME,
+    );
+  return getFirestore(app, creds.databaseId);
+}
+
+/** Every `persons` document from a source Firestore, raw (timestamps intact). */
+export async function listRawPersonsFrom(
+  creds: FirestoreCreds,
+): Promise<RawPersonDoc[]> {
+  const snap = await sourceDb(creds).collection(COLLECTION).get();
+  return snap.docs.map((d) => ({ id: d.id, data: d.data() }));
+}
+
+/**
+ * Make this deployment's `persons` collection an exact mirror of `docs`:
+ * overwrite matching ids, delete the rest. Used only by the prod-sync feature.
+ */
+export async function replaceAllPersons(
+  docs: RawPersonDoc[],
+): Promise<{ written: number; deleted: number }> {
+  const col = db().collection(COLLECTION);
+  const existing = await col.get();
+  const keep = new Set(docs.map((d) => d.id));
+
+  let deleted = 0;
+  for (const d of existing.docs) {
+    if (!keep.has(d.id)) {
+      await d.ref.delete();
+      deleted++;
+    }
+  }
+  for (const d of docs) await col.doc(d.id).set(d.data);
+  return { written: docs.length, deleted };
+}
+
 function toStoredEvent(raw: DocumentData): StoredEvent {
   return {
     year: Number(raw.year) || 0,
