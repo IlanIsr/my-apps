@@ -68,7 +68,9 @@ function botClient(): OAuth2Client {
     ]
       .filter(Boolean)
       .join(", ");
-    console.error(`[anniversaries] Google Calendar not configured: missing ${missing}`);
+    console.error(
+      `[anniversaries] Google Calendar not configured: missing ${missing}`,
+    );
     throw new CalendarNotConfiguredError();
   }
   if (!cachedClient) {
@@ -110,15 +112,13 @@ async function calendarApi<T>(path: string, init?: RequestInit): Promise<T> {
     }
 
     const body = await response.text();
-    if (
-      attempt < MAX_ATTEMPTS - 1 &&
-      isRateLimited(response.status, body)
-    ) {
+    if (attempt < MAX_ATTEMPTS - 1 && isRateLimited(response.status, body)) {
       // Exponential backoff with jitter: ~0.6s, 1.4s, 3s, 6s.
       await sleep(2 ** attempt * 600 + Math.random() * 400);
       continue;
     }
-    if (isRateLimited(response.status, body)) throw new CalendarRateLimitError();
+    if (isRateLimited(response.status, body))
+      throw new CalendarRateLimitError();
     throw new Error(`Google Calendar API ${response.status}: ${body}`);
   }
 }
@@ -229,6 +229,12 @@ export type SyncInput = {
   members: string[];
   /** The events that should exist, after applying manual overrides. */
   events: DesiredEvent[];
+  /**
+   * When true, ask Google to email the attendees (`sendUpdates=all`) so people
+   * who haven't yet interacted with the shared calendar get an invite they can
+   * accept. Default false (`sendUpdates=none` — silent).
+   */
+  notify?: boolean;
 };
 
 export type SyncResult = {
@@ -290,6 +296,7 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
   //    got done so the caller can persist it and retry the rest.
   const events: SyncedEvent[] = [];
   let rateLimited = false;
+  const sendUpdates = input.notify ? "all" : "none";
 
   for (const want of input.events) {
     const time = times.get(want.year) ?? "18:00";
@@ -311,7 +318,7 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
     try {
       if (found) {
         const patched = await calendarApi<GoogleEvent>(
-          `/${encodeURIComponent(found.id)}?sendUpdates=none`,
+          `/${encodeURIComponent(found.id)}?sendUpdates=${sendUpdates}`,
           {
             method: "PATCH",
             body: JSON.stringify(
@@ -334,20 +341,23 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
           htmlLink: patched.htmlLink ?? found.htmlLink ?? "",
         });
       } else {
-        const created = await calendarApi<GoogleEvent>("?sendUpdates=none", {
-          method: "POST",
-          body: JSON.stringify(
-            buildEventBody({
-              summary: input.summary ?? input.summaryFallback,
-              description: input.description ?? "",
-              date: want.date,
-              time,
-              attendees,
-              personId: input.personId,
-              colorId: input.colorId,
-            }),
-          ),
-        });
+        const created = await calendarApi<GoogleEvent>(
+          `?sendUpdates=${sendUpdates}`,
+          {
+            method: "POST",
+            body: JSON.stringify(
+              buildEventBody({
+                summary: input.summary ?? input.summaryFallback,
+                description: input.description ?? "",
+                date: want.date,
+                time,
+                attendees,
+                personId: input.personId,
+                colorId: input.colorId,
+              }),
+            ),
+          },
+        );
         events.push({
           year: want.year,
           date: want.date,
@@ -440,14 +450,11 @@ export async function rewriteEventTag(
   personId: string,
   description = "",
 ): Promise<void> {
-  await calendarApi(
-    `/${encodeURIComponent(googleEventId)}?sendUpdates=none`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        description,
-        extendedProperties: { private: { personId } },
-      }),
-    },
-  );
+  await calendarApi(`/${encodeURIComponent(googleEventId)}?sendUpdates=none`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      description,
+      extendedProperties: { private: { personId } },
+    }),
+  });
 }

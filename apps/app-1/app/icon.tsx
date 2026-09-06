@@ -29,27 +29,25 @@ const GROUND: Record<Env, string> = {
 export default function Icon() {
   const ground = GROUND[currentEnv()];
   return new ImageResponse(
-    (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: ground,
+      }}
+    >
       <div
         style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: ground,
+          width: 15,
+          height: 15,
+          background: "#F6F0E4",
+          transform: "rotate(45deg)",
         }}
-      >
-        <div
-          style={{
-            width: 15,
-            height: 15,
-            background: "#F6F0E4",
-            transform: "rotate(45deg)",
-          }}
-        />
-      </div>
-    ),
+      />
+    </div>,
     size,
   );
 }

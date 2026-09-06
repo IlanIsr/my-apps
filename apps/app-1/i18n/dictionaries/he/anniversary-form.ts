@@ -27,6 +27,11 @@ export const anniversaryForm = {
     gregorian: "לועזי",
     aria: "החלפת לוח השנה להזנה",
   },
+  notify: "לשלוח הזמנה ליומן לכולם",
+  notifyHelp:
+    "Google שולח לכל אחד הזמנה. אישור ההזמנה הוא מה שגורם לאירועים להופיע ביומן שלו.",
+  notifyWarning:
+    "בלי הזמנה, מי שעדיין לא אישר את היומן המשותף לא יראה את האירועים האלה.",
   nameRequired: "יש להזין שם.",
   emailInvalid: (email: string) => `אימייל לא תקין: ${email}`,
   notConfigured: NOT_CONFIGURED,

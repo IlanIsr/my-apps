@@ -45,6 +45,9 @@ export type AnniversaryFormTexts = {
   submitting: string;
   cancel: string;
   toggle: { hebrew: string; gregorian: string; aria: string };
+  notify: string;
+  notifyHelp: string;
+  notifyWarning: string;
   nameRequired: string;
   emailInvalid: (email: string) => string;
   notConfigured: string;
@@ -75,6 +78,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));
   const [years, setYears] = useState("20");
   const [sharedRaw, setSharedRaw] = useState("");
+  const [notify, setNotify] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -132,6 +136,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
           : undefined,
       sharedEmails: shared,
       years: Number(years),
+      notify,
       locale,
     });
     setPending(false);
@@ -290,6 +295,28 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
           {t.sharedEmailsHelp}
         </span>
       </label>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="flex items-start gap-2.5">
+          <input
+            type="checkbox"
+            checked={notify}
+            onChange={(e) => setNotify(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+          />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium">{t.notify}</span>
+            <span className="text-xs text-subtle-foreground">
+              {t.notifyHelp}
+            </span>
+          </span>
+        </label>
+        {!notify && (
+          <p className="rounded-field border border-border bg-sunken px-3 py-2 text-xs text-muted-foreground">
+            {t.notifyWarning}
+          </p>
+        )}
+      </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

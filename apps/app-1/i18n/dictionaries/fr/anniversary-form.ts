@@ -28,6 +28,11 @@ export const anniversaryForm = {
     gregorian: "Grégorien",
     aria: "Changer le calendrier de saisie",
   },
+  notify: "Envoyer une invitation agenda à tout le monde",
+  notifyHelp:
+    "Google envoie une invitation à chaque personne. C’est en l’acceptant que les événements apparaissent dans son propre agenda.",
+  notifyWarning:
+    "Sans invitation, quiconque n’a pas déjà accepté l’agenda partagé ne verra pas ces événements.",
   nameRequired: "Le nom est requis.",
   emailInvalid: (email: string) => `Email invalide : ${email}`,
   notConfigured: NOT_CONFIGURED,

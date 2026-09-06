@@ -34,10 +34,12 @@ import {
   isStoreConfigured,
   listPersons,
   listPersonsFrom,
+  markEmailSent,
   prodDatabaseUrl,
   replaceAllPersons,
   storeConfigIssues,
   updatePerson,
+  upsertUser,
   DatabaseNotConfiguredError,
   type PersonRecord,
   type StoredEvent,
@@ -237,7 +239,39 @@ export type AddAnniversaryInput = {
   summary: string;
   /** Clerk id of the signed-in user. */
   createdBy: string;
+  /**
+   * Email the family members a Google Calendar invite (`sendUpdates=all`) so
+   * people who haven't accepted the shared calendar yet get one they can accept.
+   */
+  notify: boolean;
 };
+
+/**
+ * Record every member email as a known user, and (best-effort) don't let a
+ * users-table hiccup fail the whole mutation — the calendar sync already
+ * succeeded by the time this runs.
+ */
+async function recordMembers(
+  emails: string[],
+  viewerEmail: string,
+  viewerClerkId: string,
+  notified: boolean,
+): Promise<void> {
+  const lower = viewerEmail.toLowerCase();
+  try {
+    await Promise.all(
+      emails.map((e) =>
+        upsertUser({
+          email: e,
+          clerkId: e === lower ? viewerClerkId : undefined,
+        }),
+      ),
+    );
+    if (notified) await markEmailSent(emails);
+  } catch (error) {
+    console.error("[anniversaries] recording users failed:", error);
+  }
+}
 
 /**
  * Create a person + their events, or — if a matching person exists — add the
@@ -288,12 +322,14 @@ export async function addAnniversary(
       colorId,
       members,
       events: base.map(toDesired),
+      notify: input.notify,
     });
     const finalMembers = members.filter((m) => !sync.declined.includes(m));
     await updatePerson(record.id, {
       members: finalMembers,
       events: applySynced(base, sync.events),
     });
+    await recordMembers(finalMembers, email, input.createdBy, input.notify);
     if (sync.rateLimited) throw new CalendarRateLimitError();
     return {
       created: sync.events.length,
@@ -320,6 +356,7 @@ export async function addAnniversary(
     colorId,
     members,
     events: base.map(toDesired),
+    notify: input.notify,
   });
   // A declined guest has effectively left. The person + events still stay on
   // the shared calendar — only the shared account itself removes an event.
@@ -329,6 +366,7 @@ export async function addAnniversary(
     members: finalMembers,
     events: applySynced(base, sync.events),
   });
+  await recordMembers(finalMembers, email, input.createdBy, input.notify);
   if (sync.rateLimited) throw new CalendarRateLimitError();
   const created = sync.events.filter(
     (e) => !priorIds.has(e.googleEventId),

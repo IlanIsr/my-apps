@@ -69,6 +69,8 @@ export async function addAnniversaryAction(input: {
   hebrewName?: string;
   origin?: string;
   hebYear?: number;
+  /** Email the family a Google Calendar invite so the events show up for them. */
+  notify: boolean;
   locale: Locale;
 }): Promise<ActionResult<{ created: number; joined: boolean }>> {
   try {

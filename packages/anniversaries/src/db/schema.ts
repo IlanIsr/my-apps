@@ -77,6 +77,25 @@ export const personEvents = pgTable(
   (t) => [index("person_events_person_id_idx").on(t.personId)],
 );
 
+/**
+ * Everyone who has touched the app or been added to an anniversary, keyed by
+ * lowercased email. `hasSentEmail` = a Google Calendar invite has been sent to
+ * this address at least once (so we don't re-notify them on every add).
+ */
+export const users = pgTable("users", {
+  email: text("email").primaryKey(),
+  /** Clerk user id — set once this address signs in; null for invite-only addresses. */
+  clerkId: text("clerk_id"),
+  hasSentEmail: boolean("has_sent_email").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
 export type PersonRow = typeof persons.$inferSelect;
 export type PersonInsert = typeof persons.$inferInsert;
 export type PersonEventRow = typeof personEvents.$inferSelect;
+export type UserRow = typeof users.$inferSelect;

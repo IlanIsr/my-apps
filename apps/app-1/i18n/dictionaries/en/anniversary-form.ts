@@ -27,11 +27,18 @@ export const anniversaryForm = {
     gregorian: "Gregorian",
     aria: "Toggle input calendar",
   },
+  notify: "Email everyone a calendar invite",
+  notifyHelp:
+    "Google sends each person an invite. Accepting it is what makes the events appear in their own calendar.",
+  notifyWarning:
+    "Without an invite, anyone who hasn’t already accepted the shared calendar won’t see these events.",
   nameRequired: "Name is required.",
   emailInvalid: (email: string) => `Not a valid email: ${email}`,
   notConfigured: NOT_CONFIGURED,
-  noSuchDate: "That Hebrew date doesn’t occur (e.g. the 30th of a 29-day month).",
-  rateLimited: "Google Calendar is busy right now — wait a moment and try again.",
+  noSuchDate:
+    "That Hebrew date doesn’t occur (e.g. the 30th of a 29-day month).",
+  rateLimited:
+    "Google Calendar is busy right now — wait a moment and try again.",
   error: (message: string) => `Something went wrong: ${message}`,
   months: {
     Tishrei: "Tishrei",

@@ -39,9 +39,7 @@ function initials(email: string): string {
   const local = email.split("@")[0] ?? email;
   const parts = local.split(/[.\-_]+/).filter(Boolean);
   const letters =
-    parts.length > 1
-      ? `${parts[0]![0]}${parts[1]![0]}`
-      : local.slice(0, 2);
+    parts.length > 1 ? `${parts[0]![0]}${parts[1]![0]}` : local.slice(0, 2);
   return letters.toUpperCase();
 }
 
@@ -95,6 +93,7 @@ export function AnniversaryDetail({
         hebYear: anniversary.hebYear,
         years: anniversary.events.length,
         sharedEmails: [],
+        notify: true,
         locale,
       });
       if (!result.ok) {

@@ -20,6 +20,9 @@ export function AnniversaryDetailView({
   if (!anniversary) return null;
 
   return (
-    <AnniversaryDetail anniversary={anniversary} t={messages.anniversaryDetail} />
+    <AnniversaryDetail
+      anniversary={anniversary}
+      t={messages.anniversaryDetail}
+    />
   );
 }

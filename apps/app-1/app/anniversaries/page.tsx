@@ -9,7 +9,10 @@ import { AnniversariesView } from "./AnniversariesView";
 
 export const dynamic = "force-dynamic";
 
-async function load(): Promise<{ ready: boolean; anniversaries: Anniversary[] }> {
+async function load(): Promise<{
+  ready: boolean;
+  anniversaries: Anniversary[];
+}> {
   try {
     const [configured, email] = await Promise.all([
       isCalendarConfigured(),

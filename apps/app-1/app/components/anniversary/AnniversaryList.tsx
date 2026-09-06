@@ -192,9 +192,7 @@ function AnniversaryCard({
               <>
                 <Sep />
                 <span>
-                  {yahrzeit
-                    ? t.card.since(sinceCount)
-                    : t.card.age(sinceCount)}
+                  {yahrzeit ? t.card.since(sinceCount) : t.card.age(sinceCount)}
                 </span>
               </>
             )}
