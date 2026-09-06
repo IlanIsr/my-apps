@@ -8,6 +8,8 @@ import {
 import { AnniversariesView } from "./AnniversariesView";
 
 export const dynamic = "force-dynamic";
+// Bulk "share my list" fans out one calendar sync per anniversary.
+export const maxDuration = 60;
 
 async function load(): Promise<{
   ready: boolean;

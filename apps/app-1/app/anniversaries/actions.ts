@@ -139,6 +139,59 @@ export async function addMemberAction(input: {
   }
 }
 
+export async function bulkShareAction(input: {
+  email: string;
+  items: { id: string; name: string; type: AnniversaryType }[];
+  notify: boolean;
+  locale: Locale;
+}): Promise<
+  ActionResult<{
+    added: number;
+    already: number;
+    failed: number;
+    rateLimited: boolean;
+  }>
+> {
+  try {
+    const viewer = await getCurrentUserEmail();
+    if (!viewer) return { ok: false, error: "not-signed-in" };
+    if (!EMAIL_RE.test(input.email.trim())) {
+      return { ok: false, error: "email-invalid" };
+    }
+    if (input.items.length === 0) return { ok: false, error: "nothing-selected" };
+
+    let added = 0;
+    let already = 0;
+    let failed = 0;
+    let rateLimited = false;
+
+    for (const item of input.items) {
+      const summary = eventSummaryFor(input.locale, item.type, item.name);
+      try {
+        const result = await addMember(
+          { id: item.id, email: input.email, notify: input.notify, summary },
+          viewer,
+        );
+        if (result.added) added++;
+        else if (result.already) already++;
+        else failed++;
+      } catch (error) {
+        if (error instanceof CalendarRateLimitError) {
+          rateLimited = true;
+          break;
+        }
+        console.error(`[anniversaries] bulk share failed for ${item.id}:`, error);
+        failed++;
+      }
+    }
+
+    refreshAnniversaries();
+    return { ok: true, data: { added, already, failed, rateLimited } };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
 export async function updatePersonAction(input: {
   id: string;
   /** Current form values — always sent so the title can be recomputed. */
