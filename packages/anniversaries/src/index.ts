@@ -21,6 +21,7 @@ export {
   NoSuchHebrewDateError,
   CalendarNotConfiguredError,
   CalendarRateLimitError,
+  DatabaseNotConfiguredError,
   StoreNotConfiguredError,
   ProdSyncNotConfiguredError,
   type AddAnniversaryInput,

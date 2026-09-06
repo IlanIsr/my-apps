@@ -33,10 +33,12 @@ export type ActionResult<T = undefined> =
     };
 
 function fail(error: unknown): { ok: false; error: string } {
-  if (
-    error instanceof CalendarNotConfiguredError ||
-    error instanceof StoreNotConfiguredError
-  ) {
+  if (error instanceof StoreNotConfiguredError) {
+    console.error("[anniversaries] database not configured:", error);
+    return { ok: false, error: "db-not-configured" };
+  }
+  if (error instanceof CalendarNotConfiguredError) {
+    console.error("[anniversaries] calendar not configured:", error);
     return { ok: false, error: "not-configured" };
   }
   if (error instanceof NoSuchHebrewDateError) {
@@ -45,7 +47,10 @@ function fail(error: unknown): { ok: false; error: string } {
   if (error instanceof CalendarRateLimitError) {
     return { ok: false, error: "rate-limited" };
   }
-  return { ok: false, error: error instanceof Error ? error.message : "unknown" };
+  return {
+    ok: false,
+    error: error instanceof Error ? error.message : "unknown",
+  };
 }
 
 function refreshAnniversaries(id?: string) {

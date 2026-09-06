@@ -1,31 +1,32 @@
 /**
- * Firestore (source of truth) access for anniversaries, via the Firebase Admin
- * SDK. Server-only. Targets a **named** database (`FIREBASE_DATABASE_ID`,
- * default `app-1`), not `(default)`.
+ * Persistence for anniversaries — Neon / Postgres via Drizzle. Server-only.
  *
- * Admin SDK — not the client SDK + security rules pattern used elsewhere in the
- * repo — because auth here is Clerk (not Firebase Auth) and every call already
- * runs inside an authenticated server action.
+ * `persons` is the source of truth; Google Calendar is a sync target (see
+ * `calendar.ts`). This module owns *only* storage: no calendar, no auth, no
+ * i18n. Multi-table writes go through `db.batch(...)`, which Neon runs as one
+ * transaction, so a person and its members / events never land half-written.
  */
 
-import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
-import {
-  FieldValue,
-  getFirestore,
-  type DocumentData,
-  type Firestore,
-} from "firebase-admin/firestore";
+import { eq } from "drizzle-orm";
 
 import type { HebrewMonthKey } from "@repo/hebcal";
 
+import { db, dbFor, DatabaseNotConfiguredError, type Db } from "./db/client";
+import {
+  personEvents,
+  personMembers,
+  persons,
+  type PersonEventRow,
+  type PersonRow,
+} from "./db/schema";
 import { anniversaryKey, type AnniversaryType } from "./person";
 
-export class StoreNotConfiguredError extends Error {
-  constructor() {
-    super("firestore-not-configured");
-    this.name = "StoreNotConfiguredError";
-  }
-}
+export { DatabaseNotConfiguredError } from "./db/client";
+/**
+ * Back-compat alias. Historically the store was Firestore and threw
+ * `StoreNotConfiguredError`; callers still catch that name.
+ */
+export { DatabaseNotConfiguredError as StoreNotConfiguredError } from "./db/client";
 
 /** A stored event — carries bookkeeping the app-facing `AnniversaryEvent` hides. */
 export type StoredEvent = {
@@ -75,220 +76,222 @@ export type PersonPatch = Partial<{
   events: StoredEvent[];
 }>;
 
-const COLLECTION = "persons";
-const APP_NAME = "anniversaries";
+// --- config ---
 
-let cachedDb: Firestore | null = null;
-
-/** Names of the Firestore env vars that are missing, if any. */
+/** Names of the store env vars that are missing, if any. */
 export function storeConfigIssues(): string[] {
-  return [
-    !process.env.FIREBASE_PROJECT_ID && "FIREBASE_PROJECT_ID",
-    !process.env.FIREBASE_CLIENT_EMAIL && "FIREBASE_CLIENT_EMAIL",
-    !process.env.FIREBASE_PRIVATE_KEY && "FIREBASE_PRIVATE_KEY",
-  ].filter((v): v is string => Boolean(v));
+  return process.env.DATABASE_URL ? [] : ["DATABASE_URL"];
 }
 
 export function isStoreConfigured(): boolean {
   return storeConfigIssues().length === 0;
 }
 
-function db(): Firestore {
-  if (cachedDb) return cachedDb;
-
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new StoreNotConfiguredError();
-  }
-  const databaseId = process.env.FIREBASE_DATABASE_ID ?? "app-1";
-
-  const app: App =
-    getApps().find((a) => a.name === APP_NAME) ??
-    initializeApp(
-      { credential: cert({ projectId, clientEmail, privateKey }) },
-      APP_NAME,
-    );
-  cachedDb = getFirestore(app, databaseId);
-  return cachedDb;
-}
-
-/** The project id this deployment's Firestore lives in. */
-export function currentProjectId(): string | undefined {
-  return process.env.FIREBASE_PROJECT_ID;
-}
-
-// --- reading another project's Firestore (prod → pre-prod data sync) ---
-
-export type FirestoreCreds = {
-  projectId: string;
-  clientEmail: string;
-  privateKey: string;
-  databaseId: string;
-};
-
-export type RawPersonDoc = { id: string; data: DocumentData };
-
-/**
- * Read-only credentials for a *source* Firestore (production), from
- * `PROD_FIREBASE_*`. `null` unless all three are set — which is only the case
- * on the pre-prod backend, so the prod-sync feature is naturally pre-prod-only.
- */
-export function prodSourceCreds(): FirestoreCreds | null {
-  const projectId = process.env.PROD_FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.PROD_FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.PROD_FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-  if (!projectId || !clientEmail || !privateKey) return null;
-  return {
-    projectId,
-    clientEmail,
-    privateKey,
-    databaseId: process.env.PROD_FIREBASE_DATABASE_ID ?? "app-1",
-  };
-}
-
-const SOURCE_APP_NAME = "anniversaries-source";
-
-function sourceDb(creds: FirestoreCreds): Firestore {
-  const app: App =
-    getApps().find((a) => a.name === SOURCE_APP_NAME) ??
-    initializeApp(
-      {
-        credential: cert({
-          projectId: creds.projectId,
-          clientEmail: creds.clientEmail,
-          privateKey: creds.privateKey,
-        }),
-      },
-      SOURCE_APP_NAME,
-    );
-  return getFirestore(app, creds.databaseId);
-}
-
-/** Every `persons` document from a source Firestore, raw (timestamps intact). */
-export async function listRawPersonsFrom(
-  creds: FirestoreCreds,
-): Promise<RawPersonDoc[]> {
-  const snap = await sourceDb(creds).collection(COLLECTION).get();
-  return snap.docs.map((d) => ({ id: d.id, data: d.data() }));
+/** This deployment's own Postgres connection string, if set. */
+export function currentDatabaseUrl(): string | undefined {
+  return process.env.DATABASE_URL;
 }
 
 /**
- * Make this deployment's `persons` collection an exact mirror of `docs`:
- * overwrite matching ids, delete the rest. Used only by the prod-sync feature.
+ * A *source* Postgres connection string (production), from `PROD_DATABASE_URL`.
+ * `null` unless set — which is only the case on the pre-prod deployment, so the
+ * prod-sync feature is naturally pre-prod-only.
  */
-export async function replaceAllPersons(
-  docs: RawPersonDoc[],
-): Promise<{ written: number; deleted: number }> {
-  const col = db().collection(COLLECTION);
-  const existing = await col.get();
-  const keep = new Set(docs.map((d) => d.id));
-
-  let deleted = 0;
-  for (const d of existing.docs) {
-    if (!keep.has(d.id)) {
-      await d.ref.delete();
-      deleted++;
-    }
-  }
-  for (const d of docs) await col.doc(d.id).set(d.data);
-  return { written: docs.length, deleted };
+export function prodDatabaseUrl(): string | null {
+  return process.env.PROD_DATABASE_URL ?? null;
 }
 
-function toStoredEvent(raw: DocumentData): StoredEvent {
+// --- row <-> record mapping ---
+
+type BatchStmt = Parameters<Db["batch"]>[0][number];
+
+async function runBatch(stmts: BatchStmt[]): Promise<void> {
+  if (stmts.length === 0) return;
+  await db().batch(stmts as [BatchStmt, ...BatchStmt[]]);
+}
+
+function lowerUnique(emails: string[]): string[] {
+  return [
+    ...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)),
+  ];
+}
+
+function toStoredEvent(row: PersonEventRow): StoredEvent {
   return {
-    year: Number(raw.year) || 0,
-    date: String(raw.date ?? ""),
-    time: String(raw.time ?? ""),
-    googleEventId: String(raw.googleEventId ?? ""),
-    htmlLink: String(raw.htmlLink ?? ""),
-    manual: raw.manual === true ? true : undefined,
+    year: row.year,
+    date: row.date,
+    time: row.time,
+    googleEventId: row.googleEventId,
+    htmlLink: row.htmlLink,
+    manual: row.manual ? true : undefined,
   };
 }
 
-function toRecord(id: string, data: DocumentData): PersonRecord {
+function toRecord(
+  p: PersonRow,
+  memberEmails: string[],
+  eventRows: PersonEventRow[],
+): PersonRecord {
+  // Dedupe events by Hebrew year (last row wins) — matches the Map semantics the
+  // orchestration layer already relies on.
+  const byYear = new Map<number, StoredEvent>();
+  for (const row of eventRows) byYear.set(row.year, toStoredEvent(row));
+
   return {
-    id,
-    name: String(data.name ?? ""),
-    type: data.type === "yahrzeit" ? "yahrzeit" : "birthday",
-    hebrewName: data.hebrewName ? String(data.hebrewName) : undefined,
-    origin: data.origin ? String(data.origin) : undefined,
-    hebYear: Number(data.hebYear) || undefined,
-    hebDate: {
-      day: Number(data.hebDay) || 0,
-      month: String(data.hebMonth ?? "") as HebrewMonthKey,
-    },
-    key: String(data.key ?? ""),
-    members: Array.isArray(data.members)
-      ? (data.members as unknown[]).map((m) => String(m))
-      : [],
-    events: Array.isArray(data.events)
-      ? (data.events as DocumentData[]).map(toStoredEvent)
-      : [],
-    createdBy: String(data.createdBy ?? ""),
+    id: p.id,
+    name: p.name,
+    type: p.type === "yahrzeit" ? "yahrzeit" : "birthday",
+    hebrewName: p.hebrewName ?? undefined,
+    origin: p.origin ?? undefined,
+    hebYear: p.hebYear ?? undefined,
+    hebDate: { day: p.hebDay, month: p.hebMonth as HebrewMonthKey },
+    key: p.key,
+    members: [...new Set(memberEmails.map((e) => e.toLowerCase()))].sort(),
+    events: [...byYear.values()].sort((a, b) => a.year - b.year),
+    createdBy: p.createdBy,
   };
 }
 
-function eventToData(e: StoredEvent): DocumentData {
-  const data: DocumentData = {
+function personValues(input: {
+  id: string;
+  name: string;
+  type: AnniversaryType;
+  hebrewName?: string;
+  origin?: string;
+  hebYear?: number;
+  hebDate: { day: number; month: string };
+  key: string;
+  createdBy: string;
+}) {
+  return {
+    id: input.id,
+    name: input.name,
+    type: input.type,
+    hebrewName: input.hebrewName ?? null,
+    origin: input.origin ?? null,
+    hebYear: input.hebYear ?? null,
+    hebDay: input.hebDate.day,
+    hebMonth: input.hebDate.month,
+    key: input.key,
+    createdBy: input.createdBy,
+  };
+}
+
+function eventValues(personId: string, e: StoredEvent) {
+  return {
+    personId,
     year: e.year,
     date: e.date,
     time: e.time,
     googleEventId: e.googleEventId,
     htmlLink: e.htmlLink,
+    manual: e.manual ?? false,
   };
-  if (e.manual) data.manual = true;
-  return data;
+}
+
+// --- reads ---
+
+async function listPersonsWith(d: Db): Promise<PersonRecord[]> {
+  const [personRows, memberRows, eventRows] = await Promise.all([
+    d.select().from(persons),
+    d.select().from(personMembers),
+    d.select().from(personEvents).orderBy(personEvents.id),
+  ]);
+
+  const membersByPerson = new Map<string, string[]>();
+  for (const m of memberRows) {
+    const list = membersByPerson.get(m.personId) ?? [];
+    list.push(m.email);
+    membersByPerson.set(m.personId, list);
+  }
+  const eventsByPerson = new Map<string, PersonEventRow[]>();
+  for (const e of eventRows) {
+    const list = eventsByPerson.get(e.personId) ?? [];
+    list.push(e);
+    eventsByPerson.set(e.personId, list);
+  }
+
+  return personRows.map((p) =>
+    toRecord(
+      p,
+      membersByPerson.get(p.id) ?? [],
+      eventsByPerson.get(p.id) ?? [],
+    ),
+  );
+}
+
+async function hydrate(d: Db, p: PersonRow): Promise<PersonRecord> {
+  const [memberRows, eventRows] = await Promise.all([
+    d.select().from(personMembers).where(eq(personMembers.personId, p.id)),
+    d
+      .select()
+      .from(personEvents)
+      .where(eq(personEvents.personId, p.id))
+      .orderBy(personEvents.id),
+  ]);
+  return toRecord(
+    p,
+    memberRows.map((m) => m.email),
+    eventRows,
+  );
 }
 
 export async function listPersons(): Promise<PersonRecord[]> {
-  const snap = await db().collection(COLLECTION).get();
-  return snap.docs.map((d) => toRecord(d.id, d.data()));
+  return listPersonsWith(db());
+}
+
+/** Every person from another deployment's database (prod → pre-prod sync). */
+export async function listPersonsFrom(
+  connectionString: string,
+): Promise<PersonRecord[]> {
+  return listPersonsWith(dbFor(connectionString));
 }
 
 export async function getPerson(id: string): Promise<PersonRecord | null> {
-  const doc = await db().collection(COLLECTION).doc(id).get();
-  const data = doc.data();
-  return data ? toRecord(doc.id, data) : null;
+  const [row] = await db().select().from(persons).where(eq(persons.id, id));
+  return row ? hydrate(db(), row) : null;
 }
 
 export async function findByKey(key: string): Promise<PersonRecord | null> {
-  const snap = await db()
-    .collection(COLLECTION)
-    .where("key", "==", key)
-    .limit(1)
-    .get();
-  const doc = snap.docs[0];
-  return doc ? toRecord(doc.id, doc.data()) : null;
+  const [row] = await db()
+    .select()
+    .from(persons)
+    .where(eq(persons.key, key))
+    .orderBy(persons.createdAt)
+    .limit(1);
+  return row ? hydrate(db(), row) : null;
 }
 
+// --- writes ---
+
 export async function createPerson(input: NewPerson): Promise<PersonRecord> {
-  const ref = db().collection(COLLECTION).doc();
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+
+  const id = crypto.randomUUID();
   const key = anniversaryKey(
     input.name,
     input.hebDate.day,
     input.hebDate.month,
     input.type,
   );
-  const data: DocumentData = {
-    name: input.name,
-    type: input.type,
-    key,
-    hebDay: input.hebDate.day,
-    hebMonth: input.hebDate.month,
-    members: input.members,
-    events: [],
-    createdBy: input.createdBy,
-    createdAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
-  };
-  if (input.hebrewName) data.hebrewName = input.hebrewName;
-  if (input.origin) data.origin = input.origin;
-  if (input.hebYear) data.hebYear = input.hebYear;
-  await ref.set(data);
+  const members = lowerUnique(input.members);
+
+  const stmts: BatchStmt[] = [
+    db()
+      .insert(persons)
+      .values(personValues({ ...input, id, key })),
+  ];
+  if (members.length > 0) {
+    stmts.push(
+      db()
+        .insert(personMembers)
+        .values(members.map((email) => ({ personId: id, email }))),
+    );
+  }
+  await runBatch(stmts);
+
   return {
-    id: ref.id,
+    id,
     name: input.name,
     type: input.type,
     hebrewName: input.hebrewName,
@@ -296,7 +299,7 @@ export async function createPerson(input: NewPerson): Promise<PersonRecord> {
     hebYear: input.hebYear,
     hebDate: input.hebDate,
     key,
-    members: input.members,
+    members,
     events: [],
     createdBy: input.createdBy,
   };
@@ -306,14 +309,113 @@ export async function updatePerson(
   id: string,
   patch: PersonPatch,
 ): Promise<void> {
-  const data: DocumentData = { updatedAt: FieldValue.serverTimestamp() };
-  if (patch.hebrewName !== undefined) data.hebrewName = patch.hebrewName;
-  if (patch.origin !== undefined) data.origin = patch.origin;
-  if (patch.members !== undefined) data.members = patch.members;
-  if (patch.events !== undefined) data.events = patch.events.map(eventToData);
-  await db().collection(COLLECTION).doc(id).update(data);
+  const set: Partial<typeof persons.$inferInsert> = { updatedAt: new Date() };
+  if (patch.hebrewName !== undefined) set.hebrewName = patch.hebrewName || null;
+  if (patch.origin !== undefined) set.origin = patch.origin || null;
+
+  const stmts: BatchStmt[] = [
+    db().update(persons).set(set).where(eq(persons.id, id)),
+  ];
+
+  if (patch.members !== undefined) {
+    const members = lowerUnique(patch.members);
+    stmts.push(
+      db().delete(personMembers).where(eq(personMembers.personId, id)),
+    );
+    if (members.length > 0) {
+      stmts.push(
+        db()
+          .insert(personMembers)
+          .values(members.map((email) => ({ personId: id, email }))),
+      );
+    }
+  }
+
+  if (patch.events !== undefined) {
+    stmts.push(db().delete(personEvents).where(eq(personEvents.personId, id)));
+    if (patch.events.length > 0) {
+      stmts.push(
+        db()
+          .insert(personEvents)
+          .values(patch.events.map((e) => eventValues(id, e))),
+      );
+    }
+  }
+
+  await runBatch(stmts);
 }
 
 export async function deletePerson(id: string): Promise<void> {
-  await db().collection(COLLECTION).doc(id).delete();
+  await db().delete(persons).where(eq(persons.id, id));
+}
+
+/**
+ * Insert-or-replace a whole person record by id — members and events included.
+ * Used by the one-time Firestore migration and the prod → pre-prod sync. Keeps
+ * the id (and every `googleEventId`) exactly as given.
+ */
+export async function upsertPerson(record: PersonRecord): Promise<void> {
+  const values = personValues(record);
+  const stmts: BatchStmt[] = [
+    db()
+      .insert(persons)
+      .values(values)
+      .onConflictDoUpdate({
+        target: persons.id,
+        set: {
+          name: values.name,
+          type: values.type,
+          hebrewName: values.hebrewName,
+          origin: values.origin,
+          hebYear: values.hebYear,
+          hebDay: values.hebDay,
+          hebMonth: values.hebMonth,
+          key: values.key,
+          createdBy: values.createdBy,
+          updatedAt: new Date(),
+        },
+      }),
+    db().delete(personMembers).where(eq(personMembers.personId, record.id)),
+    db().delete(personEvents).where(eq(personEvents.personId, record.id)),
+  ];
+
+  const members = lowerUnique(record.members);
+  if (members.length > 0) {
+    stmts.push(
+      db()
+        .insert(personMembers)
+        .values(members.map((email) => ({ personId: record.id, email }))),
+    );
+  }
+  if (record.events.length > 0) {
+    stmts.push(
+      db()
+        .insert(personEvents)
+        .values(record.events.map((e) => eventValues(record.id, e))),
+    );
+  }
+
+  await runBatch(stmts);
+}
+
+/**
+ * Make this deployment's `persons` an exact mirror of `records`: upsert every
+ * one, delete the rest. Used only by the prod-sync feature.
+ */
+export async function replaceAllPersons(
+  records: PersonRecord[],
+): Promise<{ written: number; deleted: number }> {
+  const existing = await db().select({ id: persons.id }).from(persons);
+  const keep = new Set(records.map((r) => r.id));
+
+  let deleted = 0;
+  for (const row of existing) {
+    if (!keep.has(row.id)) {
+      await deletePerson(row.id);
+      deleted++;
+    }
+  }
+  for (const record of records) await upsertPerson(record);
+
+  return { written: records.length, deleted };
 }

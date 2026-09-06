@@ -105,11 +105,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
 
     // Hebrew year: derived from the Gregorian date, or the optional field.
     const hebYearValue = fromGregorian
-      ? hebrewYearForGregorian(
-          Number(gYear),
-          Number(gMonth) + 1,
-          Number(gDay),
-        )
+      ? hebrewYearForGregorian(Number(gYear), Number(gMonth) + 1, Number(gDay))
       : hebYear.trim()
         ? Number(hebYear.trim())
         : undefined;
@@ -118,9 +114,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const badEmail = shared.find(
-      (e) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e),
-    );
+    const badEmail = shared.find((e) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
     if (badEmail) {
       setError(t.emailInvalid(badEmail));
       return;
@@ -144,7 +138,8 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
 
     if (!result.ok) {
       setError(
-        result.error === "not-configured"
+        result.error === "not-configured" ||
+          result.error === "db-not-configured"
           ? t.notConfigured
           : result.error === "no-such-date"
             ? t.noSuchDate

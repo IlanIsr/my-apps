@@ -7,8 +7,9 @@ env:
       - BUILD
       - RUNTIME
 
-  - variable: FIREBASE_PRIVATE_KEY
-    secret: FIREBASE_PRIVATE_KEY
+  # NOTE: app-1 now deploys on Vercel (Neon Postgres via DATABASE_URL). This
+  # Firebase App Hosting config is kept for reference only and is no longer the
+  # deploy target — the store no longer uses Firebase.
 
   - variable: GOOGLE_CLIENT_SECRET
     secret: GOOGLE_CLIENT_SECRET

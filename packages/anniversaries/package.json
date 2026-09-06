@@ -10,20 +10,30 @@
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "migrate-firestore-to-neon": "node --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/migrate-firestore-to-neon.ts",
+    "verify-migration": "node --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/verify-migration.ts",
     "migrate": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/migrate-to-firestore.ts",
     "clear-calendar": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/clear-calendar.ts",
     "delete-person": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/delete-person.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "@repo/hebcal": "workspace:*",
-    "firebase-admin": "^14.3.0",
+    "drizzle-orm": "^0.44.5",
     "google-auth-library": "^10.5.0"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "26.3.0",
+    "dotenv": "^16.4.7",
+    "drizzle-kit": "^0.31.5",
     "eslint": "10.9.1",
+    "firebase-admin": "^14.3.0",
     "globals": "17.11.0",
     "tsx": "^4.19.2",
     "typescript": "7.0.2"

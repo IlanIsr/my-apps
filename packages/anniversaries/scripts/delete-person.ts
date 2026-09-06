@@ -42,9 +42,7 @@ async function main() {
     process.exit(1);
   }
   if (!isStoreConfigured()) {
-    console.error(
-      "FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY not set.",
-    );
+    console.error("DATABASE_URL not set — cannot reach the Neon database.");
     process.exit(1);
   }
 

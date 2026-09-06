@@ -1,5 +1,10 @@
 /**
- * One-time migration: Google-Calendar-as-source-of-truth → Firestore.
+ * DEPRECATED / historical: the original Google-Calendar → Firestore migration.
+ * The store is now Neon / Postgres (see `migrate-firestore-to-neon.ts`); the
+ * `store.ts` functions this script calls now write to Postgres, not Firestore.
+ * Kept for reference only — do not run.
+ *
+ * One-time migration: Google-Calendar-as-source-of-truth → the store.
  *
  * Reads every event on the shared bot calendar, groups the ones carrying the
  * old JSON description tag into `persons` documents, and (with --commit) writes
@@ -79,9 +84,7 @@ type Group = {
 
 async function main() {
   if (!isStoreConfigured()) {
-    console.error(
-      "FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY not set.",
-    );
+    console.error("DATABASE_URL not set — cannot reach the store.");
     process.exit(1);
   }
 

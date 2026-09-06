@@ -28,23 +28,27 @@ import {
 } from "./person";
 import {
   createPerson,
-  currentProjectId,
+  currentDatabaseUrl,
   findByKey,
   getPerson,
   isStoreConfigured,
   listPersons,
-  listRawPersonsFrom,
-  prodSourceCreds,
+  listPersonsFrom,
+  prodDatabaseUrl,
   replaceAllPersons,
   storeConfigIssues,
   updatePerson,
-  StoreNotConfiguredError,
+  DatabaseNotConfiguredError,
   type PersonRecord,
   type StoredEvent,
 } from "./store";
 
 export { CalendarNotConfiguredError, CalendarRateLimitError } from "./calendar";
-export { StoreNotConfiguredError } from "./store";
+export {
+  DatabaseNotConfiguredError,
+  // Back-compat alias — callers historically caught `StoreNotConfiguredError`.
+  StoreNotConfiguredError,
+} from "./store";
 
 export class NoSuchHebrewDateError extends Error {
   constructor() {
@@ -171,12 +175,15 @@ function applySynced(
   });
 }
 
-/** Whether both the store and the shared calendar are configured and reachable. */
+/**
+ * Whether the anniversaries feature is available: the Postgres store is
+ * configured (`DATABASE_URL`) and the shared Google Calendar is reachable.
+ */
 export async function isCalendarConfigured(): Promise<boolean> {
   const missing = storeConfigIssues();
   if (missing.length > 0) {
     console.error(
-      `[anniversaries] Firestore not configured: missing ${missing.join(", ")}`,
+      `[anniversaries] Database not configured: missing ${missing.join(", ")}`,
     );
     return false;
   }
@@ -240,7 +247,7 @@ export async function addAnniversary(
   input: AddAnniversaryInput,
   viewerEmail: string,
 ): Promise<{ created: number; joined: boolean }> {
-  if (!isStoreConfigured()) throw new StoreNotConfiguredError();
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
 
   const email = viewerEmail.toLowerCase();
   const shared = unique(input.sharedEmails);
@@ -421,11 +428,11 @@ export class ProdSyncNotConfiguredError extends Error {
 }
 
 /**
- * Whether this deployment can pull data from production — i.e. `PROD_FIREBASE_*`
- * is set and its own store is configured. Only true on the pre-prod backend.
+ * Whether this deployment can pull data from production — i.e. `PROD_DATABASE_URL`
+ * is set and its own store is configured. Only true on the pre-prod deployment.
  */
 export function canSyncFromProd(): boolean {
-  return prodSourceCreds() !== null && isStoreConfigured();
+  return prodDatabaseUrl() !== null && isStoreConfigured();
 }
 
 /**
@@ -437,13 +444,18 @@ export async function syncFromProd(): Promise<{
   written: number;
   deleted: number;
 }> {
-  const creds = prodSourceCreds();
-  if (!creds) throw new ProdSyncNotConfiguredError();
-  if (!isStoreConfigured()) throw new StoreNotConfiguredError();
-  if (creds.projectId === currentProjectId()) {
-    throw new Error("prod-sync: source and target are the same project");
+  const sourceUrl = prodDatabaseUrl();
+  if (!sourceUrl) throw new ProdSyncNotConfiguredError();
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+  if (sourceUrl === currentDatabaseUrl()) {
+    throw new Error("prod-sync: source and target are the same database");
   }
 
-  const source = await listRawPersonsFrom(creds);
-  return replaceAllPersons(source);
+  try {
+    const source = await listPersonsFrom(sourceUrl);
+    return await replaceAllPersons(source);
+  } catch (error) {
+    console.error("[anniversaries] prod → pre-prod sync failed:", error);
+    throw error;
+  }
 }
