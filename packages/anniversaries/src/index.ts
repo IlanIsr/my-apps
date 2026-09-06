@@ -16,6 +16,7 @@ export {
   addAnniversary,
   leaveAnniversary,
   updateEvent,
+  updateAnniversary,
   canSyncFromProd,
   syncFromProd,
   NoSuchHebrewDateError,
@@ -26,4 +27,5 @@ export {
   ProdSyncNotConfiguredError,
   type AddAnniversaryInput,
   type UpdateEventInput,
+  type UpdatePersonInput,
 } from "./service";

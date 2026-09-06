@@ -456,6 +456,87 @@ export async function updateEvent(input: UpdateEventInput): Promise<void> {
   await updatePerson(input.id, { events });
 }
 
+export type UpdatePersonInput = {
+  id: string;
+  /** New display name. Omit to leave unchanged. */
+  name?: string;
+  type?: AnniversaryType;
+  /** `""` clears it. Omit to leave unchanged. */
+  hebrewName?: string;
+  /** `""` clears it. Omit to leave unchanged. */
+  origin?: string;
+  /** `0` / `NaN` clears it. Omit to leave unchanged. */
+  hebYear?: number;
+  /**
+   * Pre-translated event title for the (possibly new) name + type — used only
+   * if name or type actually changed.
+   */
+  summary: string;
+};
+
+/**
+ * Edit a person's details. Name / type changes recompute the dedup `key`, the
+ * calendar event titles and (for type) the colour — so those trigger a calendar
+ * re-sync. hebrewName / origin / hebYear are store-only. A member (or admin) may
+ * edit; anyone else is a no-op.
+ */
+export async function updateAnniversary(
+  input: UpdatePersonInput,
+  viewerEmail: string,
+): Promise<{ updated: boolean }> {
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+
+  const person = await getPerson(input.id);
+  if (!person) return { updated: false };
+
+  const email = viewerEmail.toLowerCase();
+  if (!person.members.includes(email) && !isAnniversariesAdmin(viewerEmail)) {
+    return { updated: false };
+  }
+
+  const name = input.name?.trim() || person.name;
+  const type = input.type ?? person.type;
+  const nameOrTypeChanged = name !== person.name || type !== person.type;
+
+  const patch: Parameters<typeof updatePerson>[1] = {};
+  if (name !== person.name) patch.name = name;
+  if (type !== person.type) patch.type = type;
+  if (nameOrTypeChanged) {
+    patch.key = anniversaryKey(name, person.hebDate.day, person.hebDate.month, type);
+  }
+  if (input.hebrewName !== undefined) {
+    patch.hebrewName = input.hebrewName.trim() || null;
+  }
+  if (input.origin !== undefined) patch.origin = input.origin.trim() || null;
+  if (input.hebYear !== undefined) {
+    patch.hebYear = Number.isFinite(input.hebYear) && input.hebYear > 0
+      ? Math.floor(input.hebYear)
+      : null;
+  }
+
+  if (Object.keys(patch).length === 0) return { updated: false };
+
+  await updatePerson(input.id, patch);
+
+  if (nameOrTypeChanged) {
+    const sync = await syncPersonEvents({
+      personId: person.id,
+      summary: input.summary,
+      summaryFallback: name,
+      description: "",
+      colorId: colorIdFor(type),
+      members: person.members,
+      events: person.events.map(toDesired),
+    });
+    await updatePerson(input.id, {
+      events: applySynced(person.events, sync.events),
+    });
+    if (sync.rateLimited) throw new CalendarRateLimitError();
+  }
+
+  return { updated: true };
+}
+
 // --- prod → pre-prod data sync (admin only) ---
 
 export class ProdSyncNotConfiguredError extends Error {

@@ -71,8 +71,16 @@ export type NewPerson = {
 };
 
 export type PersonPatch = Partial<{
-  hebrewName: string;
-  origin: string;
+  name: string;
+  type: AnniversaryType;
+  /** Pass `null` to clear. */
+  hebrewName: string | null;
+  /** Pass `null` to clear. */
+  origin: string | null;
+  /** Pass `null` to clear. */
+  hebYear: number | null;
+  /** Recomputed by the service when name/type change. */
+  key: string;
   members: string[];
   events: StoredEvent[];
 }>;
@@ -311,8 +319,12 @@ export async function updatePerson(
   patch: PersonPatch,
 ): Promise<void> {
   const set: Partial<typeof persons.$inferInsert> = { updatedAt: new Date() };
+  if (patch.name !== undefined) set.name = patch.name;
+  if (patch.type !== undefined) set.type = patch.type;
+  if (patch.key !== undefined) set.key = patch.key;
   if (patch.hebrewName !== undefined) set.hebrewName = patch.hebrewName || null;
   if (patch.origin !== undefined) set.origin = patch.origin || null;
+  if (patch.hebYear !== undefined) set.hebYear = patch.hebYear ?? null;
 
   const stmts: BatchStmt[] = [
     db().update(persons).set(set).where(eq(persons.id, id)),
