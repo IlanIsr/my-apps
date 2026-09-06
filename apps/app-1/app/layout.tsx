@@ -44,8 +44,16 @@ const jetbrainsMono = JetBrains_Mono({
 
 const fontVars = `${spectral.variable} ${frankRuhl.variable} ${assistant.variable} ${jetbrainsMono.variable}`;
 
+// Non-prod deploys get a tab-title prefix so they're obvious next to prod.
+const ENV_TITLE_PREFIX =
+  process.env.VERCEL_ENV === "preview"
+    ? "[preprod] "
+    : process.env.VERCEL_ENV === "production"
+      ? ""
+      : "[dev] ";
+
 export const metadata: Metadata = {
-  title: "Hebrew Anniversaries",
+  title: `${ENV_TITLE_PREFIX}Hebrew Anniversaries`,
   description: "Hebrew-calendar anniversaries in your Google Calendar.",
 };
 

@@ -11,7 +11,8 @@
     "GOOGLE_CALENDAR_ID",
     "DATABASE_URL",
     "PROD_DATABASE_URL",
-    "ANNIVERSARIES_ADMIN_EMAILS"
+    "ANNIVERSARIES_ADMIN_EMAILS",
+    "VERCEL_ENV"
   ],
   "tasks": {
     "build": {
