@@ -419,6 +419,59 @@ export async function leaveAnniversary(
   return { removed: 1, deleted: 0 };
 }
 
+export type AddMemberInput = {
+  id: string;
+  /** The email to add to the family list. */
+  email: string;
+  /** Email them a Google Calendar invite (`sendUpdates=all`). */
+  notify: boolean;
+  /** Pre-translated event title. */
+  summary: string;
+};
+
+/**
+ * Add one more person to an existing anniversary's family list and (re)sync the
+ * calendar so they're invited. A member (or admin) may do this. Returns whether
+ * the address was actually added (`already` = it was already on the list).
+ */
+export async function addMember(
+  input: AddMemberInput,
+  viewerEmail: string,
+): Promise<{ added: boolean; already: boolean }> {
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+
+  const viewer = viewerEmail.toLowerCase();
+  const target = input.email.trim().toLowerCase();
+  const person = await getPerson(input.id);
+  if (!person || !target) return { added: false, already: false };
+  if (!person.members.includes(viewer) && !isAnniversariesAdmin(viewerEmail)) {
+    return { added: false, already: false };
+  }
+  if (person.members.includes(target)) return { added: false, already: true };
+
+  const members = unique([...person.members, target]);
+  const sync = await syncPersonEvents({
+    personId: person.id,
+    summary: input.summary,
+    summaryFallback: person.name,
+    description: "",
+    colorId: colorIdFor(person.type),
+    members,
+    events: person.events.map(toDesired),
+    notify: input.notify,
+  });
+  const finalMembers = members.filter((m) => !sync.declined.includes(m));
+
+  await updatePerson(person.id, {
+    members: finalMembers,
+    events: applySynced(person.events, sync.events),
+  });
+  await recordMembers([target], viewer, "", input.notify);
+  if (sync.rateLimited) throw new CalendarRateLimitError();
+
+  return { added: finalMembers.includes(target), already: false };
+}
+
 export type UpdateEventInput = {
   /** Person (Firestore) id. */
   id: string;

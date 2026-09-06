@@ -45,4 +45,17 @@ export const anniversaryDetail = {
       "Google Agenda est occupé pour le moment — patientez puis réessayez.",
     error: (message: string) => `Une erreur est survenue : ${message}`,
   },
+  addMemberForm: {
+    label: "Ajouter quelqu’un",
+    placeholder: "quelquun@example.com",
+    notify: "Lui envoyer une invitation agenda",
+    add: "Ajouter",
+    adding: "Ajout…",
+    added: (email: string) => `${email} ajouté.`,
+    already: (email: string) => `${email} est déjà dans cette liste.`,
+    emailInvalid: "Saisissez une adresse email valide.",
+    rateLimited:
+      "Google Agenda est occupé pour le moment — patientez puis réessayez.",
+    error: (message: string) => `Une erreur est survenue : ${message}`,
+  },
 } as const satisfies AnniversaryDetailTexts;

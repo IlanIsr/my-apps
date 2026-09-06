@@ -60,4 +60,17 @@ export const anniversaryDetail = {
       "Google Calendar is busy right now — wait a moment and try again.",
     error: (message: string) => `Something went wrong: ${message}`,
   },
+  addMemberForm: {
+    label: "Add someone",
+    placeholder: "someone@example.com",
+    notify: "Email them a calendar invite",
+    add: "Add",
+    adding: "Adding…",
+    added: (email: string) => `Added ${email}.`,
+    already: (email: string) => `${email} is already on this list.`,
+    emailInvalid: "Enter a valid email address.",
+    rateLimited:
+      "Google Calendar is busy right now — wait a moment and try again.",
+    error: (message: string) => `Something went wrong: ${message}`,
+  },
 } as const satisfies AnniversaryDetailTexts;

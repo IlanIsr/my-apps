@@ -43,4 +43,16 @@ export const anniversaryDetail = {
     rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
     error: (message: string) => `משהו השתבש: ${message}`,
   },
+  addMemberForm: {
+    label: "הוספת אדם",
+    placeholder: "someone@example.com",
+    notify: "לשלוח לו הזמנה ליומן",
+    add: "הוספה",
+    adding: "מוסיף…",
+    added: (email: string) => `${email} נוסף.`,
+    already: (email: string) => `${email} כבר ברשימה הזו.`,
+    emailInvalid: "יש להזין כתובת אימייל תקינה.",
+    rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
+    error: (message: string) => `משהו השתבש: ${message}`,
+  },
 } as const satisfies AnniversaryDetailTexts;
