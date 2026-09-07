@@ -166,7 +166,8 @@ export async function bulkShareAction(input: {
     if (!EMAIL_RE.test(input.email.trim())) {
       return { ok: false, error: "email-invalid" };
     }
-    if (input.items.length === 0) return { ok: false, error: "nothing-selected" };
+    if (input.items.length === 0)
+      return { ok: false, error: "nothing-selected" };
 
     let added = 0;
     let already = 0;
@@ -188,7 +189,10 @@ export async function bulkShareAction(input: {
           rateLimited = true;
           break;
         }
-        console.error(`[anniversaries] bulk share failed for ${item.id}:`, error);
+        console.error(
+          `[anniversaries] bulk share failed for ${item.id}:`,
+          error,
+        );
         failed++;
       }
     }

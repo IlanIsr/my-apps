@@ -1,3 +1,9 @@
+/**
+ * Root layout for app-2 — a placeholder app (its page just prints
+ * `@repo/utils` output). Same Clerk `<AuthProvider>` gate as the others; a
+ * Firestore feature is planned. Stays light (no theme toggle).
+ */
+
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -26,7 +32,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <AuthProvider>
           <header className="flex justify-end p-4">
             <AuthControl />

@@ -4,10 +4,7 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { DEFAULT_LOCALE, isLocale, LOCALE_DIR, type Locale } from "./config";
 import { getDictionary } from "./dictionaries";
-import {
-  LanguageContext,
-  type LanguageContextValue,
-} from "./language-context";
+import { LanguageContext, type LanguageContextValue } from "./language-context";
 
 const STORAGE_KEY = "app-1.locale";
 const CHANGE_EVENT = "app-1:locale-change";

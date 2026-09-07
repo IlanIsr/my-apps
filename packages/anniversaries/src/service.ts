@@ -1,10 +1,11 @@
 /**
- * Orchestration: Firestore is the source of truth, Google Calendar is a sync
- * target. Every mutation writes the store, then reconciles the calendar.
+ * Orchestration: Neon Postgres (via `store.ts`) is the source of truth, Google
+ * Calendar is a sync target. Every mutation writes the store, then reconciles
+ * the calendar, then records the members in `users` (best-effort).
  *
  * This is the API app-1 consumes (via `app/anniversaries/actions.ts`). Callers
- * pass the signed-in user's email + a pre-translated event `summary`; this
- * package does no auth and no i18n.
+ * pass the signed-in user's email + Clerk id + a pre-translated event
+ * `summary`; this package does no auth and no i18n.
  */
 
 import {
@@ -473,7 +474,7 @@ export async function addMember(
 }
 
 export type UpdateEventInput = {
-  /** Person (Firestore) id. */
+  /** `persons.id`. */
   id: string;
   /** Google Calendar event id. */
   eventId: string;
@@ -555,16 +556,22 @@ export async function updateAnniversary(
   if (name !== person.name) patch.name = name;
   if (type !== person.type) patch.type = type;
   if (nameOrTypeChanged) {
-    patch.key = anniversaryKey(name, person.hebDate.day, person.hebDate.month, type);
+    patch.key = anniversaryKey(
+      name,
+      person.hebDate.day,
+      person.hebDate.month,
+      type,
+    );
   }
   if (input.hebrewName !== undefined) {
     patch.hebrewName = input.hebrewName.trim() || null;
   }
   if (input.origin !== undefined) patch.origin = input.origin.trim() || null;
   if (input.hebYear !== undefined) {
-    patch.hebYear = Number.isFinite(input.hebYear) && input.hebYear > 0
-      ? Math.floor(input.hebYear)
-      : null;
+    patch.hebYear =
+      Number.isFinite(input.hebYear) && input.hebYear > 0
+        ? Math.floor(input.hebYear)
+        : null;
   }
 
   if (Object.keys(patch).length === 0) return { updated: false };

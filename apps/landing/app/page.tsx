@@ -1,6 +1,11 @@
-// Hardcoded for now — will be replaced with data from Firestore.
-// In dev the links point at the local dev servers so cross-app navigation
-// (and the shared Clerk session across localhost ports) works end to end.
+/**
+ * The `landing` index page: a static list of links to the other apps.
+ *
+ * The app list is hardcoded for now (to move to Firestore later). In dev the
+ * links point at the local dev servers so cross-app navigation — and the
+ * shared Clerk session across localhost ports — works end to end.
+ */
+
 const isDev = process.env.NODE_ENV === "development";
 
 const apps = [
@@ -25,7 +30,9 @@ export default function Page() {
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center gap-8 px-6 py-16">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">My Apps</h1>
-        <p className="mt-1 opacity-70">A collection of small independent apps.</p>
+        <p className="mt-1 opacity-70">
+          A collection of small independent apps.
+        </p>
       </header>
 
       <ul className="flex flex-col gap-3">

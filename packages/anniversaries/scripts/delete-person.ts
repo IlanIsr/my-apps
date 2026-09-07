@@ -17,7 +17,10 @@ import { deletePerson, isStoreConfigured, listPersons } from "../src/store";
 
 const args = process.argv.slice(2);
 const commit = args.includes("--commit");
-const name = args.filter((a) => !a.startsWith("--")).join(" ").trim();
+const name = args
+  .filter((a) => !a.startsWith("--"))
+  .join(" ")
+  .trim();
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

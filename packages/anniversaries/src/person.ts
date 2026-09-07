@@ -20,11 +20,11 @@ export type AnniversaryEvent = {
 };
 
 /**
- * A person and their anniversary. Backed by a `persons/{id}` Firestore
- * document; the calendar events are a projection of it.
+ * A person and their anniversary. Backed by a `persons` row (+ its
+ * `person_members` / `person_events`); the calendar events are a projection of it.
  */
 export type Anniversary = {
-  /** Firestore document id. */
+  /** `persons.id` — a preserved Firestore doc id for migrated rows, else a UUID. */
   id: string;
   name: string;
   type: AnniversaryType;

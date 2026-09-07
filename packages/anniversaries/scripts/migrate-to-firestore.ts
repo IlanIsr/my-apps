@@ -52,7 +52,9 @@ function today(): string {
 }
 
 function eventDate(event: GoogleEvent): string {
-  return (event.start?.dateTime ?? "").slice(0, 10) || (event.start?.date ?? "");
+  return (
+    (event.start?.dateTime ?? "").slice(0, 10) || (event.start?.date ?? "")
+  );
 }
 
 function eventTime(event: GoogleEvent): string {
