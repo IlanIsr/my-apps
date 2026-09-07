@@ -1,5 +1,6 @@
 import type { CalendarUnavailableTexts } from "@/app/components/anniversary/CalendarUnavailable";
 
+/** French UI strings — shape: {@link CalendarUnavailableTexts}. */
 export const calendarUnavailable = {
   title: "Calendrier des anniversaires indisponible",
   message:

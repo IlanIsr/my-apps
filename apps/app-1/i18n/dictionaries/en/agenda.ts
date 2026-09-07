@@ -15,6 +15,7 @@ function ordinal(n: number): string {
   }
 }
 
+/** English UI strings — shape: {@link AgendaTexts}. */
 export const agenda = {
   title: "Agenda",
   subtitle: "Every upcoming anniversary event, in date order.",

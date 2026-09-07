@@ -17,6 +17,7 @@ const months = {
   Elul: "Elul",
 } as const;
 
+/** English UI strings — shape: {@link ConverterTexts}. */
 export const converter = {
   question: "Do you know the date in Hebrew or Gregorian?",
   gregorian: "Gregorian",

@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * The React context {@link I18nProvider} fills and the `use-language` /
+ * `use-translations` hooks read. Not exported from the `@/i18n` barrel — use
+ * those hooks instead.
+ */
+
 import { createContext, useContext } from "react";
 
 import type { Locale } from "./config";

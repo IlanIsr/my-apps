@@ -10,6 +10,10 @@ import { eventSummary } from "./event-summary";
 import { navbar } from "./navbar";
 import { newAnniversaryHeader } from "./new-anniversary-header";
 
+/**
+ * The assembled English message tree. Each key comes from that feature's
+ * dictionary file and must satisfy the component-owned `XxxTexts` type.
+ */
 export const en = {
   navbar,
   converter,

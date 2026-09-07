@@ -1,5 +1,6 @@
 import type { AnniversariesTexts } from "@/app/components/anniversary/AnniversaryList";
 
+/** Hebrew UI strings — shape: {@link AnniversariesTexts}. */
 export const anniversaries = {
   listPage: {
     title: "ימי שנה עבריים",

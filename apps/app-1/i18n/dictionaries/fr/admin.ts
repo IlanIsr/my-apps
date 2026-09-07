@@ -1,5 +1,6 @@
 import type { AdminTexts } from "@/app/admin/AdminView";
 
+/** French UI strings — shape: {@link AdminTexts}. */
 export const admin = {
   eyebrow: "Compte partagé",
   title: "Admin",

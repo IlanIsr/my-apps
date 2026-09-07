@@ -1,5 +1,6 @@
 import type { NewAnniversaryHeaderTexts } from "@/app/components/anniversary/NewAnniversaryHeader";
 
+/** English UI strings — shape: {@link NewAnniversaryHeaderTexts}. */
 export const newAnniversaryHeader = {
   title: "Add an anniversary",
   subtitle: "Its next years of events go on the shared family calendar.",

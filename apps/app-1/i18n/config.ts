@@ -1,3 +1,10 @@
+/**
+ * Locale constants. **Keep `LOCALES` + the storage key in sync with the inline
+ * `<html lang/dir>` script in `layout.tsx`** — that script runs before this
+ * module loads, so it can't import from here.
+ */
+
+/** The supported UI languages, in picker order. */
 export const LOCALES = ["en", "he", "fr"] as const;
 
 export type Locale = (typeof LOCALES)[number];
@@ -25,6 +32,7 @@ export const LOCALE_LABEL: Record<Locale, string> = {
   fr: "Français",
 };
 
+/** Type guard: is `value` one of the supported locale codes? */
 export function isLocale(value: unknown): value is Locale {
   return (
     typeof value === "string" && (LOCALES as readonly string[]).includes(value)

@@ -2,6 +2,7 @@ import type { AnniversaryFormTexts } from "@/app/components/anniversary/Annivers
 
 const NOT_CONFIGURED = "The shared anniversaries calendar isn’t set up yet.";
 
+/** English UI strings — shape: {@link AnniversaryFormTexts}. */
 export const anniversaryForm = {
   name: "Name",
   namePlaceholder: "Ilan Israel Bellaiche",

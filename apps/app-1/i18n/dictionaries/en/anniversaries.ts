@@ -15,6 +15,7 @@ function ordinal(n: number): string {
   }
 }
 
+/** English UI strings — shape: {@link AnniversariesTexts}. */
 export const anniversaries = {
   listPage: {
     title: "Hebrew Anniversaries",

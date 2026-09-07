@@ -1,5 +1,6 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 
+/** French UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
   back: "Tous les anniversaires",
   eyebrow: { birthday: "Anniversaire", yahrzeit: "Yahrzeit" },
