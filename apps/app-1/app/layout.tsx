@@ -1,3 +1,10 @@
+/**
+ * Root layout for app-1. Loads the serif/sans/mono fonts (`next/font/google`),
+ * sets `<html lang/dir>` before paint from the stored locale, and wraps the
+ * tree in `<AuthProvider>` (Clerk) → `<Providers>` (i18n + theme) → `<Navbar>`.
+ * The metadata title and favicon are environment-tagged (see `icon.tsx`).
+ */
+
 import "./globals.css";
 
 import type { Metadata } from "next";

@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * Client boundary for `/anniversaries/[id]`: renders {@link AnniversaryDetail},
+ * or {@link CalendarUnavailable} when the feature isn't configured. A missing
+ * (`null`) anniversary that *is* configured renders nothing — the server page
+ * has already called `notFound()` in that case.
+ */
+
 import { useTranslations } from "@/i18n";
 import type { Anniversary } from "@repo/anniversaries";
 import { AnniversaryDetail } from "../../components/anniversary/AnniversaryDetail";

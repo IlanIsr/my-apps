@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * `/anniversaries/new` — a client route (it needs the message dictionary for
+ * the form). Just composes {@link NewAnniversaryHeader} + {@link AnniversaryForm}.
+ */
+
 import { useTranslations } from "@/i18n";
 import { AnniversaryForm } from "../../components/anniversary/AnniversaryForm";
 import { NewAnniversaryHeader } from "../../components/anniversary/NewAnniversaryHeader";

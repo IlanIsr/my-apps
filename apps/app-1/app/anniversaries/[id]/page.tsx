@@ -1,3 +1,10 @@
+/**
+ * `/anniversaries/[id]` route (server). Checks the store + calendar are
+ * configured, loads the person by id (not filtered by membership — a shared
+ * link still opens), and hands off to {@link AnniversaryDetailView}. A
+ * misconfigured backend degrades to the "unavailable" screen rather than a 500.
+ */
+
 import { notFound } from "next/navigation";
 
 import { getCurrentUserEmail } from "@repo/auth/user";

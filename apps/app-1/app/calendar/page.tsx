@@ -1,3 +1,9 @@
+/**
+ * `/calendar` route (server). Flattens every upcoming event across the
+ * anniversaries the viewer is on into one date-sorted list for
+ * {@link AgendaView}. A backend error degrades to the "unavailable" screen.
+ */
+
 import { getCurrentUserEmail } from "@repo/auth/user";
 
 import { isCalendarConfigured, listAnniversaries } from "@repo/anniversaries";

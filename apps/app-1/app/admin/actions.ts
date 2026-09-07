@@ -1,5 +1,11 @@
 "use server";
 
+/**
+ * Server action behind the `/admin` "Copy from production" button. Re-checks
+ * that the caller is an anniversaries admin, then runs {@link syncFromProd}
+ * (which itself only works where `PROD_DATABASE_URL` is set, i.e. pre-prod).
+ */
+
 import { revalidatePath } from "next/cache";
 
 import { getCurrentUserEmail } from "@repo/auth/user";

@@ -1,3 +1,10 @@
+/**
+ * `/anniversaries` route (server) — the app's landing page (`/` redirects
+ * here). Checks the store + calendar, lists the anniversaries the viewer is on
+ * (admins see all), and renders {@link AnniversariesView}. A backend error
+ * degrades to the "unavailable" screen rather than a 500.
+ */
+
 import { getCurrentUserEmail } from "@repo/auth/user";
 
 import {

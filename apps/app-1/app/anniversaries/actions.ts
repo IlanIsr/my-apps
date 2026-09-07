@@ -1,5 +1,13 @@
 "use server";
 
+/**
+ * Server actions for `/anniversaries` — the thin auth + i18n layer over
+ * `@repo/anniversaries`. Each one resolves the signed-in user (Clerk),
+ * pre-translates the calendar event title for the current locale, calls the
+ * matching service function, revalidates the affected paths, and maps thrown
+ * errors to a stable `{ ok: false, error }` code for the client.
+ */
+
 import { revalidatePath } from "next/cache";
 
 import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
