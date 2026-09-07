@@ -11,6 +11,14 @@ import { Eyebrow } from "../Eyebrow";
 import { Ornament } from "../Ornament";
 import { ShareListModal, type ShareListModalTexts } from "./ShareListModal";
 
+/**
+ * The `/anniversaries` list: a searchable stack of cards (one per person the
+ * viewer is on the family list for; the admin sees everyone), an "Add
+ * anniversary" link, and — when you're on at least one list — a "Share my list"
+ * button that opens {@link ShareListModal}.
+ */
+
+/** Text for {@link AnniversaryList} and its card / empty-state sub-parts. */
 export type AnniversariesTexts = {
   listPage: {
     title: string;

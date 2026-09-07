@@ -1,12 +1,18 @@
+/** One `<option>`: a stable `key` (the stored value) and its display `label`. */
 export type Option = { key: string; label: string };
 
 type Props = {
+  /** Mono uppercase field label. */
   label: string;
   options: Option[];
   value: string;
   onChange: (value: string) => void;
 };
 
+/**
+ * A labelled `<select>` styled to match the form fields. Controlled: the parent
+ * holds `value` and updates it from `onChange`.
+ */
 export function Select({ label, options, value, onChange }: Props) {
   return (
     <label className="flex flex-col gap-1.5 text-sm">

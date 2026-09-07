@@ -1,11 +1,18 @@
 "use client";
 
+/**
+ * Inline editor for one occurrence: change its Gregorian date and/or start
+ * time. Calls {@link updateEventAction}, which patches that single Google
+ * Calendar event and marks it `manual` so future syncs don't recompute it.
+ */
+
 import { useState } from "react";
 
 import { useLanguage } from "@/i18n";
 import type { Anniversary, AnniversaryEvent } from "@repo/anniversaries";
 import { updateEventAction } from "../../anniversaries/actions";
 
+/** Text for {@link EditEventForm}. */
 export type EditEventFormTexts = {
   date: string;
   time: string;

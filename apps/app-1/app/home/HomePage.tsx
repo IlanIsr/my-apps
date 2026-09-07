@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * The `/converter` page (Hebrew Date Converter) — fully client-side, no
+ * network. A segmented control flips between converting a Hebrew date to its
+ * next Gregorian occurrence ({@link HebrewDateForm}) and a Gregorian date to
+ * its Hebrew equivalent ({@link GregorianDateForm}).
+ */
+
 import { useState } from "react";
 
 import { Segmented } from "../components/Segmented";
@@ -9,6 +16,7 @@ import {
 } from "./GregorianDateForm";
 import { HebrewDateForm, type HebrewDateFormTexts } from "./HebrewDateForm";
 
+/** Text for {@link HomePage} (the converter) and its two sub-forms. */
 export type ConverterTexts = {
   question: string;
   gregorian: string;

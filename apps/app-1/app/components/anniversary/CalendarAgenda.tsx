@@ -10,6 +10,14 @@ import {
 
 import { Eyebrow } from "../Eyebrow";
 
+/**
+ * The `/calendar` view: one flat, date-sorted list of every upcoming
+ * occurrence (across all the anniversaries the viewer is on), grouped under
+ * month headings. Rendered by `AgendaView` after the server page has fetched
+ * the data.
+ */
+
+/** Text for {@link CalendarAgenda}. */
 export type AgendaTexts = {
   title: string;
   subtitle: string;
@@ -20,6 +28,7 @@ export type AgendaTexts = {
   since: (n: number) => string;
 };
 
+/** One flattened row: a single occurrence of one person's anniversary. */
 export type AgendaItem = {
   anniversaryId: string;
   name: string;

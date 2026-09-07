@@ -1,11 +1,21 @@
 "use client";
 
+/**
+ * "Share my list" modal (opened from {@link AnniversaryList}): pick one email
+ * and tick which of your anniversaries to add them to — all checked by default.
+ * Calls {@link bulkShareAction}, which loops `addMember` over the selection and
+ * returns added / already-shared / failed counts (and flags a mid-run Google
+ * Calendar rate limit). Backdrop click or Escape closes it (unless a share is
+ * in flight).
+ */
+
 import { useEffect, useState } from "react";
 
 import { useLanguage } from "@/i18n";
 import type { Anniversary } from "@repo/anniversaries/person";
 import { bulkShareAction } from "../../anniversaries/actions";
 
+/** Text for {@link ShareListModal}. */
 export type ShareListModalTexts = {
   title: string;
   intro: string;

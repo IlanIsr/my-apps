@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * "Edit details" panel on the anniversary detail page: name, type, Hebrew
+ * name, origin, Hebrew year. Calls {@link updatePersonAction}. A name or type
+ * change recomputes the dedup key and re-syncs the calendar event titles (and
+ * colour, for a type change); the other fields are store-only.
+ */
+
 import { useState } from "react";
 
 import { useLanguage } from "@/i18n";
@@ -7,6 +14,7 @@ import type { Anniversary, AnniversaryType } from "@repo/anniversaries/person";
 import { updatePersonAction } from "../../anniversaries/actions";
 import { Segmented } from "../Segmented";
 
+/** Text for {@link EditPersonForm}. */
 export type EditPersonFormTexts = {
   name: string;
   type: string;

@@ -9,6 +9,11 @@ import { useTranslations } from "@/i18n";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
+/**
+ * Text this component needs. Like every app-1 component, it owns its slice of
+ * the message tree; the shape is assembled into `Messages` in `i18n/messages.ts`
+ * and each locale dictionary must `satisfies` it.
+ */
 export type NavbarTexts = {
   appName: string;
   tabs: {
@@ -21,6 +26,14 @@ export type NavbarTexts = {
   themeToggle: string;
 };
 
+/**
+ * The app shell header: wordmark, route tabs, language + theme switchers, and
+ * the Clerk account control. It is the only component besides the client
+ * `page.tsx`/route boundaries that calls {@link useTranslations} directly.
+ *
+ * @param isAdmin - Whether to show the `/admin` tab (server-computed from
+ *   `ANNIVERSARIES_ADMIN_EMAILS` and passed down from the layout).
+ */
 export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
   const t = useTranslations().navbar;
   const pathname = usePathname();
