@@ -1,4 +1,7 @@
 @import "@repo/tailwind-config";
+/* HeroUI v3 prebuilt component styles — must come after tailwindcss. Components
+ * are consumed via `@repo/heroui/*`, never `@heroui/react` directly. */
+@import "@heroui/styles";
 
 /*
  * app-1 "Hebrew Anniversaries" visual identity. Parchment ground, ink-brown

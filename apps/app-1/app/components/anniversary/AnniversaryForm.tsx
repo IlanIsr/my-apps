@@ -21,8 +21,9 @@ import {
 } from "@repo/hebcal";
 import type { AnniversaryType } from "@repo/anniversaries/person";
 
+import { Button } from "@repo/heroui/button";
+
 import { useLanguage } from "@/i18n";
-import { Button } from "../Button";
 import { Segmented } from "../Segmented";
 import { Select } from "../Select";
 import {
@@ -331,11 +332,8 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex items-center gap-2 pt-1">
-        <Button
-          type="submit"
-          disabled={pending}
-          className={yahrzeit ? "bg-yahrzeit" : undefined}
-        >
+        {/* HeroUI button via @repo/heroui — unstyled-to-our-theme for now. */}
+        <Button type="submit" variant="primary" isDisabled={pending}>
           {pending ? t.submitting : t.submit}
         </Button>
         <Link
