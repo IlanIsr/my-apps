@@ -7,6 +7,7 @@ import type { CalendarUnavailableTexts } from "@/app/components/anniversary/Cale
 import type { NewAnniversaryHeaderTexts } from "@/app/components/anniversary/NewAnniversaryHeader";
 import type { NavbarTexts } from "@/app/components/Navbar";
 import type { ConverterTexts } from "@/app/home/HomePage";
+import type { LandingTexts } from "@/app/LandingView";
 import type { EventSummaryTexts } from "@/lib/event-summary";
 
 /**
@@ -16,6 +17,7 @@ import type { EventSummaryTexts } from "@/lib/event-summary";
  */
 export type Messages = {
   navbar: NavbarTexts;
+  landing: LandingTexts;
   converter: ConverterTexts;
   anniversaries: AnniversariesTexts;
   anniversaryForm: AnniversaryFormTexts;

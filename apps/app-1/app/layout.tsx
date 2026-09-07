@@ -12,6 +12,7 @@ import { AuthProvider } from "@repo/auth/provider";
 import { getCurrentUserEmail } from "@repo/auth/user";
 import { isAnniversariesAdmin } from "@repo/anniversaries";
 
+import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
 import { Providers } from "./providers";
 
@@ -72,6 +73,7 @@ export default async function RootLayout({
           <Providers>
             <Navbar isAdmin={isAdmin} />
             <main className="mx-auto max-w-2xl px-6 py-12">{children}</main>
+            <Footer />
           </Providers>
         </AuthProvider>
       </body>

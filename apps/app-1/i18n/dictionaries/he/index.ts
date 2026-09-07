@@ -7,11 +7,13 @@ import { anniversaryForm } from "./anniversary-form";
 import { calendarUnavailable } from "./calendar-unavailable";
 import { converter } from "./converter";
 import { eventSummary } from "./event-summary";
+import { landing } from "./landing";
 import { navbar } from "./navbar";
 import { newAnniversaryHeader } from "./new-anniversary-header";
 
 export const he = {
   navbar,
+  landing,
   converter,
   anniversaries,
   anniversaryForm,

@@ -11,11 +11,8 @@ const nextConfig = {
   // google-auth-library does runtime `require()`s and ships native-ish deps —
   // bundling it breaks the server build. Load it as a real node module instead.
   serverExternalPackages: ["google-auth-library"],
-  async redirects() {
-    return [
-      { source: "/", destination: "/anniversaries", permanent: false },
-    ];
-  },
+  // `/` is now a real page: a public landing page for signed-out visitors, and
+  // a redirect to `/anniversaries` for signed-in ones (see app/page.tsx).
 };
 
 export default nextConfig;
