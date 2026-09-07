@@ -146,9 +146,10 @@ export default function PrivacyPage() {
             purpose. Access to that calendar is authorized once, for that
             account, using the{" "}
             <code className="rounded bg-sunken px-1 py-0.5 font-mono text-[12px] text-foreground">
-              https://www.googleapis.com/auth/calendar
+              https://www.googleapis.com/auth/calendar.events
             </code>{" "}
-            scope.
+            scope, which grants access to calendar events only &mdash; not to
+            your calendars, sharing settings, or any other Google data.
           </p>
           <p>Using this access, the app:</p>
           <List
