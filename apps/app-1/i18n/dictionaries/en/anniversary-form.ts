@@ -27,11 +27,11 @@ export const anniversaryForm = {
     gregorian: "Gregorian",
     aria: "Toggle input calendar",
   },
-  notify: "Email everyone a calendar invite",
+  notify: "Email a calendar invite",
   notifyHelp:
-    "Google sends each person an invite. Accepting it is what makes the events appear in their own calendar.",
+    "Checked by default for anyone joining for the first time. Uncheck someone who has already accepted an invite from this calendar — they’ll see new events without another one.",
   notifyWarning:
-    "Without an invite, anyone who hasn’t already accepted the shared calendar won’t see these events.",
+    "Anyone left unchecked won’t be emailed and won’t see these events unless they’ve already accepted an invite from this calendar.",
   nameRequired: "Name is required.",
   emailInvalid: (email: string) => `Not a valid email: ${email}`,
   notConfigured: NOT_CONFIGURED,

@@ -93,7 +93,7 @@ export function AnniversaryDetail({
         hebYear: anniversary.hebYear,
         years: anniversary.events.length,
         sharedEmails: [],
-        notify: true,
+        notifyEmails: [],
         locale,
       });
       if (!result.ok) {

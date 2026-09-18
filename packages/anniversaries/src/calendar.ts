@@ -160,6 +160,14 @@ export type GoogleEvent = {
 
 type AttendeeInput = { email: string; responseStatus?: string };
 
+function mapAttendees(attendees: AttendeeInput[]): Record<string, unknown>[] {
+  return attendees.map((a) =>
+    a.responseStatus
+      ? { email: a.email, optional: true, responseStatus: a.responseStatus }
+      : { email: a.email, optional: true },
+  );
+}
+
 function buildEventBody(fields: {
   summary?: string;
   description?: string;
@@ -179,11 +187,7 @@ function buildEventBody(fields: {
   const body: Record<string, unknown> = {
     start: { dateTime: `${fields.date}T${fields.time}:00`, timeZone: TIMEZONE },
     end: { dateTime: `${fields.date}T${endTime}:00`, timeZone: TIMEZONE },
-    attendees: fields.attendees.map((a) =>
-      a.responseStatus
-        ? { email: a.email, optional: true, responseStatus: a.responseStatus }
-        : { email: a.email, optional: true },
-    ),
+    attendees: mapAttendees(fields.attendees),
     guestsCanModify: false,
     guestsCanInviteOthers: false,
     guestsCanSeeOtherGuests: false,
@@ -230,11 +234,14 @@ export type SyncInput = {
   /** The events that should exist, after applying manual overrides. */
   events: DesiredEvent[];
   /**
-   * When true, ask Google to email the attendees (`sendUpdates=all`) so people
-   * who haven't yet interacted with the shared calendar get an invite they can
-   * accept. Default false (`sendUpdates=none` — silent).
+   * Subset of `members` (any case) who should be emailed a Google Calendar
+   * invite this round, so people who haven't yet interacted with the shared
+   * calendar get one they can accept. Members left out are added/kept as
+   * attendees silently (`sendUpdates=none`) — once someone has accepted, new
+   * events just appear for them without another invite. Omit or pass `[]` to
+   * notify no one.
    */
-  notify?: boolean;
+  notifyEmails?: string[];
 };
 
 export type SyncResult = {
@@ -296,7 +303,24 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
   //    got done so the caller can persist it and retry the rest.
   const events: SyncedEvent[] = [];
   let rateLimited = false;
-  const sendUpdates = input.notify ? "all" : "none";
+
+  // Which members should be emailed this round. When it's everyone or no one,
+  // one write per event suffices. When it's a genuine mix, adding the
+  // to-notify members as a separate follow-up change (rather than in the same
+  // write as the rest) is what makes Google email only them — an unaffected
+  // existing attendee isn't renotified just because sendUpdates=all.
+  const notifySet = new Set(
+    (input.notifyEmails ?? []).map((e) => e.toLowerCase()),
+  );
+  const toNotify = memberEmails.filter((m) => notifySet.has(m));
+  const toKeepSilent = memberEmails.filter((m) => !notifySet.has(m));
+  const isSplitNotify = toNotify.length > 0 && toKeepSilent.length > 0;
+  const sendUpdates = isSplitNotify
+    ? "none"
+    : toNotify.length > 0
+      ? "all"
+      : "none";
+  const firstPassEmails = isSplitNotify ? toKeepSilent : memberEmails;
 
   for (const want of input.events) {
     const time = times.get(want.year) ?? "18:00";
@@ -310,14 +334,16 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
         priorStatus.set(a.email.toLowerCase(), a.responseStatus);
       }
     }
-    const attendees: AttendeeInput[] = memberEmails.map((email) => {
-      const responseStatus = priorStatus.get(email);
-      return responseStatus ? { email, responseStatus } : { email };
-    });
+    const attendeesFor = (emails: string[]): AttendeeInput[] =>
+      emails.map((email) => {
+        const responseStatus = priorStatus.get(email);
+        return responseStatus ? { email, responseStatus } : { email };
+      });
 
     try {
+      let result: GoogleEvent;
       if (found) {
-        const patched = await calendarApi<GoogleEvent>(
+        result = await calendarApi<GoogleEvent>(
           `/${encodeURIComponent(found.id)}?sendUpdates=${sendUpdates}`,
           {
             method: "PATCH",
@@ -327,45 +353,49 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
                 description: input.description,
                 date: want.date,
                 time,
-                attendees,
+                attendees: attendeesFor(firstPassEmails),
                 colorId: input.colorId,
               }),
             ),
           },
         );
-        events.push({
-          year: want.year,
-          date: want.date,
-          time,
-          googleEventId: found.id,
-          htmlLink: patched.htmlLink ?? found.htmlLink ?? "",
-        });
       } else {
-        const created = await calendarApi<GoogleEvent>(
-          `?sendUpdates=${sendUpdates}`,
-          {
-            method: "POST",
-            body: JSON.stringify(
-              buildEventBody({
-                summary: input.summary ?? input.summaryFallback,
-                description: input.description ?? "",
-                date: want.date,
-                time,
-                attendees,
-                personId: input.personId,
-                colorId: input.colorId,
-              }),
-            ),
-          },
-        );
-        events.push({
-          year: want.year,
-          date: want.date,
-          time,
-          googleEventId: created.id,
-          htmlLink: created.htmlLink ?? "",
+        result = await calendarApi<GoogleEvent>(`?sendUpdates=${sendUpdates}`, {
+          method: "POST",
+          body: JSON.stringify(
+            buildEventBody({
+              summary: input.summary ?? input.summaryFallback,
+              description: input.description ?? "",
+              date: want.date,
+              time,
+              attendees: attendeesFor(firstPassEmails),
+              personId: input.personId,
+              colorId: input.colorId,
+            }),
+          ),
         });
       }
+
+      if (isSplitNotify) {
+        await sleep(WRITE_GAP_MS);
+        result = await calendarApi<GoogleEvent>(
+          `/${encodeURIComponent(result.id)}?sendUpdates=all`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({
+              attendees: mapAttendees(attendeesFor(memberEmails)),
+            }),
+          },
+        );
+      }
+
+      events.push({
+        year: want.year,
+        date: want.date,
+        time,
+        googleEventId: result.id,
+        htmlLink: result.htmlLink ?? found?.htmlLink ?? "",
+      });
     } catch (error) {
       if (error instanceof CalendarRateLimitError) {
         rateLimited = true;

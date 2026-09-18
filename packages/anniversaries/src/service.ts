@@ -30,6 +30,7 @@ import {
   createPerson,
   currentDatabaseUrl,
   findByKey,
+  getEmailSentState,
   getPerson,
   isStoreConfigured,
   listPersons,
@@ -86,6 +87,27 @@ function unique(emails: string[]): string[] {
   return [
     ...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)),
   ];
+}
+
+/**
+ * Whether each of `emails` should default to "notify" when adding them as a
+ * shared member — true unless they've already been sent a calendar invite
+ * (and so have presumably already accepted it and don't need another one).
+ * Fails open (defaults every address to notify) if the lookup itself fails.
+ */
+export async function getNotifyDefaults(
+  emails: string[],
+): Promise<Record<string, boolean>> {
+  const wanted = unique(emails);
+  const defaults: Record<string, boolean> = {};
+  try {
+    const state = await getEmailSentState(wanted);
+    for (const email of wanted) defaults[email] = !state.get(email);
+  } catch (error) {
+    console.error("[anniversaries] notify-defaults lookup failed:", error);
+    for (const email of wanted) defaults[email] = true;
+  }
+  return defaults;
 }
 
 function todayISO(): string {
@@ -240,10 +262,13 @@ export type AddAnniversaryInput = {
   /** Clerk id of the signed-in user. */
   createdBy: string;
   /**
-   * Email the family members a Google Calendar invite (`sendUpdates=all`) so
-   * people who haven't accepted the shared calendar yet get one they can accept.
+   * Subset of `sharedEmails` to email a Google Calendar invite this round —
+   * a per-member choice, since someone who's already accepted the shared
+   * calendar doesn't need to be re-invited every time. The signed-in user's
+   * own invite is decided automatically (see `addAnniversary`), not through
+   * this list.
    */
-  notify: boolean;
+  notifyEmails: string[];
 };
 
 /**
@@ -255,7 +280,7 @@ async function recordMembers(
   emails: string[],
   viewerEmail: string,
   viewerClerkId: string,
-  notified: boolean,
+  notifiedEmails: string[],
 ): Promise<void> {
   const lower = viewerEmail.toLowerCase();
   try {
@@ -267,7 +292,7 @@ async function recordMembers(
         }),
       ),
     );
-    if (notified) await markEmailSent(emails);
+    if (notifiedEmails.length > 0) await markEmailSent(notifiedEmails);
   } catch (error) {
     console.error("[anniversaries] recording users failed:", error);
   }
@@ -285,6 +310,17 @@ export async function addAnniversary(
 
   const email = viewerEmail.toLowerCase();
   const shared = unique(input.sharedEmails);
+  // The signed-in user's own invite is automatic — notify them the first
+  // time (before they've ever accepted the shared calendar), then stop.
+  // `sharedEmails` notification is an explicit per-member choice from the
+  // caller instead, restricted to emails actually being shared here.
+  const creatorState = await getEmailSentState([email]);
+  const requestedShared = unique(input.notifyEmails).filter((e) =>
+    shared.includes(e),
+  );
+  const notifyEmails = creatorState.get(email)
+    ? requestedShared
+    : [...requestedShared, email];
   const years = Math.min(
     MAX_YEARS,
     Math.max(1, Number.isFinite(input.years) ? Math.floor(input.years) : 1),
@@ -322,14 +358,19 @@ export async function addAnniversary(
       colorId,
       members,
       events: base.map(toDesired),
-      notify: input.notify,
+      notifyEmails,
     });
     const finalMembers = members.filter((m) => !sync.declined.includes(m));
     await updatePerson(record.id, {
       members: finalMembers,
       events: applySynced(base, sync.events),
     });
-    await recordMembers(finalMembers, email, input.createdBy, input.notify);
+    await recordMembers(
+      finalMembers,
+      email,
+      input.createdBy,
+      notifyEmails.filter((e) => finalMembers.includes(e)),
+    );
     if (sync.rateLimited) throw new CalendarRateLimitError();
     return {
       created: sync.events.length,
@@ -356,7 +397,7 @@ export async function addAnniversary(
     colorId,
     members,
     events: base.map(toDesired),
-    notify: input.notify,
+    notifyEmails,
   });
   // A declined guest has effectively left. The person + events still stay on
   // the shared calendar — only the shared account itself removes an event.
@@ -366,7 +407,12 @@ export async function addAnniversary(
     members: finalMembers,
     events: applySynced(base, sync.events),
   });
-  await recordMembers(finalMembers, email, input.createdBy, input.notify);
+  await recordMembers(
+    finalMembers,
+    email,
+    input.createdBy,
+    notifyEmails.filter((e) => finalMembers.includes(e)),
+  );
   if (sync.rateLimited) throw new CalendarRateLimitError();
   const created = sync.events.filter(
     (e) => !priorIds.has(e.googleEventId),

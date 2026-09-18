@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -23,7 +23,12 @@ import {
   hebrewDayOptions,
   hebrewMonthOptions,
 } from "../../home/options";
-import { addAnniversaryAction } from "../../anniversaries/actions";
+import {
+  addAnniversaryAction,
+  getNotifyDefaultsAction,
+} from "../../anniversaries/actions";
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export type AnniversaryFormTexts = {
   name: string;
@@ -78,9 +83,56 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));
   const [years, setYears] = useState("20");
   const [sharedRaw, setSharedRaw] = useState("");
-  const [notify, setNotify] = useState(true);
+  const [notifyOverrides, setNotifyOverrides] = useState<
+    Record<string, boolean>
+  >({});
+  const [notifyDefaults, setNotifyDefaults] = useState<Record<string, boolean>>(
+    {},
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  // Emails that look valid so far, lowercased + deduped, in typed order.
+  const parsedShared = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const raw of sharedRaw.split(",")) {
+      const emailAddr = raw.trim().toLowerCase();
+      if (emailAddr && EMAIL_RE.test(emailAddr) && !seen.has(emailAddr)) {
+        seen.add(emailAddr);
+        list.push(emailAddr);
+      }
+    }
+    return list;
+  }, [sharedRaw]);
+
+  // Default each newly-typed email to "notify" unless we've already sent
+  // them a calendar invite before (they've presumably accepted it by now).
+  const fetchedNotifyDefaults = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const missing = parsedShared.filter(
+      (emailAddr) => !fetchedNotifyDefaults.current.has(emailAddr),
+    );
+    if (missing.length === 0) return;
+    for (const emailAddr of missing) {
+      fetchedNotifyDefaults.current.add(emailAddr);
+    }
+    let cancelled = false;
+    getNotifyDefaultsAction(missing).then((result) => {
+      if (!cancelled) setNotifyDefaults((prev) => ({ ...prev, ...result }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [parsedShared]);
+
+  const notifyChecked = (emailAddr: string) =>
+    notifyOverrides[emailAddr] ?? notifyDefaults[emailAddr] ?? true;
+  const toggleNotify = (emailAddr: string) =>
+    setNotifyOverrides((prev) => ({
+      ...prev,
+      [emailAddr]: !notifyChecked(emailAddr),
+    }));
 
   const yearOptions = [5, 10, 15, 20, 30, 50].map((n) => ({
     key: String(n),
@@ -118,11 +170,12 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const badEmail = shared.find((e) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+    const badEmail = shared.find((e) => !EMAIL_RE.test(e));
     if (badEmail) {
       setError(t.emailInvalid(badEmail));
       return;
     }
+    const notifyEmails = shared.filter((e) => notifyChecked(e.toLowerCase()));
 
     setPending(true);
     const result = await addAnniversaryAction({
@@ -136,7 +189,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
           : undefined,
       sharedEmails: shared,
       years: Number(years),
-      notify,
+      notifyEmails,
       locale,
     });
     setPending(false);
@@ -296,27 +349,32 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
         </span>
       </label>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="flex items-start gap-2.5">
-          <input
-            type="checkbox"
-            checked={notify}
-            onChange={(e) => setNotify(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
-          />
-          <span className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium">{t.notify}</span>
-            <span className="text-xs text-subtle-foreground">
-              {t.notifyHelp}
-            </span>
-          </span>
-        </label>
-        {!notify && (
-          <p className="rounded-field border border-border bg-sunken px-3 py-2 text-xs text-muted-foreground">
-            {t.notifyWarning}
-          </p>
-        )}
-      </div>
+      {parsedShared.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <span className={label}>{t.notify}</span>
+          <span className="text-xs text-subtle-foreground">{t.notifyHelp}</span>
+          <div className="flex flex-col gap-1.5 pt-1">
+            {parsedShared.map((emailAddr) => (
+              <label key={emailAddr} className="flex items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={notifyChecked(emailAddr)}
+                  onChange={() => toggleNotify(emailAddr)}
+                  className="h-4 w-4 shrink-0 accent-primary"
+                />
+                <span className="text-sm" dir="ltr">
+                  {emailAddr}
+                </span>
+              </label>
+            ))}
+          </div>
+          {parsedShared.some((emailAddr) => !notifyChecked(emailAddr)) && (
+            <p className="rounded-field border border-border bg-sunken px-3 py-2 text-xs text-muted-foreground">
+              {t.notifyWarning}
+            </p>
+          )}
+        </div>
+      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
