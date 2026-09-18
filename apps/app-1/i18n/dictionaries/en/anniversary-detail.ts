@@ -29,7 +29,8 @@ export const anniversaryDetail = {
   leave: "Leave this list",
   leaving: "Removing…",
   leaveConfirm: "Remove yourself from this anniversary?",
-  rateLimited: "Google Calendar is busy right now — wait a moment and try again.",
+  rateLimited:
+    "Google Calendar is busy right now — wait a moment and try again.",
   age: (n: number) => `turns ${n}`,
   since: (n: number) => `${ordinal(n)} yahrzeit`,
   error: (message: string) => `Something went wrong: ${message}`,

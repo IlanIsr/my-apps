@@ -14,6 +14,7 @@ export {
   listAnniversaries,
   getAnniversary,
   addAnniversary,
+  getNotifyDefaults,
   leaveAnniversary,
   updateEvent,
   canSyncFromProd,

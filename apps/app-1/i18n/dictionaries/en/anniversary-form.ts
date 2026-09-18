@@ -27,11 +27,18 @@ export const anniversaryForm = {
     gregorian: "Gregorian",
     aria: "Toggle input calendar",
   },
+  notify: "Email a calendar invite",
+  notifyHelp:
+    "Checked by default for anyone joining for the first time. Uncheck someone who has already accepted an invite from this calendar — they’ll see new events without another one.",
+  notifyWarning:
+    "Anyone left unchecked won’t be emailed and won’t see these events unless they’ve already accepted an invite from this calendar.",
   nameRequired: "Name is required.",
   emailInvalid: (email: string) => `Not a valid email: ${email}`,
   notConfigured: NOT_CONFIGURED,
-  noSuchDate: "That Hebrew date doesn’t occur (e.g. the 30th of a 29-day month).",
-  rateLimited: "Google Calendar is busy right now — wait a moment and try again.",
+  noSuchDate:
+    "That Hebrew date doesn’t occur (e.g. the 30th of a 29-day month).",
+  rateLimited:
+    "Google Calendar is busy right now — wait a moment and try again.",
   error: (message: string) => `Something went wrong: ${message}`,
   months: {
     Tishrei: "Tishrei",

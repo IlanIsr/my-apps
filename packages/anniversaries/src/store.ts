@@ -7,7 +7,7 @@
  * transaction, so a person and its members / events never land half-written.
  */
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 import type { HebrewMonthKey } from "@repo/hebcal";
 
@@ -16,6 +16,7 @@ import {
   personEvents,
   personMembers,
   persons,
+  users,
   type PersonEventRow,
   type PersonRow,
 } from "./db/schema";
@@ -418,4 +419,55 @@ export async function replaceAllPersons(
   for (const record of records) await upsertPerson(record);
 
   return { written: records.length, deleted };
+}
+
+// --- users ---
+
+/**
+ * Record an email as a known user. `clerkId` is stored when known (the address
+ * has signed in); passing `undefined` leaves any existing id untouched.
+ */
+export async function upsertUser(input: {
+  email: string;
+  clerkId?: string;
+}): Promise<void> {
+  const email = input.email.trim().toLowerCase();
+  if (!email) return;
+  const set: { updatedAt: Date; clerkId?: string } = { updatedAt: new Date() };
+  if (input.clerkId) set.clerkId = input.clerkId;
+  await db()
+    .insert(users)
+    .values({ email, clerkId: input.clerkId ?? null })
+    .onConflictDoUpdate({ target: users.email, set });
+}
+
+/** `email → hasSentEmail` for the given addresses. Missing addresses map to `false`. */
+export async function getEmailSentState(
+  emails: string[],
+): Promise<Map<string, boolean>> {
+  const wanted = lowerUnique(emails);
+  const state = new Map<string, boolean>(wanted.map((e) => [e, false]));
+  if (wanted.length === 0) return state;
+  const rows = await db()
+    .select({ email: users.email, hasSentEmail: users.hasSentEmail })
+    .from(users)
+    .where(inArray(users.email, wanted));
+  for (const r of rows) state.set(r.email, r.hasSentEmail);
+  return state;
+}
+
+/** Mark that a Google Calendar invite has now been sent to these addresses. */
+export async function markEmailSent(emails: string[]): Promise<void> {
+  const wanted = lowerUnique(emails);
+  if (wanted.length === 0) return;
+  const stmts: BatchStmt[] = wanted.map((email) =>
+    db()
+      .insert(users)
+      .values({ email, hasSentEmail: true })
+      .onConflictDoUpdate({
+        target: users.email,
+        set: { hasSentEmail: true, updatedAt: new Date() },
+      }),
+  );
+  await runBatch(stmts);
 }

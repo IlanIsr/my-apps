@@ -9,6 +9,7 @@ import {
   addAnniversary,
   CalendarNotConfiguredError,
   CalendarRateLimitError,
+  getNotifyDefaults,
   leaveAnniversary,
   NoSuchHebrewDateError,
   StoreNotConfiguredError,
@@ -69,6 +70,8 @@ export async function addAnniversaryAction(input: {
   hebrewName?: string;
   origin?: string;
   hebYear?: number;
+  /** Which of `sharedEmails` to email a Google Calendar invite this round. */
+  notifyEmails: string[];
   locale: Locale;
 }): Promise<ActionResult<{ created: number; joined: boolean }>> {
   try {
@@ -88,6 +91,16 @@ export async function addAnniversaryAction(input: {
   } catch (error) {
     return fail(error);
   }
+}
+
+/**
+ * Whether each email should default to "notify" in the share-with checklist —
+ * `false` for anyone we've already sent a calendar invite to.
+ */
+export async function getNotifyDefaultsAction(
+  emails: string[],
+): Promise<Record<string, boolean>> {
+  return getNotifyDefaults(emails);
 }
 
 export async function leaveAnniversaryAction(

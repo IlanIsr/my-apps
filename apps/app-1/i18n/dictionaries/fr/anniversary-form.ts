@@ -28,6 +28,11 @@ export const anniversaryForm = {
     gregorian: "Grégorien",
     aria: "Changer le calendrier de saisie",
   },
+  notify: "Envoyer une invitation agenda",
+  notifyHelp:
+    "Coché par défaut pour qui rejoint pour la première fois. Décochez quelqu’un qui a déjà accepté une invitation de cet agenda — il verra les nouveaux événements sans nouvelle invitation.",
+  notifyWarning:
+    "Toute personne décochée ne recevra pas d’invitation et ne verra pas ces événements, sauf si elle a déjà accepté une invitation de cet agenda.",
   nameRequired: "Le nom est requis.",
   emailInvalid: (email: string) => `Email invalide : ${email}`,
   notConfigured: NOT_CONFIGURED,
