@@ -227,31 +227,33 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
         />
       </label>
 
-      <div className="flex flex-col gap-1.5">
-        <span className={label}>{t.type}</span>
-        <Segmented
-          aria-label={t.type}
-          tone={tone}
-          value={type}
-          onChange={setType}
-          options={[
-            { value: "birthday", label: t.types.birthday },
-            { value: "yahrzeit", label: t.types.yahrzeit },
-          ]}
-        />
-      </div>
+      <div className="flex flex-wrap gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className={label}>{t.type}</span>
+          <Segmented
+            aria-label={t.type}
+            tone={tone}
+            value={type}
+            onChange={setType}
+            options={[
+              { value: "birthday", label: t.types.birthday },
+              { value: "yahrzeit", label: t.types.yahrzeit },
+            ]}
+          />
+        </div>
 
-      <div className="flex flex-col gap-1.5">
-        <span className={label}>{t.calendar}</span>
-        <Segmented
-          aria-label={t.toggle.aria}
-          value={fromGregorian ? "gregorian" : "hebrew"}
-          onChange={(v) => setFromGregorian(v === "gregorian")}
-          options={[
-            { value: "hebrew", label: t.toggle.hebrew },
-            { value: "gregorian", label: t.toggle.gregorian },
-          ]}
-        />
+        <div className="flex flex-col gap-1.5">
+          <span className={label}>{t.calendar}</span>
+          <Segmented
+            aria-label={t.toggle.aria}
+            value={fromGregorian ? "gregorian" : "hebrew"}
+            onChange={(v) => setFromGregorian(v === "gregorian")}
+            options={[
+              { value: "hebrew", label: t.toggle.hebrew },
+              { value: "gregorian", label: t.toggle.gregorian },
+            ]}
+          />
+        </div>
       </div>
 
       {fromGregorian ? (
@@ -301,25 +303,25 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
               value={month}
               onChange={setMonth}
             />
-          </div>
-          <label className="flex flex-col gap-1.5">
-            <span className={label}>
-              {t.hebYear}{" "}
-              <span className="normal-case tracking-normal text-subtle-foreground/70">
-                {t.optional}
+            <label className="flex flex-col gap-1.5">
+              <span className={label}>
+                {t.hebYear}{" "}
+                <span className="normal-case tracking-normal text-subtle-foreground/70">
+                  {t.optional}
+                </span>
               </span>
-            </span>
-            <input
-              inputMode="numeric"
-              value={hebYear}
-              onChange={(e) =>
-                setHebYear(e.target.value.replace(/[^0-9]/g, ""))
-              }
-              placeholder="5754"
-              className={`${input} w-32`}
-              dir="ltr"
-            />
-          </label>
+              <input
+                inputMode="numeric"
+                value={hebYear}
+                onChange={(e) =>
+                  setHebYear(e.target.value.replace(/[^0-9]/g, ""))
+                }
+                placeholder="5754"
+                className={`${input} w-32`}
+                dir="ltr"
+              />
+            </label>
+          </div>
         </>
       )}
 
