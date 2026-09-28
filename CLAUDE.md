@@ -106,21 +106,22 @@ All three apps are **fully gated** — every route redirects to `/sign-in` witho
 
 ### app-1 → Vercel + Neon Postgres
 
-app-1 deploys on **Vercel** (project `anniversaries`, root directory `apps/app-1`). The store is **Neon Postgres** via the Vercel ↔ Neon marketplace integration, which sets `DATABASE_URL` on the project.
+app-1 deploys on **Vercel** (project `anniversaries`, root directory `apps/app-1`). The store is **Neon Postgres** — a single Neon project (`anniversaries`, id `falling-flower-75807245`, region Frankfurt) with two branches, `main` (default) and `preprod` (child of `main`). The Neon ↔ Vercel marketplace integration is scoped to the **Production environment only**; Preview and Development each get their own manually-added `DATABASE_URL` pointed at the `preprod` branch, so prod is never reachable from a non-prod deployment.
 
-**Two environments for app-1** (branch → Vercel environment → Neon database):
+**Three Vercel environments for app-1** (branch → Vercel environment → Neon branch):
 
-| Env      | Branch    | Vercel env                 | Neon                           | Notes                                                                                                                                                                                                                                                                                            |
-| -------- | --------- | -------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| pre-prod | `preprod` | Preview (branch `preprod`) | its own Neon database / branch | shares the prod **Clerk instance** and the prod **shared Google Calendar** (same bot account / OAuth client / refresh token) — test events land on the real calendar, so use throwaway names. Also has `PROD_DATABASE_URL` (read-only, → prod Neon) for the Admin "Copy from production" button. |
-| prod     | `main`    | Production                 | prod Neon database             | no `PROD_DATABASE_URL`                                                                                                                                                                                                                                                                           |
+| Env         | Branch(es)                          | Vercel env  | Neon branch          | Notes                                                                                                                                                                                                                                                    |
+| ----------- | ------------------------------------ | ----------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| prod        | `main`                               | Production  | `main`                 | `DATABASE_URL` + the full `DATABASE_PG*`/`DATABASE_POSTGRES_*`/`DATABASE_NEON_PROJECT_ID` bundle come from the Neon integration (only `DATABASE_URL` is actually read by app code — the rest is unused convenience output).                              |
+| pre-prod    | any branch (in practice `preprod`)   | Preview     | `preprod`               | `DATABASE_URL` is a **manually-added** env var (not integration-managed), scoped to Preview with **no git-branch restriction** — every Preview deployment, from any branch, hits `preprod`. Shares the prod **Clerk instance** and the prod **shared Google Calendar** (same bot account / OAuth client / refresh token) — test events land on the real calendar, so use throwaway names. |
+| local / dev | —                                     | Development | `preprod`               | Same manual `preprod` connection string, Development-scoped. Only takes effect via `vercel dev` / `vercel env pull --environment=development` — plain `next dev` still reads `DATABASE_URL` from the repo-root `.env`/`.env.local`, not from this Vercel scope. |
 
 **Flow:** feature work → merge to `preprod` → verify on the pre-prod preview URL → merge `preprod` into `main` → prod deploys. Both are fast-forward when kept linear.
 
 **Env vars per Vercel environment** (Project → Settings → Environment Variables):
 
-- `DATABASE_URL` — from the Neon integration (different per environment).
-- `PROD_DATABASE_URL` — **pre-prod / Preview only**; a read-only Neon connection string pointed at the prod database. Enables the `/admin` "Copy from production" button. `syncFromProd()` refuses if it equals `DATABASE_URL`.
+- `DATABASE_URL` — Production: from the Neon integration → Neon branch `main`. Preview and Development: manually-added, non-integration vars → Neon branch `preprod` (same connection string on both scopes).
+- `PROD_DATABASE_URL` — not currently configured on any environment (would enable the Admin "Copy from production" button on Preview; `syncFromProd()` refuses if it ever equals `DATABASE_URL`). See "Likely next tasks."
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (inlined at build — must be present at build time or every gated route 500s with `@clerk/nextjs: Missing publishableKey`), `CLERK_SECRET_KEY`.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, optional `GOOGLE_CALENDAR_ID` — same values in both environments (the shared bot calendar).
 - `ANNIVERSARIES_ADMIN_EMAILS` — comma list; same in both.
@@ -137,7 +138,7 @@ Run from the repo root; scripts load `DATABASE_URL` from the root `.env` / `.env
 
 - `pnpm --filter @repo/anniversaries db:generate` — regenerate SQL after editing `db/schema.ts` (offline).
 - `pnpm --filter @repo/anniversaries db:migrate` — apply pending migrations to the database in `DATABASE_URL`.
-- Run `db:migrate` against **each** Neon database (pre-prod and prod). There is no automatic migration-on-deploy; do it manually (or add it to the Vercel build command) before a deploy that needs a new column/table.
+- `apps/app-1`'s Vercel `build` script is `pnpm --filter @repo/anniversaries run db:migrate && next build`, so migrations run **automatically on every deploy** (Production and Preview alike), each against that deployment's own `DATABASE_URL` (`main` for prod, `preprod` for preview). A pending migration that fails blocks the build. To apply a migration manually ahead of a deploy — e.g. before merging to `preprod`/`main` — run `db:migrate` locally against the target Neon branch's connection string.
 
 ### One-time Firestore → Neon migration (historical)
 
@@ -154,7 +155,7 @@ The store used to be **Firestore** (Firebase project `my-app-1` / `my-app-1-312d
 
 ### Prod → pre-prod data sync (runtime, admin only)
 
-The `/admin` page (super-user only) has a "Copy from production" button — `syncFromProd()` reads the prod Neon `persons` (via `PROD_DATABASE_URL`) and mirrors it into pre-prod (upsert matching ids, delete the rest; calendar untouched, since pre-prod shares the prod calendar so the copied `google_event_id`s still resolve). Gated on `PROD_DATABASE_URL` being set (Preview only); refuses if it equals `DATABASE_URL`.
+The `/admin` page (super-user only) has a "Copy from production" button — `syncFromProd()` reads the prod Neon `persons` (via `PROD_DATABASE_URL`) and mirrors it into pre-prod (upsert matching ids, delete the rest; calendar untouched, since pre-prod shares the prod calendar so the copied `google_event_id`s still resolve). Gated on `PROD_DATABASE_URL` being set (Preview only); refuses if it equals `DATABASE_URL`. **`PROD_DATABASE_URL` is not currently set on the Vercel project**, so this button is presently inert — see "Likely next tasks."
 
 ### app-2 / landing → Firebase (unchanged)
 
@@ -190,7 +191,7 @@ The root registration is PR [is-a-dev/register#50502](https://github.com/is-a-de
 
 ## Likely next tasks
 
-1. Anniversaries persistence → **Neon Postgres (Drizzle)**, replacing Firestore. Store rewritten in `@repo/anniversaries`; one-time migration + verify scripts added; app-1 deploys on Vercel. **Still to do manually:** create the Neon databases (prod + pre-prod) via the Vercel ↔ Neon integration, run `db:migrate` against each, run the Firestore → Neon migration (see the Deployment section), set the Vercel env vars, deploy. Firestore data + Firebase projects are left intact until explicitly cleaned up.
+1. Anniversaries persistence is on **Neon Postgres (Drizzle)**, Firestore fully migrated away from (see "One-time Firestore → Neon migration" — Firestore data + Firebase projects left intact, not yet cleaned up). Neon/Vercel env setup is done: prod → branch `main` (integration-managed, Production-only), Preview + Development → branch `preprod` (manual `DATABASE_URL`, no git-branch restriction). **Still to do:** set `PROD_DATABASE_URL` (Preview only, read-only connection to the `main` branch) to enable the `/admin` "Copy from production" button — currently unset.
 2. Phase 5: `origin` / `hebrewName` UI on the create form + person editing (backend stores them; `type` / `hebYear` are already wired end-to-end).
 3. Build app-2's Firestore feature using the client-SDK pattern above.
 4. After PR #50502 merges: configure `app1`/`app2.ilanisr.is-a.dev` subdomains (app-1 → Vercel, app-2 → Firebase App Hosting; pull current DNS from each).
