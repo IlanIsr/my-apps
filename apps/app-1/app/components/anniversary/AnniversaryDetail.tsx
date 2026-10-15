@@ -13,6 +13,7 @@ import { BackLink } from "../BackLink";
 import { Eyebrow } from "../Eyebrow";
 import { Ornament } from "../Ornament";
 import { EditEventForm, type EditEventFormTexts } from "./EditEventForm";
+import { EditPersonForm, type EditPersonFormTexts } from "./EditPersonForm";
 
 export type AnniversaryDetailTexts = {
   back: string;
@@ -21,6 +22,7 @@ export type AnniversaryDetailTexts = {
   family: string;
   upcoming: string;
   edit: string;
+  editDetails: string;
   viewInCalendar: string;
   nightfall: string;
   join: string;
@@ -33,6 +35,7 @@ export type AnniversaryDetailTexts = {
   since: (n: number) => string;
   error: (message: string) => string;
   editForm: EditEventFormTexts;
+  editPersonForm: EditPersonFormTexts;
 };
 
 function initials(email: string): string {
@@ -55,6 +58,7 @@ export function AnniversaryDetail({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingPerson, setEditingPerson] = useState(false);
 
   const yahrzeit = anniversary.type === "yahrzeit";
   const accentText = yahrzeit ? "text-yahrzeit" : "text-birthday";
@@ -180,7 +184,28 @@ export function AnniversaryDetail({
             </button>
           )}
         </div>
+
+        {(anniversary.joined || anniversary.admin) && !editingPerson && (
+          <button
+            type="button"
+            onClick={() => setEditingPerson(true)}
+            className="w-fit rounded-pill border border-border px-3 py-1 text-[12.5px] text-muted-foreground hover:text-foreground"
+          >
+            {t.editDetails}
+          </button>
+        )}
       </div>
+
+      {editingPerson && (
+        <EditPersonForm
+          anniversary={anniversary}
+          t={t.editPersonForm}
+          onDone={() => {
+            setEditingPerson(false);
+            router.refresh();
+          }}
+        />
+      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

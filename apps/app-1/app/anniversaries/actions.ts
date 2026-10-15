@@ -13,6 +13,7 @@ import {
   leaveAnniversary,
   NoSuchHebrewDateError,
   StoreNotConfiguredError,
+  updateAnniversary,
   updateEvent,
   type AnniversaryType,
 } from "@repo/anniversaries";
@@ -112,6 +113,30 @@ export async function leaveAnniversaryAction(
 
     const data = await leaveAnniversary(id, email);
     refreshAnniversaries(id);
+    return { ok: true, data };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function updatePersonAction(input: {
+  id: string;
+  /** Current form values — always sent so the title can be recomputed. */
+  name: string;
+  type: AnniversaryType;
+  hebrewName?: string;
+  origin?: string;
+  hebYear?: number;
+  locale: Locale;
+}): Promise<ActionResult<{ updated: boolean }>> {
+  try {
+    const email = await getCurrentUserEmail();
+    if (!email) return { ok: false, error: "not-signed-in" };
+    if (!input.name.trim()) return { ok: false, error: "name-required" };
+
+    const summary = eventSummaryFor(input.locale, input.type, input.name);
+    const data = await updateAnniversary({ ...input, summary }, email);
+    refreshAnniversaries(input.id);
     return { ok: true, data };
   } catch (error) {
     return fail(error);
