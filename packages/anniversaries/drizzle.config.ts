@@ -9,7 +9,11 @@ import { defineConfig } from "drizzle-kit";
  * apps read it from). Load those here so `drizzle-kit` — run from this package
  * dir — sees it. `db:generate` works offline; the rest need a real URL.
  */
-for (const rel of ["../../.env", "../../.env.local", "../../apps/app-1/.env.local"]) {
+for (const rel of [
+  "../../.env",
+  "../../.env.local",
+  "../../apps/app-1/.env.local",
+]) {
   const path = resolve(process.cwd(), rel);
   if (existsSync(path)) config({ path, override: true });
 }

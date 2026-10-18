@@ -1,11 +1,19 @@
 "use client";
 
+/**
+ * Inline "Add someone" form on the anniversary detail page: one email + a
+ * notify toggle. Calls {@link addMemberAction}, which adds the address to the
+ * family list and re-syncs the shared calendar so they're invited. Reports
+ * back when the address is already on the list.
+ */
+
 import { useState } from "react";
 
 import { useLanguage } from "@/i18n";
 import type { Anniversary } from "@repo/anniversaries/person";
 import { addMemberAction } from "../../anniversaries/actions";
 
+/** Text for {@link AddMemberForm}. */
 export type AddMemberFormTexts = {
   label: string;
   placeholder: string;

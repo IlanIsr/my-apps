@@ -1,3 +1,9 @@
+/**
+ * Assembles the app-wide {@link Messages} type from every component's own
+ * `XxxTexts`. Add a UI string by extending the owning component's type, then
+ * adding it to that feature's file in all three `dictionaries/<locale>/`.
+ */
+
 import type { AdminTexts } from "@/app/admin/AdminView";
 import type { AgendaTexts } from "@/app/components/anniversary/CalendarAgenda";
 import type { AnniversariesTexts } from "@/app/components/anniversary/AnniversaryList";

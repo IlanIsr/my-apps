@@ -1,5 +1,14 @@
 "use client";
 
+/**
+ * The "Add an anniversary" form (`/anniversaries/new`). Collects a name, type
+ * (birthday / yahrzeit), a Hebrew date — entered directly or converted from a
+ * Gregorian one — an optional Hebrew year, how many years ahead to create,
+ * people to share with, and whether to email everyone a calendar invite. On
+ * submit it calls {@link addAnniversaryAction}; the backend either creates the
+ * person or, if one already matches, adds you and tops up missing years.
+ */
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,6 +39,7 @@ import {
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/** Text for {@link AnniversaryForm} — every label, hint, and error string. */
 export type AnniversaryFormTexts = {
   name: string;
   namePlaceholder: string;

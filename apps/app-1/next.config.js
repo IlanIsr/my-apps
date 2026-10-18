@@ -1,7 +1,7 @@
+// `@repo/env/load` backfills env vars from the monorepo-root `.env` (shared
+// defaults) with override:false, so an app-local `.env.local` still wins. On
+// Vercel the env comes from the project settings and no `.env` file exists.
 import "@repo/env/load";
-
-// Redeploy trigger: 2026-09-04 — rebuild after setting Clerk env vars on the
-// App Hosting backend (NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is baked in at build).
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

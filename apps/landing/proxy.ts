@@ -1,3 +1,9 @@
+/**
+ * Next.js 16 network-boundary handler. Delegates to the shared Clerk proxy
+ * (`@repo/auth/proxy`), gating every route behind a session. `config.matcher`
+ * must be a literal here — Next can't read it through the re-export.
+ */
+
 import { clerkProxy } from "@repo/auth/proxy";
 
 export default clerkProxy;

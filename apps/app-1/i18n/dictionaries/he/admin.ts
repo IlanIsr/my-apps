@@ -1,5 +1,6 @@
 import type { AdminTexts } from "@/app/admin/AdminView";
 
+/** Hebrew UI strings — shape: {@link AdminTexts}. */
 export const admin = {
   eyebrow: "חשבון משותף",
   title: "ניהול",

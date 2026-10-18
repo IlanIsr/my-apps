@@ -1,5 +1,11 @@
 "use client";
 
+/**
+ * Client boundary for `/calendar`: renders {@link CalendarAgenda} with the
+ * server-fetched, date-sorted items, or {@link CalendarUnavailable} when the
+ * feature isn't configured.
+ */
+
 import { useTranslations } from "@/i18n";
 import {
   CalendarAgenda,

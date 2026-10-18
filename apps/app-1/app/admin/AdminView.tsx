@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * Client boundary for `/admin` (super-users only). Its one feature is the
+ * "Copy from production" button, which calls {@link syncFromProdAction} to
+ * mirror the prod `persons` into this environment. The button only appears on
+ * pre-prod (where `PROD_DATABASE_URL` is set); otherwise an empty state shows.
+ */
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
@@ -9,6 +16,7 @@ import { Eyebrow } from "../components/Eyebrow";
 import { Ornament } from "../components/Ornament";
 import { syncFromProdAction } from "./actions";
 
+/** Text for {@link AdminView}. */
 export type AdminTexts = {
   eyebrow: string;
   title: string;

@@ -14,6 +14,12 @@ import {
   gregorianYearOptions,
 } from "./options";
 
+/**
+ * Pick a Gregorian day / month / year; shows the corresponding Hebrew date
+ * (via `calculateHebrewDate` from `@repo/hebcal`).
+ */
+
+/** Text for {@link GregorianDateForm}. */
 export type GregorianDateFormTexts = {
   day: string;
   month: string;

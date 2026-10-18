@@ -1,5 +1,6 @@
 import type { NavbarTexts } from "@/app/components/Navbar";
 
+/** English UI strings — shape: {@link NavbarTexts}. */
 export const navbar = {
   appName: "Hebrew Anniversaries",
   tabs: {

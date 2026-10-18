@@ -1,5 +1,6 @@
 import type { AgendaTexts } from "@/app/components/anniversary/CalendarAgenda";
 
+/** Hebrew UI strings — shape: {@link AgendaTexts}. */
 export const agenda = {
   title: "סדר יום",
   subtitle: "כל אירועי ימי השנה הקרובים, לפי תאריך.",

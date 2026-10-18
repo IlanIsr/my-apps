@@ -1,5 +1,13 @@
 import { Ornament } from "../Ornament";
 
+/**
+ * Shown in place of the anniversaries UI whenever the feature isn't ready —
+ * `DATABASE_URL` missing, or the shared Google Calendar unreachable. The route
+ * `page.tsx` decides (via `isCalendarConfigured()`); the real cause is in the
+ * server logs, hence the `CAL_NOT_CONFIGURED` marker.
+ */
+
+/** Text for {@link CalendarUnavailable}. */
 export type CalendarUnavailableTexts = {
   title: string;
   message: string;

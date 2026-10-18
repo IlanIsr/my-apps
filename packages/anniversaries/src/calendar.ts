@@ -1,8 +1,9 @@
 /**
  * Google Calendar I/O against the shared bot calendar
- * (`anniversaries.calendar@gmail.com`). The calendar is a **projection** of
- * Firestore: `syncPersonEvents` reconciles a person's events to match what the
- * store says they should be.
+ * (`anniversaries.calendar@gmail.com`). The calendar is a **projection** of the
+ * Postgres store: `syncPersonEvents` reconciles a person's events to match what
+ * the store says they should be, and (with `notify`) can email the attendees an
+ * invite via `sendUpdates=all`.
  *
  * Authenticates AS the bot account via `google-auth-library` + a stored refresh
  * token; talks to the Calendar REST API with `fetch`.

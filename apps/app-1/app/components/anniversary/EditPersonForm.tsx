@@ -1,5 +1,14 @@
 "use client";
 
+/**
+ * "Edit details" panel on the anniversary detail page: name, Hebrew date
+ * (entered directly or converted from a Gregorian one, same as the add form),
+ * Hebrew name, Hebrew year. Calls {@link updatePersonAction}. A name or Hebrew
+ * date change recomputes the dedup key; a date change also regenerates every
+ * stored occurrence at the new date. Either re-syncs the calendar. Type isn't
+ * editable here; hebrewName / hebYear are store-only.
+ */
+
 import { useMemo, useState } from "react";
 
 import {
@@ -21,6 +30,7 @@ import {
 import { Segmented } from "../Segmented";
 import { Select } from "../Select";
 
+/** Text for {@link EditPersonForm}. */
 export type EditPersonFormTexts = {
   name: string;
   hebDate: string;

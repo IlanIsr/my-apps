@@ -15,6 +15,7 @@ function ordinal(n: number): string {
   }
 }
 
+/** English UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
   back: "All anniversaries",
   eyebrow: { birthday: "Birthday", yahrzeit: "Yahrzeit" },

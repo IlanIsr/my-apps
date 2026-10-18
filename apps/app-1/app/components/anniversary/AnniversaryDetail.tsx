@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * The `/anniversaries/[id]` detail view: the person's name / Hebrew date, the
+ * admin-only "Family on this date" avatar stack, a join / leave button, an
+ * "Edit details" panel ({@link EditPersonForm}), an "Add someone" form
+ * ({@link AddMemberForm}), and the list of upcoming events — each editable
+ * inline via {@link EditEventForm}.
+ */
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
@@ -16,6 +24,7 @@ import { AddMemberForm, type AddMemberFormTexts } from "./AddMemberForm";
 import { EditEventForm, type EditEventFormTexts } from "./EditEventForm";
 import { EditPersonForm, type EditPersonFormTexts } from "./EditPersonForm";
 
+/** Text for {@link AnniversaryDetail}, including the nested form dictionaries. */
 export type AnniversaryDetailTexts = {
   back: string;
   eyebrow: { birthday: string; yahrzeit: string };

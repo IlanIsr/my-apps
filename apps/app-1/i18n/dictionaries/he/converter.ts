@@ -17,6 +17,7 @@ const months = {
   Elul: "אלול",
 } as const;
 
+/** Hebrew UI strings — shape: {@link ConverterTexts}. */
 export const converter = {
   question: "יודעים את התאריך העברי או הלועזי?",
   gregorian: "לועזי",

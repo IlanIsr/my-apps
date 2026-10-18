@@ -2,6 +2,7 @@ import type { AnniversaryFormTexts } from "@/app/components/anniversary/Annivers
 
 const NOT_CONFIGURED = "לוח ימי השנה המשותף עדיין לא מוגדר.";
 
+/** Hebrew UI strings — shape: {@link AnniversaryFormTexts}. */
 export const anniversaryForm = {
   name: "שם",
   namePlaceholder: "אילן ישראל בלייש",

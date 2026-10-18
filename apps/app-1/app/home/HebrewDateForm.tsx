@@ -14,6 +14,12 @@ import { Ornament } from "../components/Ornament";
 import { Select } from "../components/Select";
 import { hebrewDayOptions, hebrewMonthOptions } from "./options";
 
+/**
+ * Pick a Hebrew day + month; shows the next Gregorian date that Hebrew date
+ * falls on (via `findNextHebrewDate` from `@repo/hebcal`).
+ */
+
+/** Text for {@link HebrewDateForm}. */
 export type HebrewDateFormTexts = {
   day: string;
   month: string;

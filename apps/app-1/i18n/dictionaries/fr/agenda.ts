@@ -1,5 +1,6 @@
 import type { AgendaTexts } from "@/app/components/anniversary/CalendarAgenda";
 
+/** French UI strings — shape: {@link AgendaTexts}. */
 export const agenda = {
   title: "Agenda",
   subtitle: "Tous les prochains événements d’anniversaire, par date.",

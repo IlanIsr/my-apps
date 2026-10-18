@@ -1,5 +1,6 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 
+/** Hebrew UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
   back: "כל ימי השנה",
   eyebrow: { birthday: "יום הולדת", yahrzeit: "אזכרה" },

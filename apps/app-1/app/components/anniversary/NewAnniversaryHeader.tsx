@@ -1,5 +1,8 @@
 import { BackLink } from "../../components/BackLink";
 
+/** Back link + title + blurb at the top of `/anniversaries/new`. */
+
+/** Text for {@link NewAnniversaryHeader}. */
 export type NewAnniversaryHeaderTexts = {
   title: string;
   subtitle: string;

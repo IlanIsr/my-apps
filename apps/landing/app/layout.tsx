@@ -1,3 +1,8 @@
+/**
+ * Root layout for the `landing` app — the index page linking to the other
+ * apps. Same shared Clerk gate; stays light.
+ */
+
 import type { Metadata } from "next";
 import "./globals.css";
 

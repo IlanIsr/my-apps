@@ -1,3 +1,9 @@
+/**
+ * app-1's button — a thin wrapper over `<button>` with three visual variants
+ * drawn from the parchment/ink palette. (Not `@repo/ui/button`, which is the
+ * untouched starter component.)
+ */
+
 type Variant = "primary" | "outline" | "ghost";
 
 const VARIANTS: Record<Variant, string> = {
@@ -8,6 +14,10 @@ const VARIANTS: Record<Variant, string> = {
   ghost: "text-muted-foreground font-medium hover:text-foreground",
 };
 
+/**
+ * @param variant - `"primary"` (default), `"outline"`, or `"ghost"`.
+ * All other `<button>` props (including `className`, which is appended) pass through.
+ */
 export function Button({
   variant = "primary",
   className = "",
