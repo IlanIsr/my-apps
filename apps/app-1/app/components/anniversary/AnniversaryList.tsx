@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { LOCALE_TAG, useLanguage } from "@/i18n";
 import { occurrencesSince, type Anniversary } from "@repo/anniversaries/person";
 
 import { Eyebrow } from "../Eyebrow";
 import { Ornament } from "../Ornament";
+import { ShareListModal, type ShareListModalTexts } from "./ShareListModal";
 
 export type AnniversariesTexts = {
   listPage: {
@@ -15,6 +17,8 @@ export type AnniversariesTexts = {
     subtitle: (count: number, admin: boolean) => string;
   };
   add: string;
+  shareList: string;
+  shareModal: ShareListModalTexts;
   search: string;
   joined: string;
   eyebrow: { birthday: string; yahrzeit: string };
@@ -41,7 +45,14 @@ export function AnniversaryList({
   t: AnniversariesTexts;
 }) {
   const { locale } = useLanguage();
+  const router = useRouter();
   const [query, setQuery] = useState("");
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const myList = useMemo(
+    () => anniversaries.filter((a) => a.joined),
+    [anniversaries],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -70,13 +81,33 @@ export function AnniversaryList({
             {t.listPage.subtitle(anniversaries.length, admin)}
           </p>
         </div>
-        <Link
-          href="/anniversaries/new"
-          className="shrink-0 rounded-field bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-        >
-          {t.add}
-        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          {myList.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="rounded-field border border-border-strong bg-card px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-muted"
+            >
+              {t.shareList}
+            </button>
+          )}
+          <Link
+            href="/anniversaries/new"
+            className="rounded-field bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+          >
+            {t.add}
+          </Link>
+        </div>
       </div>
+
+      {shareOpen && (
+        <ShareListModal
+          anniversaries={myList}
+          t={t.shareModal}
+          onClose={() => setShareOpen(false)}
+          onShared={() => router.refresh()}
+        />
+      )}
 
       {anniversaries.length > 0 && (
         <div className="flex items-center gap-2.5 rounded-field border border-border bg-card px-3 py-2.5">

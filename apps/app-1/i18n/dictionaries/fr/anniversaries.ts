@@ -9,6 +9,32 @@ export const anniversaries = {
         : `${count} dans ma liste`,
   },
   add: "Ajouter un anniversaire",
+  shareList: "Partager ma liste",
+  shareModal: {
+    title: "Partager ma liste",
+    intro:
+      "Ajoutez une personne à chaque anniversaire sélectionné. Elle est invitée à l’agenda partagé de chacun.",
+    shareWith: "Partager avec",
+    placeholder: "quelquun@example.com",
+    notify: "Lui envoyer une invitation agenda",
+    selectAll: "Tout sélectionner",
+    clearAll: "Effacer",
+    share: "Partager",
+    sharing: "Partage…",
+    cancel: "Annuler",
+    emailInvalid: "Saisissez une adresse email valide.",
+    nothingSelected: "Sélectionnez au moins un anniversaire.",
+    rateLimited: "Google Agenda nous a limités en cours de route.",
+    result: (added: number, already: number, failed: number) =>
+      [
+        added > 0 && `Ajouté à ${added}`,
+        already > 0 && `${already} déjà partagé${already === 1 ? "" : "s"}`,
+        failed > 0 && `${failed} échec${failed === 1 ? "" : "s"}`,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "Rien à faire.",
+    error: (message: string) => `Une erreur est survenue : ${message}`,
+  },
   search: "Rechercher par nom ou date hébraïque",
   joined: "Dans ma liste",
   eyebrow: { birthday: "Anniversaire", yahrzeit: "Yahrzeit" },
