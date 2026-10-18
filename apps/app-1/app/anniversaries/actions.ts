@@ -124,8 +124,9 @@ export async function updatePersonAction(input: {
   /** Current form values — always sent so the title can be recomputed. */
   name: string;
   type: AnniversaryType;
+  hebDay: number;
+  hebMonth: string;
   hebrewName?: string;
-  origin?: string;
   hebYear?: number;
   locale: Locale;
 }): Promise<ActionResult<{ updated: boolean }>> {

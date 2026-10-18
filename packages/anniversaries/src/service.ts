@@ -507,6 +507,10 @@ export type UpdatePersonInput = {
   /** New display name. Omit to leave unchanged. */
   name?: string;
   type?: AnniversaryType;
+  /** Omit either to leave the Hebrew date unchanged. Changing it regenerates
+   * every stored occurrence (same count as today) at the new date. */
+  hebDay?: number;
+  hebMonth?: string;
   /** `""` clears it. Omit to leave unchanged. */
   hebrewName?: string;
   /** `""` clears it. Omit to leave unchanged. */
@@ -515,16 +519,19 @@ export type UpdatePersonInput = {
   hebYear?: number;
   /**
    * Pre-translated event title for the (possibly new) name + type — used only
-   * if name or type actually changed.
+   * if name, type, or the Hebrew date actually changed.
    */
   summary: string;
 };
 
 /**
  * Edit a person's details. Name / type changes recompute the dedup `key`, the
- * calendar event titles and (for type) the colour — so those trigger a calendar
- * re-sync. hebrewName / origin / hebYear are store-only. A member (or admin) may
- * edit; anyone else is a no-op.
+ * calendar event titles and (for type) the colour. A Hebrew date change also
+ * recomputes the key and regenerates every stored occurrence (preserving manual
+ * per-event overrides and existing Google event ids, so those are PATCHed in
+ * place rather than left stale on the calendar). Any of these trigger a
+ * calendar re-sync. hebrewName / origin / hebYear are store-only. A member (or
+ * admin) may edit; anyone else is a no-op.
  */
 export async function updateAnniversary(
   input: UpdatePersonInput,
@@ -542,13 +549,31 @@ export async function updateAnniversary(
 
   const name = input.name?.trim() || person.name;
   const type = input.type ?? person.type;
+  const hebDay = input.hebDay ?? person.hebDate.day;
+  const hebMonth = input.hebMonth ?? person.hebDate.month;
   const nameOrTypeChanged = name !== person.name || type !== person.type;
+  const dateChanged =
+    hebDay !== person.hebDate.day || hebMonth !== person.hebDate.month;
+  const needsResync = nameOrTypeChanged || dateChanged;
+
+  // When the date changes, regenerate occurrences (same count as today) at
+  // the new day/month — reusing the existing record preserves manual
+  // overrides and googleEventIds, so the sync below PATCHes those events in
+  // place instead of creating duplicates and leaving the old ones stale.
+  const base = dateChanged
+    ? desiredStored(person, hebDay, hebMonth, Math.max(1, person.events.length))
+    : person.events;
+  if (dateChanged && base.length === 0) throw new NoSuchHebrewDateError();
 
   const patch: Parameters<typeof updatePerson>[1] = {};
   if (name !== person.name) patch.name = name;
   if (type !== person.type) patch.type = type;
-  if (nameOrTypeChanged) {
-    patch.key = anniversaryKey(name, person.hebDate.day, person.hebDate.month, type);
+  if (dateChanged) {
+    patch.hebDay = hebDay;
+    patch.hebMonth = hebMonth as HebrewMonthKey;
+  }
+  if (needsResync) {
+    patch.key = anniversaryKey(name, hebDay, hebMonth, type);
   }
   if (input.hebrewName !== undefined) {
     patch.hebrewName = input.hebrewName.trim() || null;
@@ -564,7 +589,7 @@ export async function updateAnniversary(
 
   await updatePerson(input.id, patch);
 
-  if (nameOrTypeChanged) {
+  if (needsResync) {
     const sync = await syncPersonEvents({
       personId: person.id,
       summary: input.summary,
@@ -572,10 +597,10 @@ export async function updateAnniversary(
       description: "",
       colorId: colorIdFor(type),
       members: person.members,
-      events: person.events.map(toDesired),
+      events: base.map(toDesired),
     });
     await updatePerson(input.id, {
-      events: applySynced(person.events, sync.events),
+      events: applySynced(base, sync.events),
     });
     if (sync.rateLimited) throw new CalendarRateLimitError();
   }

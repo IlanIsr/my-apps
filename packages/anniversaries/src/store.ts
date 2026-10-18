@@ -73,13 +73,15 @@ export type NewPerson = {
 export type PersonPatch = Partial<{
   name: string;
   type: AnniversaryType;
+  hebDay: number;
+  hebMonth: HebrewMonthKey;
   /** Pass `null` to clear. */
   hebrewName: string | null;
   /** Pass `null` to clear. */
   origin: string | null;
   /** Pass `null` to clear. */
   hebYear: number | null;
-  /** Recomputed by the service when name/type change. */
+  /** Recomputed by the service when name/type/date change. */
   key: string;
   members: string[];
   events: StoredEvent[];
@@ -321,6 +323,8 @@ export async function updatePerson(
   const set: Partial<typeof persons.$inferInsert> = { updatedAt: new Date() };
   if (patch.name !== undefined) set.name = patch.name;
   if (patch.type !== undefined) set.type = patch.type;
+  if (patch.hebDay !== undefined) set.hebDay = patch.hebDay;
+  if (patch.hebMonth !== undefined) set.hebMonth = patch.hebMonth;
   if (patch.key !== undefined) set.key = patch.key;
   if (patch.hebrewName !== undefined) set.hebrewName = patch.hebrewName || null;
   if (patch.origin !== undefined) set.origin = patch.origin || null;

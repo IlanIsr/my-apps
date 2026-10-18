@@ -10,6 +10,10 @@ import {
 import { AnniversaryDetailView } from "./AnniversaryDetailView";
 
 export const dynamic = "force-dynamic";
+// Edit/leave actions here re-sync every stored calendar event sequentially
+// (~150ms apart, to avoid rate-limiting the shared calendar) — a person with
+// many years of events can take well past the default function timeout.
+export const maxDuration = 60;
 
 async function load(
   id: string,

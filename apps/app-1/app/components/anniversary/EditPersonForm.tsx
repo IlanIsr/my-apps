@@ -1,26 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
+import {
+  gregorianToHebrew,
+  hebrewYearForGregorian,
+  toHebrewMonthKey,
+  type HebrewMonthKey,
+} from "@repo/hebcal";
 import { useLanguage } from "@/i18n";
-import type { Anniversary, AnniversaryType } from "@repo/anniversaries/person";
+import type { Anniversary } from "@repo/anniversaries/person";
 import { updatePersonAction } from "../../anniversaries/actions";
+import {
+  gregorianDayOptions,
+  gregorianMonthOptions,
+  gregorianYearOptions,
+  hebrewDayOptions,
+  hebrewMonthOptions,
+} from "../../home/options";
 import { Segmented } from "../Segmented";
+import { Select } from "../Select";
 
 export type EditPersonFormTexts = {
   name: string;
-  type: string;
-  types: { birthday: string; yahrzeit: string };
+  hebDate: string;
+  calendar: string;
+  day: string;
+  month: string;
+  year: string;
   hebrewName: string;
-  origin: string;
   hebYear: string;
   optional: string;
   save: string;
   saving: string;
   cancel: string;
+  toggle: { hebrew: string; gregorian: string; aria: string };
   nameRequired: string;
+  noSuchDate: string;
   rateLimited: string;
   error: (message: string) => string;
+  months: Record<HebrewMonthKey, string>;
 };
 
 export function EditPersonForm({
@@ -33,30 +52,55 @@ export function EditPersonForm({
   onDone: () => void;
 }) {
   const { locale } = useLanguage();
+  const months = useMemo(() => hebrewMonthOptions(t.months), [t.months]);
+  const days = useMemo(() => hebrewDayOptions(locale), [locale]);
+  const gregDays = useMemo(() => gregorianDayOptions(), []);
+  const gregMonths = useMemo(() => gregorianMonthOptions(locale), [locale]);
+  const gregYears = useMemo(() => gregorianYearOptions(), []);
+
   const [name, setName] = useState(anniversary.name);
-  const [type, setType] = useState<AnniversaryType>(anniversary.type);
+  const [fromGregorian, setFromGregorian] = useState(false);
+  const [day, setDay] = useState(String(anniversary.hebDate.day));
+  const [month, setMonth] = useState<string>(anniversary.hebDate.month);
+  const [gDay, setGDay] = useState("1");
+  const [gMonth, setGMonth] = useState("0");
+  const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));
   const [hebrewName, setHebrewName] = useState(anniversary.hebrewName ?? "");
-  const [origin, setOrigin] = useState(anniversary.origin ?? "");
   const [hebYear, setHebYear] = useState(
     anniversary.hebYear ? String(anniversary.hebYear) : "",
   );
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const converted = useMemo(() => {
+    if (!fromGregorian) return null;
+    return gregorianToHebrew(Number(gYear), Number(gMonth) + 1, Number(gDay));
+  }, [fromGregorian, gYear, gMonth, gDay]);
+
   const save = async () => {
     if (!name.trim()) {
       setError(t.nameRequired);
       return;
     }
+
+    const hebDay = converted ? converted.day : Number(day);
+    const hebMonth = converted ? toHebrewMonthKey(converted.month) : month;
+    const hebYearValue = fromGregorian
+      ? hebrewYearForGregorian(Number(gYear), Number(gMonth) + 1, Number(gDay))
+      : hebYear.trim()
+        ? Number(hebYear.trim())
+        : 0;
+
     setPending(true);
     setError(null);
     const result = await updatePersonAction({
       id: anniversary.id,
       name: name.trim(),
-      type,
+      type: anniversary.type,
+      hebDay,
+      hebMonth,
       hebrewName: hebrewName.trim(),
-      origin: origin.trim(),
-      hebYear: hebYear.trim() ? Number(hebYear.trim()) : 0,
+      hebYear: hebYearValue,
       locale,
     });
     setPending(false);
@@ -66,7 +110,9 @@ export function EditPersonForm({
           ? t.rateLimited
           : result.error === "name-required"
             ? t.nameRequired
-            : t.error(result.error),
+            : result.error === "no-such-date"
+              ? t.noSuchDate
+              : t.error(result.error),
       );
       return;
     }
@@ -90,18 +136,77 @@ export function EditPersonForm({
       </label>
 
       <div className="flex flex-col gap-1.5">
-        <span className={labelCls}>{t.type}</span>
+        <span className={labelCls}>{t.calendar}</span>
         <Segmented
-          aria-label={t.type}
-          tone={type === "yahrzeit" ? "yahrzeit" : "birthday"}
-          value={type}
-          onChange={setType}
+          aria-label={t.toggle.aria}
+          value={fromGregorian ? "gregorian" : "hebrew"}
+          onChange={(v) => setFromGregorian(v === "gregorian")}
           options={[
-            { value: "birthday", label: t.types.birthday },
-            { value: "yahrzeit", label: t.types.yahrzeit },
+            { value: "hebrew", label: t.toggle.hebrew },
+            { value: "gregorian", label: t.toggle.gregorian },
           ]}
         />
       </div>
+
+      {fromGregorian ? (
+        <div className="flex flex-wrap items-end gap-3">
+          <Select
+            label={t.day}
+            options={gregDays}
+            value={gDay}
+            onChange={setGDay}
+          />
+          <Select
+            label={t.month}
+            options={gregMonths}
+            value={gMonth}
+            onChange={setGMonth}
+          />
+          <Select
+            label={t.year}
+            options={gregYears}
+            value={gYear}
+            onChange={setGYear}
+          />
+          {converted && (
+            <p className="pb-2.5 text-sm text-muted-foreground">
+              {t.hebDate}: {converted.day}{" "}
+              <span dir="ltr">{converted.month}</span>
+            </p>
+          )}
+        </div>
+      ) : (
+        <div
+          className="flex flex-wrap gap-3"
+          dir={locale === "he" ? "rtl" : "ltr"}
+        >
+          <Select label={t.day} options={days} value={day} onChange={setDay} />
+          <Select
+            label={t.month}
+            options={months}
+            value={month}
+            onChange={setMonth}
+          />
+          <label className="flex flex-col gap-1.5">
+            <span className={labelCls}>
+              {t.hebYear}{" "}
+              <span className="normal-case tracking-normal text-subtle-foreground/70">
+                {t.optional}
+              </span>
+            </span>
+            <input
+              inputMode="numeric"
+              value={hebYear}
+              onChange={(e) =>
+                setHebYear(e.target.value.replace(/[^0-9]/g, ""))
+              }
+              placeholder="5754"
+              className={`${field} w-32`}
+              dir="ltr"
+            />
+          </label>
+        </div>
+      )}
 
       <label className="flex flex-col gap-1.5">
         <span className={labelCls}>
@@ -115,37 +220,6 @@ export function EditPersonForm({
           onChange={(e) => setHebrewName(e.target.value)}
           className={field}
           dir="rtl"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className={labelCls}>
-          {t.origin}{" "}
-          <span className="normal-case tracking-normal text-subtle-foreground/70">
-            {t.optional}
-          </span>
-        </span>
-        <input
-          value={origin}
-          onChange={(e) => setOrigin(e.target.value)}
-          className={field}
-        />
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className={labelCls}>
-          {t.hebYear}{" "}
-          <span className="normal-case tracking-normal text-subtle-foreground/70">
-            {t.optional}
-          </span>
-        </span>
-        <input
-          inputMode="numeric"
-          value={hebYear}
-          onChange={(e) => setHebYear(e.target.value.replace(/[^0-9]/g, ""))}
-          placeholder="5754"
-          className={`${field} w-32`}
-          dir="ltr"
         />
       </label>
 
