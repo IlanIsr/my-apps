@@ -15,6 +15,7 @@ export {
   getAnniversary,
   addAnniversary,
   getNotifyDefaults,
+  addMember,
   leaveAnniversary,
   updateEvent,
   updateAnniversary,
@@ -27,6 +28,7 @@ export {
   StoreNotConfiguredError,
   ProdSyncNotConfiguredError,
   type AddAnniversaryInput,
+  type AddMemberInput,
   type UpdateEventInput,
   type UpdatePersonInput,
 } from "./service";

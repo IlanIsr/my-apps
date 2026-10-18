@@ -7,6 +7,7 @@ import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
 import { getDictionary, type Locale } from "@/i18n";
 import {
   addAnniversary,
+  addMember,
   CalendarNotConfiguredError,
   CalendarRateLimitError,
   getNotifyDefaults,
@@ -17,6 +18,8 @@ import {
   updateEvent,
   type AnniversaryType,
 } from "@repo/anniversaries";
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function eventSummaryFor(
   locale: Locale,
@@ -113,6 +116,34 @@ export async function leaveAnniversaryAction(
 
     const data = await leaveAnniversary(id, email);
     refreshAnniversaries(id);
+    return { ok: true, data };
+  } catch (error) {
+    return fail(error);
+  }
+}
+
+export async function addMemberAction(input: {
+  id: string;
+  /** The anniversary's current name + type, for the calendar title. */
+  name: string;
+  type: AnniversaryType;
+  email: string;
+  notify: boolean;
+  locale: Locale;
+}): Promise<ActionResult<{ added: boolean; already: boolean }>> {
+  try {
+    const viewer = await getCurrentUserEmail();
+    if (!viewer) return { ok: false, error: "not-signed-in" };
+    if (!EMAIL_RE.test(input.email.trim())) {
+      return { ok: false, error: "email-invalid" };
+    }
+
+    const summary = eventSummaryFor(input.locale, input.type, input.name);
+    const data = await addMember(
+      { id: input.id, email: input.email, notify: input.notify, summary },
+      viewer,
+    );
+    refreshAnniversaries(input.id);
     return { ok: true, data };
   } catch (error) {
     return fail(error);

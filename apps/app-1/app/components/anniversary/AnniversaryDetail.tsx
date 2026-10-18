@@ -12,6 +12,7 @@ import {
 import { BackLink } from "../BackLink";
 import { Eyebrow } from "../Eyebrow";
 import { Ornament } from "../Ornament";
+import { AddMemberForm, type AddMemberFormTexts } from "./AddMemberForm";
 import { EditEventForm, type EditEventFormTexts } from "./EditEventForm";
 import { EditPersonForm, type EditPersonFormTexts } from "./EditPersonForm";
 
@@ -36,6 +37,7 @@ export type AnniversaryDetailTexts = {
   error: (message: string) => string;
   editForm: EditEventFormTexts;
   editPersonForm: EditPersonFormTexts;
+  addMemberForm: AddMemberFormTexts;
 };
 
 function initials(email: string): string {
@@ -204,6 +206,14 @@ export function AnniversaryDetail({
             setEditingPerson(false);
             router.refresh();
           }}
+        />
+      )}
+
+      {(anniversary.joined || anniversary.admin) && (
+        <AddMemberForm
+          anniversary={anniversary}
+          t={t.addMemberForm}
+          onAdded={() => router.refresh()}
         />
       )}
 
