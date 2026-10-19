@@ -221,44 +221,47 @@ export function daysUntil(isoDate: string, today = new Date()): number {
   return Math.round((target - now) / 86_400_000);
 }
 
-/**
- * Rewards in the order worth acting on: open deadlines (soonest first), then
- * "first N" races, then expired deadlines.
- */
-export function sortRewards(rewards: PageReward[]): PageReward[] {
-  const rank = (r: PageReward) => {
-    if (r.kind === "first_n") return [1, r.page];
-    const days = daysUntil(r.deadline ?? "");
-    return days < 0 ? [2, -days] : [0, days];
-  };
-  return [...rewards].sort((x, y) => {
-    const [a1, a2] = rank(x);
-    const [b1, b2] = rank(y);
-    return a1! - b1! || a2! - b2!;
-  });
-}
-
 export function rewardExpired(r: PageReward): boolean {
   return r.kind === "deadline" && daysUntil(r.deadline ?? "") < 0;
 }
 
-/** Deadlines by date (earliest first), then "first N" races by page. */
-export function sortRewardsByDate(rewards: PageReward[]): PageReward[] {
-  return [...rewards].sort(
-    (x, y) =>
-      (x.deadline ?? "￿").localeCompare(y.deadline ?? "￿") || x.page - y.page,
+export type RewardSort = "date" | "page" | "completion";
+
+/** Share of a page's cards the kids own, all kids together (0–100). */
+export function rewardCompletion(
+  cards: Card[],
+  page: number,
+  kids: Collector[],
+): number {
+  const total = cardsOnPage(cards, page).length * kids.length;
+  if (!total) return 0;
+  const missing = kids.reduce(
+    (n, k) => n + missingOnPage(cards, page, k.id).length,
+    0,
   );
+  return Math.round(((total - missing) / total) * 100);
 }
 
-/** Closest to done first: fewest cards still missing across all kids. */
-export function sortRewardsByCompletion(
+/**
+ * Rewards sorted by deadline, page number or completion %. "First N" races
+ * have no date, so the date sort always puts them last whatever the direction.
+ */
+export function sortRewardsBy(
   rewards: PageReward[],
+  by: RewardSort,
+  desc: boolean,
   cards: Card[],
   kids: Collector[],
 ): PageReward[] {
-  const missing = (r: PageReward) =>
-    kids.reduce((n, k) => n + missingOnPage(cards, r.page, k.id).length, 0);
-  return [...rewards].sort(
-    (x, y) => missing(x) - missing(y) || x.page - y.page,
-  );
+  const sign = desc ? -1 : 1;
+  const key = (r: PageReward) =>
+    by === "completion" ? rewardCompletion(cards, r.page, kids) : r.page;
+  return [...rewards].sort((x, y) => {
+    if (by === "date") {
+      if (!x.deadline || !y.deadline)
+        return (x.deadline ? -1 : y.deadline ? 1 : 0) || x.page - y.page;
+      return sign * x.deadline.localeCompare(y.deadline) || x.page - y.page;
+    }
+    return sign * (key(x) - key(y)) || x.page - y.page;
+  });
 }

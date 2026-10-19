@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * "Prix": every page that has a prize (most urgent first by default, or by
- * date / completion), with each kid's status — complete, or which cards they
+ * "Prix": every page that has a prize, sorted by date / page / completion %
+ * (either direction), with each kid's status — complete, or which cards they
  * still need. Finished deadlines can be hidden and each prize collapsed.
  */
 
@@ -11,27 +11,28 @@ import { useState } from "react";
 import {
   daysUntil,
   missingOnPage,
+  rewardCompletion,
   rewardExpired,
-  sortRewards,
-  sortRewardsByCompletion,
-  sortRewardsByDate,
+  sortRewardsBy,
   type Album,
   type Collector,
   type PageReward,
+  type RewardSort,
 } from "@/lib/album-logic";
 
 import { Avatar } from "./Avatar";
-import { CheckIcon, ChevronIcon, GiftIcon, PlusIcon } from "./icons";
-
-type RewardSort = "urgency" | "date" | "completion";
+import { ArrowIcon, CheckIcon, ChevronIcon, GiftIcon, PlusIcon } from "./icons";
 
 export type RewardsTexts = {
   add: string;
   hideExpired: string;
   sortBy: string;
-  sortUrgency: string;
   sortDate: string;
+  sortPage: string;
   sortCompletion: string;
+  ascending: string;
+  descending: string;
+  completion: (pct: number) => string;
   noMatch: string;
   emptyTitle: string;
   emptyBody: string;
@@ -63,16 +64,12 @@ export function RewardsTab({
   onEdit: (reward: PageReward) => void;
   t: RewardsTexts;
 }) {
-  const [sort, setSort] = useState<RewardSort>("urgency");
+  const [sort, setSort] = useState<RewardSort>("date");
+  const [desc, setDesc] = useState(false);
   const [hideExpired, setHideExpired] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 
-  const sorted =
-    sort === "date"
-      ? sortRewardsByDate(album.rewards)
-      : sort === "completion"
-        ? sortRewardsByCompletion(album.rewards, album.cards, kids)
-        : sortRewards(album.rewards);
+  const sorted = sortRewardsBy(album.rewards, sort, desc, album.cards, kids);
   const rewards = hideExpired
     ? sorted.filter((r) => !rewardExpired(r))
     : sorted;
@@ -104,10 +101,21 @@ export function RewardsTab({
               aria-label={t.sortBy}
               className="field-input h-9.5! w-auto!"
             >
-              <option value="urgency">{t.sortUrgency}</option>
               <option value="date">{t.sortDate}</option>
+              <option value="page">{t.sortPage}</option>
               <option value="completion">{t.sortCompletion}</option>
             </select>
+            <button
+              type="button"
+              onClick={() => setDesc((d) => !d)}
+              aria-label={desc ? t.descending : t.ascending}
+              title={desc ? t.descending : t.ascending}
+              className="field-input flex h-9.5! w-9.5! items-center justify-center px-0!"
+            >
+              <ArrowIcon
+                className={`size-4 transition-transform ${desc ? "rotate-90" : "-rotate-90"}`}
+              />
+            </button>
           </>
         )}
         <button
@@ -153,6 +161,9 @@ export function RewardsTab({
                 <h3 className="text-[15px]">
                   {t.page(r.page)} — {r.prize}
                 </h3>
+                <p className="text-xs font-semibold text-accent">
+                  {t.completion(rewardCompletion(album.cards, r.page, kids))}
+                </p>
                 <p className="text-xs text-muted">
                   {r.kind === "deadline" && r.deadline ? (
                     <>

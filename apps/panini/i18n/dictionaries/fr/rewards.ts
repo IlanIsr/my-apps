@@ -7,9 +7,12 @@ export const rewards = {
   add: "Ajouter un prix",
   hideExpired: "Masquer les terminés",
   sortBy: "Trier par",
-  sortUrgency: "Par urgence",
   sortDate: "Par date",
+  sortPage: "Par page",
   sortCompletion: "Par complétion",
+  ascending: "Croissant",
+  descending: "Décroissant",
+  completion: (pct: number) => `${pct} % complété`,
   noMatch: "Tous les prix sont terminés.",
   emptyTitle: "Aucun prix pour l'instant",
   emptyBody:
