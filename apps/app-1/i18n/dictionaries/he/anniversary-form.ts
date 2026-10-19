@@ -1,5 +1,7 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
+import { hebrewMonths } from "./hebrew-months";
+
 const NOT_CONFIGURED = "לוח ימי השנה המשותף עדיין לא מוגדר.";
 
 /** Hebrew UI strings — shape: {@link AnniversaryFormTexts}. */
@@ -16,10 +18,6 @@ export const anniversaryForm = {
   hebYear: "שנה עברית",
   optional: "רשות",
   years: "שנים קדימה",
-  sharedEmails: "שיתוף עם",
-  sharedEmailsPlaceholder: "someone@example.com, other@example.com",
-  sharedEmailsHelp:
-    "אתה מתווסף אוטומטית. כל אחד אחר כאן מצטרף כאורח אופציונלי, בלתי נראה לאחרים.",
   submit: "יצירת יום שנה",
   submitting: "יוצר…",
   cancel: "ביטול",
@@ -28,31 +26,10 @@ export const anniversaryForm = {
     gregorian: "לועזי",
     aria: "החלפת לוח השנה להזנה",
   },
-  notify: "לשלוח הזמנת יומן",
-  notifyHelp:
-    "מסומן כברירת מחדל למי שמצטרף בפעם הראשונה. בטלו סימון למי שכבר אישר הזמנה מהיומן הזה — הוא יראה אירועים חדשים בלי הזמנה נוספת.",
-  notifyWarning:
-    "מי שהסימון שלו בוטל לא יקבל הזמנה ולא יראה את האירועים האלה, אלא אם כבר אישר הזמנה מהיומן הזה בעבר.",
   nameRequired: "יש להזין שם.",
-  emailInvalid: (email: string) => `אימייל לא תקין: ${email}`,
   notConfigured: NOT_CONFIGURED,
   noSuchDate: "תאריך עברי זה אינו קיים (למשל ה-30 בחודש בן 29 יום).",
   rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
   error: (message: string) => `משהו השתבש: ${message}`,
-  months: {
-    Tishrei: "תשרי",
-    Cheshvan: "חשוון",
-    Kislev: "כסלו",
-    Tevet: "טבת",
-    Shvat: "שבט",
-    Adar: "אדר",
-    Adar1: "אדר א׳",
-    Adar2: "אדר ב׳",
-    Nisan: "ניסן",
-    Iyyar: "אייר",
-    Sivan: "סיוון",
-    Tamuz: "תמוז",
-    Av: "אב",
-    Elul: "אלול",
-  },
+  months: hebrewMonths,
 } as const satisfies AnniversaryFormTexts;

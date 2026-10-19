@@ -13,7 +13,7 @@
 import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
 import { getFirestore, type DocumentData } from "firebase-admin/firestore";
 
-import { anniversaryKey, type AnniversaryType } from "../../src/person";
+import { anniversaryKey, toAnniversaryType } from "../../src/person";
 import type { PersonRecord, StoredEvent } from "../../src/store";
 
 const APP_NAME = "anniversaries-firestore-source";
@@ -103,8 +103,7 @@ function toStoredEvent(raw: DocumentData): StoredEvent {
 
 /** Map a raw Firestore `persons/{id}` doc to a `PersonRecord`. */
 export function docToRecord(id: string, data: DocumentData): PersonRecord {
-  const type: AnniversaryType =
-    data.type === "yahrzeit" ? "yahrzeit" : "birthday";
+  const type = toAnniversaryType(data.type);
   const hebDay = Number(data.hebDay) || 0;
   const hebMonth = String(data.hebMonth ?? "");
   return {

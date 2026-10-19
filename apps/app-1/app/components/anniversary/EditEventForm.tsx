@@ -9,7 +9,7 @@
 import { useState } from "react";
 
 import { useLanguage } from "@/i18n";
-import type { Anniversary, AnniversaryEvent } from "@repo/anniversaries";
+import type { Anniversary, AnniversaryEvent } from "@repo/anniversaries/person";
 import { updateEventAction } from "../../anniversaries/actions";
 
 /** Text for {@link EditEventForm}. */

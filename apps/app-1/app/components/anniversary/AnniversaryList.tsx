@@ -2,20 +2,22 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { LOCALE_TAG, useLanguage } from "@/i18n";
 import { occurrencesSince, type Anniversary } from "@repo/anniversaries/person";
 
 import { Eyebrow } from "../Eyebrow";
 import { Ornament } from "../Ornament";
-import { ShareListModal, type ShareListModalTexts } from "./ShareListModal";
+import {
+  CreateShareLinkModal,
+  type CreateShareLinkModalTexts,
+} from "./CreateShareLinkModal";
 
 /**
  * The `/anniversaries` list: a searchable stack of cards (one per person the
  * viewer is on the family list for; the admin sees everyone), an "Add
  * anniversary" link, and — when you're on at least one list — a "Share my list"
- * button that opens {@link ShareListModal}.
+ * button that opens {@link CreateShareLinkModal}.
  */
 
 /** Text for {@link AnniversaryList} and its card / empty-state sub-parts. */
@@ -26,7 +28,7 @@ export type AnniversariesTexts = {
   };
   add: string;
   shareList: string;
-  shareModal: ShareListModalTexts;
+  shareModal: CreateShareLinkModalTexts;
   search: string;
   joined: string;
   eyebrow: { birthday: string; yahrzeit: string };
@@ -53,7 +55,6 @@ export function AnniversaryList({
   t: AnniversariesTexts;
 }) {
   const { locale } = useLanguage();
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -109,11 +110,10 @@ export function AnniversaryList({
       </div>
 
       {shareOpen && (
-        <ShareListModal
+        <CreateShareLinkModal
           anniversaries={myList}
           t={t.shareModal}
           onClose={() => setShareOpen(false)}
-          onShared={() => router.refresh()}
         />
       )}
 

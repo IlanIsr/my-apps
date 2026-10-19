@@ -1,5 +1,7 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
+import { hebrewMonths } from "./hebrew-months";
+
 const NOT_CONFIGURED = "The shared anniversaries calendar isn’t set up yet.";
 
 /** English UI strings — shape: {@link AnniversaryFormTexts}. */
@@ -16,10 +18,6 @@ export const anniversaryForm = {
   hebYear: "Hebrew year",
   optional: "optional",
   years: "Years ahead",
-  sharedEmails: "Share with",
-  sharedEmailsPlaceholder: "someone@example.com, other@example.com",
-  sharedEmailsHelp:
-    "You’re added automatically. Anyone else here joins as an optional guest, invisible to the others.",
   submit: "Create anniversary",
   submitting: "Creating…",
   cancel: "Cancel",
@@ -28,33 +26,12 @@ export const anniversaryForm = {
     gregorian: "Gregorian",
     aria: "Toggle input calendar",
   },
-  notify: "Email a calendar invite",
-  notifyHelp:
-    "Checked by default for anyone joining for the first time. Uncheck someone who has already accepted an invite from this calendar — they’ll see new events without another one.",
-  notifyWarning:
-    "Anyone left unchecked won’t be emailed and won’t see these events unless they’ve already accepted an invite from this calendar.",
   nameRequired: "Name is required.",
-  emailInvalid: (email: string) => `Not a valid email: ${email}`,
   notConfigured: NOT_CONFIGURED,
   noSuchDate:
     "That Hebrew date doesn’t occur (e.g. the 30th of a 29-day month).",
   rateLimited:
     "Google Calendar is busy right now — wait a moment and try again.",
   error: (message: string) => `Something went wrong: ${message}`,
-  months: {
-    Tishrei: "Tishrei",
-    Cheshvan: "Cheshvan",
-    Kislev: "Kislev",
-    Tevet: "Tevet",
-    Shvat: "Shvat",
-    Adar: "Adar",
-    Adar1: "Adar I",
-    Adar2: "Adar II",
-    Nisan: "Nisan",
-    Iyyar: "Iyar",
-    Sivan: "Sivan",
-    Tamuz: "Tamuz",
-    Av: "Av",
-    Elul: "Elul",
-  },
+  months: hebrewMonths,
 } as const satisfies AnniversaryFormTexts;

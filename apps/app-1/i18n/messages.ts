@@ -11,6 +11,8 @@ import type { AnniversaryDetailTexts } from "@/app/components/anniversary/Annive
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 import type { CalendarUnavailableTexts } from "@/app/components/anniversary/CalendarUnavailable";
 import type { NewAnniversaryHeaderTexts } from "@/app/components/anniversary/NewAnniversaryHeader";
+import type { ShareLinkViewTexts } from "@/app/anniversaries/share/[id]/ShareLinkView";
+import type { FooterTexts } from "@/app/components/Footer";
 import type { NavbarTexts } from "@/app/components/Navbar";
 import type { ConverterTexts } from "@/app/home/HomePage";
 import type { LandingTexts } from "@/app/LandingView";
@@ -23,6 +25,7 @@ import type { EventSummaryTexts } from "@/lib/event-summary";
  */
 export type Messages = {
   navbar: NavbarTexts;
+  footer: FooterTexts;
   landing: LandingTexts;
   converter: ConverterTexts;
   anniversaries: AnniversariesTexts;
@@ -33,4 +36,5 @@ export type Messages = {
   agenda: AgendaTexts;
   admin: AdminTexts;
   eventSummary: EventSummaryTexts;
+  shareLinkView: ShareLinkViewTexts;
 };

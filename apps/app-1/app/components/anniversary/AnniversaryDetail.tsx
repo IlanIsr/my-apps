@@ -3,9 +3,9 @@
 /**
  * The `/anniversaries/[id]` detail view: the person's name / Hebrew date, the
  * admin-only "Family on this date" avatar stack, a join / leave button, an
- * "Edit details" panel ({@link EditPersonForm}), an "Add someone" form
- * ({@link AddMemberForm}), and the list of upcoming events — each editable
- * inline via {@link EditEventForm}.
+ * "Edit details" panel ({@link EditPersonForm}), a "Share this one" trigger
+ * for {@link CreateShareLinkModal}, and the list of upcoming events — each
+ * editable inline via {@link EditEventForm}.
  */
 
 import { useState, useTransition } from "react";
@@ -20,7 +20,10 @@ import {
 import { BackLink } from "../BackLink";
 import { Eyebrow } from "../Eyebrow";
 import { Ornament } from "../Ornament";
-import { AddMemberForm, type AddMemberFormTexts } from "./AddMemberForm";
+import {
+  CreateShareLinkModal,
+  type CreateShareLinkModalTexts,
+} from "./CreateShareLinkModal";
 import { EditEventForm, type EditEventFormTexts } from "./EditEventForm";
 import { EditPersonForm, type EditPersonFormTexts } from "./EditPersonForm";
 
@@ -33,6 +36,7 @@ export type AnniversaryDetailTexts = {
   upcoming: string;
   edit: string;
   editDetails: string;
+  shareThis: string;
   viewInCalendar: string;
   nightfall: string;
   join: string;
@@ -46,7 +50,7 @@ export type AnniversaryDetailTexts = {
   error: (message: string) => string;
   editForm: EditEventFormTexts;
   editPersonForm: EditPersonFormTexts;
-  addMemberForm: AddMemberFormTexts;
+  shareModal: CreateShareLinkModalTexts;
 };
 
 function initials(email: string): string {
@@ -70,6 +74,7 @@ export function AnniversaryDetail({
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPerson, setEditingPerson] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const yahrzeit = anniversary.type === "yahrzeit";
   const accentText = yahrzeit ? "text-yahrzeit" : "text-birthday";
@@ -107,8 +112,6 @@ export function AnniversaryDetail({
         hebMonth: anniversary.hebDate.month,
         hebYear: anniversary.hebYear,
         years: anniversary.events.length,
-        sharedEmails: [],
-        notifyEmails: [],
         locale,
       });
       if (!result.ok) {
@@ -196,14 +199,25 @@ export function AnniversaryDetail({
           )}
         </div>
 
-        {(anniversary.joined || anniversary.admin) && !editingPerson && (
-          <button
-            type="button"
-            onClick={() => setEditingPerson(true)}
-            className="w-fit rounded-pill border border-border px-3 py-1 text-[12.5px] text-muted-foreground hover:text-foreground"
-          >
-            {t.editDetails}
-          </button>
+        {(anniversary.joined || anniversary.admin) && (
+          <div className="flex gap-2">
+            {!editingPerson && (
+              <button
+                type="button"
+                onClick={() => setEditingPerson(true)}
+                className="w-fit rounded-pill border border-border px-3 py-1 text-[12.5px] text-muted-foreground hover:text-foreground"
+              >
+                {t.editDetails}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="w-fit rounded-pill border border-border px-3 py-1 text-[12.5px] text-muted-foreground hover:text-foreground"
+            >
+              {t.shareThis}
+            </button>
+          </div>
         )}
       </div>
 
@@ -218,11 +232,11 @@ export function AnniversaryDetail({
         />
       )}
 
-      {(anniversary.joined || anniversary.admin) && (
-        <AddMemberForm
-          anniversary={anniversary}
-          t={t.addMemberForm}
-          onAdded={() => router.refresh()}
+      {shareOpen && (
+        <CreateShareLinkModal
+          anniversaries={[anniversary]}
+          t={t.shareModal}
+          onClose={() => setShareOpen(false)}
         />
       )}
 

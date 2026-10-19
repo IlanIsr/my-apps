@@ -1,21 +1,6 @@
 import type { ConverterTexts } from "@/app/home/HomePage";
 
-const months = {
-  Tishrei: "תשרי",
-  Cheshvan: "חשוון",
-  Kislev: "כסלו",
-  Tevet: "טבת",
-  Shvat: "שבט",
-  Adar: "אדר",
-  Adar1: "אדר א׳",
-  Adar2: "אדר ב׳",
-  Nisan: "ניסן",
-  Iyyar: "אייר",
-  Sivan: "סיוון",
-  Tamuz: "תמוז",
-  Av: "אב",
-  Elul: "אלול",
-} as const;
+import { hebrewMonths as months } from "./hebrew-months";
 
 /** Hebrew UI strings — shape: {@link ConverterTexts}. */
 export const converter = {

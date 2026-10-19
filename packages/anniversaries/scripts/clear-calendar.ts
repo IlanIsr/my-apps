@@ -7,13 +7,11 @@
  *   pnpm --filter @repo/anniversaries clear-calendar --commit  # delete
  */
 
+import { sleep } from "@repo/utils";
+
 import { deleteEvent, listAllEvents } from "../src/calendar";
 
 const commit = process.argv.includes("--commit");
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 async function main() {
   const events = await listAllEvents();

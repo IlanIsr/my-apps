@@ -35,6 +35,9 @@ importers:
       '@repo/heroui':
         specifier: workspace:*
         version: link:../../packages/heroui
+      '@repo/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       next:
         specifier: 16.3.2
         version: 16.3.2(@babel/core@7.29.7(supports-color@7.2.0))(@opentelemetry/api@1.9.1)(@types/node@26.3.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -203,6 +206,9 @@ importers:
       '@repo/hebcal':
         specifier: workspace:*
         version: link:../hebcal
+      '@repo/utils':
+        specifier: workspace:*
+        version: link:../utils
       drizzle-orm:
         specifier: ^0.44.5
         version: 0.44.7(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.1)

@@ -8,11 +8,14 @@
  * `summary`; this package does no auth and no i18n.
  */
 
+import { createHash } from "node:crypto";
+
 import {
   calculateNextOccurrences,
   getTsetHakohavimWithFallback,
   type HebrewMonthKey,
 } from "@repo/hebcal";
+import { uniqueLowercased } from "@repo/utils";
 
 import {
   CalendarRateLimitError,
@@ -46,6 +49,10 @@ import {
   type PersonRecord,
   type StoredEvent,
 } from "./store";
+import {
+  createShareLink as insertShareLink,
+  getShareLink as fetchShareLink,
+} from "./share-links";
 
 export { CalendarNotConfiguredError, CalendarRateLimitError } from "./calendar";
 export {
@@ -82,33 +89,6 @@ export function isAnniversariesAdmin(email: string): boolean {
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
   return admins.includes(email.trim().toLowerCase());
-}
-
-function unique(emails: string[]): string[] {
-  return [
-    ...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)),
-  ];
-}
-
-/**
- * Whether each of `emails` should default to "notify" when adding them as a
- * shared member — true unless they've already been sent a calendar invite
- * (and so have presumably already accepted it and don't need another one).
- * Fails open (defaults every address to notify) if the lookup itself fails.
- */
-export async function getNotifyDefaults(
-  emails: string[],
-): Promise<Record<string, boolean>> {
-  const wanted = unique(emails);
-  const defaults: Record<string, boolean> = {};
-  try {
-    const state = await getEmailSentState(wanted);
-    for (const email of wanted) defaults[email] = !state.get(email);
-  } catch (error) {
-    console.error("[anniversaries] notify-defaults lookup failed:", error);
-    for (const email of wanted) defaults[email] = true;
-  }
-  return defaults;
 }
 
 function todayISO(): string {
@@ -252,8 +232,6 @@ export type AddAnniversaryInput = {
   hebDay: number;
   hebMonth: string;
   years: number;
-  /** Extra people to add to the family list alongside the current user. */
-  sharedEmails: string[];
   hebrewName?: string;
   origin?: string;
   /** Hebrew year of birth / passing. Optional. */
@@ -262,14 +240,6 @@ export type AddAnniversaryInput = {
   summary: string;
   /** Clerk id of the signed-in user. */
   createdBy: string;
-  /**
-   * Subset of `sharedEmails` to email a Google Calendar invite this round —
-   * a per-member choice, since someone who's already accepted the shared
-   * calendar doesn't need to be re-invited every time. The signed-in user's
-   * own invite is decided automatically (see `addAnniversary`), not through
-   * this list.
-   */
-  notifyEmails: string[];
 };
 
 /**
@@ -301,7 +271,7 @@ async function recordMembers(
 
 /**
  * Create a person + their events, or — if a matching person exists — add the
- * current user (and any `sharedEmails`) and top up missing future years.
+ * current user and top up missing future years.
  */
 export async function addAnniversary(
   input: AddAnniversaryInput,
@@ -310,18 +280,10 @@ export async function addAnniversary(
   if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
 
   const email = viewerEmail.toLowerCase();
-  const shared = unique(input.sharedEmails);
   // The signed-in user's own invite is automatic — notify them the first
   // time (before they've ever accepted the shared calendar), then stop.
-  // `sharedEmails` notification is an explicit per-member choice from the
-  // caller instead, restricted to emails actually being shared here.
   const creatorState = await getEmailSentState([email]);
-  const requestedShared = unique(input.notifyEmails).filter((e) =>
-    shared.includes(e),
-  );
-  const notifyEmails = creatorState.get(email)
-    ? requestedShared
-    : [...requestedShared, email];
+  const notifyEmails = creatorState.get(email) ? [] : [email];
   const years = Math.min(
     MAX_YEARS,
     Math.max(1, Number.isFinite(input.years) ? Math.floor(input.years) : 1),
@@ -339,7 +301,7 @@ export async function addAnniversary(
     const base = desiredStored(null, input.hebDay, input.hebMonth, years);
     if (base.length === 0) throw new NoSuchHebrewDateError();
 
-    const members = unique([email, ...shared]);
+    const members = [email];
     const record = await createPerson({
       name: input.name.trim(),
       type: input.type,
@@ -379,7 +341,7 @@ export async function addAnniversary(
     };
   }
 
-  const members = unique([...existing.members, email, ...shared]);
+  const members = uniqueLowercased([...existing.members, email]);
   const base = desiredStored(
     existing,
     input.hebDay,
@@ -466,41 +428,22 @@ export async function leaveAnniversary(
   return { removed: 1, deleted: 0 };
 }
 
-export type AddMemberInput = {
-  id: string;
-  /** The email to add to the family list. */
-  email: string;
-  /** Email them a Google Calendar invite (`sendUpdates=all`). */
-  notify: boolean;
-  /** Pre-translated event title. */
-  summary: string;
-};
-
 /**
- * Add one more person to an existing anniversary's family list and (re)sync the
- * calendar so they're invited. A member (or admin) may do this. Returns whether
- * the address was actually added (`already` = it was already on the list).
+ * Add `target` as a member of `person` and (re)sync the calendar so they're
+ * invited (`sendUpdates=all`). Shared by every "join" path — the only one
+ * left is {@link joinShareLink}, where `target` is always the signed-in
+ * viewer themselves, never an address someone else typed.
  */
-export async function addMember(
-  input: AddMemberInput,
-  viewerEmail: string,
-): Promise<{ added: boolean; already: boolean }> {
-  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
-
-  const viewer = viewerEmail.toLowerCase();
-  const target = input.email.trim().toLowerCase();
-  const person = await getPerson(input.id);
-  if (!person || !target) return { added: false, already: false };
-  if (!person.members.includes(viewer) && !isAnniversariesAdmin(viewerEmail)) {
-    return { added: false, already: false };
-  }
-  if (person.members.includes(target)) return { added: false, already: true };
-
-  const members = unique([...person.members, target]);
-  const notifyEmails = input.notify ? [target] : [];
+async function addMemberToCalendar(
+  person: PersonRecord,
+  target: { email: string; userId: string },
+  summary: string,
+): Promise<{ added: boolean; rateLimited: boolean }> {
+  const members = uniqueLowercased([...person.members, target.email]);
+  const notifyEmails = [target.email];
   const sync = await syncPersonEvents({
     personId: person.id,
-    summary: input.summary,
+    summary,
     summaryFallback: person.name,
     description: "",
     colorId: colorIdFor(person.type),
@@ -515,14 +458,155 @@ export async function addMember(
     events: applySynced(person.events, sync.events),
   });
   await recordMembers(
-    [target],
-    viewer,
-    "",
+    [target.email],
+    target.email,
+    target.userId,
     notifyEmails.filter((e) => finalMembers.includes(e)),
   );
-  if (sync.rateLimited) throw new CalendarRateLimitError();
 
-  return { added: finalMembers.includes(target), already: false };
+  return {
+    added: finalMembers.includes(target.email),
+    rateLimited: sync.rateLimited,
+  };
+}
+
+export type ShareLinkPreviewItem = {
+  id: string;
+  name: string;
+  type: AnniversaryType;
+  hebDateLabel: string;
+  /** The viewer is already a member — show it pre-checked and disabled. */
+  alreadyJoined: boolean;
+};
+
+/**
+ * Generate a 24h-reusable link covering `personIds`. The viewer must already
+ * be a member (or admin) of every one of them — sharing something you don't
+ * belong to isn't allowed.
+ */
+export async function createShareLink(
+  personIds: string[],
+  viewerEmail: string,
+): Promise<{ id: string; expiresAt: Date }> {
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+
+  const email = viewerEmail.toLowerCase();
+  const admin = isAnniversariesAdmin(viewerEmail);
+  const ids = [...new Set(personIds)];
+  if (ids.length === 0) throw new Error("no-anniversaries-selected");
+
+  for (const id of ids) {
+    const person = await getPerson(id);
+    if (!person || (!person.members.includes(email) && !admin)) {
+      throw new Error("not-a-member");
+    }
+  }
+
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const link = await insertShareLink({
+    createdBy: email,
+    personIds: ids,
+    expiresAt,
+  });
+  return { id: link.id, expiresAt };
+}
+
+/**
+ * What a share link's recipient sees before joining: never reveals
+ * `members` (admin-only elsewhere) — just enough to decide what to join.
+ * The link id is the only credential checked, same trust model as
+ * {@link getAnniversary}.
+ */
+export async function getShareLinkPreview(
+  id: string,
+  viewerEmail: string,
+): Promise<{ expired: boolean; items: ShareLinkPreviewItem[] } | null> {
+  const link = await fetchShareLink(id);
+  if (!link) return null;
+
+  const email = viewerEmail.toLowerCase();
+  const expired = Date.now() > link.expiresAt.getTime();
+  const items: ShareLinkPreviewItem[] = [];
+  for (const personId of link.personIds) {
+    const person = await getPerson(personId);
+    if (!person) continue; // deleted since the link was created
+    items.push({
+      id: person.id,
+      name: person.name,
+      type: person.type,
+      hebDateLabel: formatHebDateLabel(person.hebDate),
+      alreadyJoined: person.members.includes(email),
+    });
+  }
+  return { expired, items };
+}
+
+/**
+ * Join a subset of a share link's anniversaries as the signed-in viewer —
+ * always self, never an address typed by whoever created the link. Requested
+ * ids are intersected with the link's own list; nothing outside it is ever
+ * touched.
+ */
+export async function joinShareLink(
+  id: string,
+  personIds: string[],
+  viewer: { email: string; userId: string },
+  summaryFor: (type: AnniversaryType, name: string) => string,
+): Promise<{
+  joined: string[];
+  alreadyJoined: string[];
+  failed: string[];
+  rateLimited: boolean;
+}> {
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+
+  const link = await fetchShareLink(id);
+  const joined: string[] = [];
+  const alreadyJoined: string[] = [];
+  const failed: string[] = [];
+  if (!link || Date.now() > link.expiresAt.getTime()) {
+    return { joined, alreadyJoined, failed, rateLimited: false };
+  }
+
+  const email = viewer.email.toLowerCase();
+  const wanted = new Set(personIds);
+  const ids = link.personIds.filter((pid) => wanted.has(pid));
+
+  for (const personId of ids) {
+    const person = await getPerson(personId);
+    if (!person) {
+      failed.push(personId);
+      continue;
+    }
+    if (person.members.includes(email)) {
+      alreadyJoined.push(personId);
+      continue;
+    }
+    try {
+      const summary = summaryFor(person.type, person.name);
+      const result = await addMemberToCalendar(
+        person,
+        { email, userId: viewer.userId },
+        summary,
+      );
+      if (result.added) joined.push(personId);
+      else failed.push(personId);
+      if (result.rateLimited) {
+        return { joined, alreadyJoined, failed, rateLimited: true };
+      }
+    } catch (error) {
+      if (error instanceof CalendarRateLimitError) {
+        return { joined, alreadyJoined, failed, rateLimited: true };
+      }
+      console.error(
+        `[anniversaries] join-share-link failed for ${personId}:`,
+        error,
+      );
+      failed.push(personId);
+    }
+  }
+
+  return { joined, alreadyJoined, failed, rateLimited: false };
 }
 
 export type UpdateEventInput = {
@@ -686,10 +770,53 @@ export function canSyncFromProd(): boolean {
   return prodDatabaseUrl() !== null && isStoreConfigured();
 }
 
+/** Short, deterministic, non-reversible stand-in for a piece of real data. */
+function pseudonym(seed: string): string {
+  return createHash("sha256").update(seed).digest("hex").slice(0, 12);
+}
+
 /**
- * Replace this environment's `persons` with an exact copy of production's.
- * Calendar events aren't touched — pre-prod shares the prod shared calendar, so
- * the copied `googleEventId`s already resolve.
+ * Replace a prod person's real identity with a deterministic placeholder
+ * before it ever reaches the pre-prod database: names and member emails are
+ * hashed (same input always yields the same output, so re-running the sync
+ * keeps pre-prod's data internally consistent — e.g. a member shared across
+ * several anniversaries stays the same fake member everywhere). Hebrew dates
+ * and `type` are left untouched — they drive the occurrence logic pre-prod
+ * exists to test. `googleEventId`/`htmlLink` are cleared too: they point at
+ * prod's calendar, not pre-prod's.
+ */
+function maskPersonForPreprod(record: PersonRecord): PersonRecord {
+  const name = `Person ${pseudonym(record.id)}`;
+  return {
+    ...record,
+    name,
+    hebrewName: record.hebrewName
+      ? `Person ${pseudonym(`${record.id}:he`)}`
+      : undefined,
+    createdBy: "",
+    key: anniversaryKey(
+      name,
+      record.hebDate.day,
+      record.hebDate.month,
+      record.type,
+    ),
+    members: record.members.map(
+      (email) => `member-${pseudonym(email)}@preprod.invalid`,
+    ),
+    events: record.events.map((e) => ({
+      ...e,
+      googleEventId: "",
+      htmlLink: "",
+    })),
+  };
+}
+
+/**
+ * Replace this environment's `persons` with a pseudonymised copy of
+ * production's (see `maskPersonForPreprod`), then create each person's events
+ * fresh on pre-prod's own calendar (`GOOGLE_CALENDAR_ID`) — prod's
+ * `googleEventId`s never existed there. Member emails are masked, so no real
+ * invite is ever sent for synced data (`notifyEmails: []`).
  */
 export async function syncFromProd(): Promise<{
   written: number;
@@ -704,7 +831,32 @@ export async function syncFromProd(): Promise<{
 
   try {
     const source = await listPersonsFrom(sourceUrl);
-    return await replaceAllPersons(source);
+    const masked = source.map(maskPersonForPreprod);
+    const result = await replaceAllPersons(masked);
+
+    for (const record of masked) {
+      try {
+        const sync = await syncPersonEvents({
+          personId: record.id,
+          summaryFallback: record.name,
+          description: "",
+          colorId: colorIdFor(record.type),
+          members: record.members,
+          events: record.events.map(toDesired),
+          notifyEmails: [],
+        });
+        await updatePerson(record.id, {
+          events: applySynced(record.events, sync.events),
+        });
+      } catch (error) {
+        console.error(
+          `[anniversaries] prod-sync: calendar sync failed for person ${record.id}:`,
+          error,
+        );
+      }
+    }
+
+    return result;
   } catch (error) {
     console.error("[anniversaries] prod → pre-prod sync failed:", error);
     throw error;

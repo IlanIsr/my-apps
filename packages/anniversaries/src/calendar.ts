@@ -12,6 +12,7 @@
 import { OAuth2Client } from "google-auth-library";
 
 import { getTsetHakohavimWithFallback } from "@repo/hebcal";
+import { sleep } from "@repo/utils";
 
 const TIMEZONE = "Asia/Jerusalem";
 const EVENT_DURATION_MIN = 15;
@@ -35,8 +36,6 @@ export class CalendarRateLimitError extends Error {
     this.name = "CalendarRateLimitError";
   }
 }
-
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /** Run `fn` over `items`, at most `limit` at a time. */
 async function pool<T>(

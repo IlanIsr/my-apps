@@ -95,7 +95,37 @@ export const users = pgTable("users", {
     .defaultNow(),
 });
 
+/**
+ * A shareable, time-limited link: a member picks a subset of their
+ * anniversaries, generates one of these, and shares the URL themselves
+ * outside the app. Reusable by multiple recipients until it expires.
+ */
+export const shareLinks = pgTable("share_links", {
+  /** The token itself — unguessable, same trust model as `persons.id`. */
+  id: text("id").primaryKey(),
+  /** Lowercased email of the member who generated the link. */
+  createdBy: text("created_by").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+export const shareLinkPersons = pgTable(
+  "share_link_persons",
+  {
+    shareLinkId: text("share_link_id")
+      .notNull()
+      .references(() => shareLinks.id, { onDelete: "cascade" }),
+    personId: text("person_id")
+      .notNull()
+      .references(() => persons.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.shareLinkId, t.personId] })],
+);
+
 export type PersonRow = typeof persons.$inferSelect;
 export type PersonInsert = typeof persons.$inferInsert;
 export type PersonEventRow = typeof personEvents.$inferSelect;
 export type UserRow = typeof users.$inferSelect;
+export type ShareLinkRow = typeof shareLinks.$inferSelect;

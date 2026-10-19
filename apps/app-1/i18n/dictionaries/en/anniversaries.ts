@@ -1,19 +1,6 @@
 import type { AnniversariesTexts } from "@/app/components/anniversary/AnniversaryList";
-
-function ordinal(n: number): string {
-  const rem100 = n % 100;
-  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
-  switch (n % 10) {
-    case 1:
-      return `${n}st`;
-    case 2:
-      return `${n}nd`;
-    case 3:
-      return `${n}rd`;
-    default:
-      return `${n}th`;
-  }
-}
+import { createShareLinkModal } from "./create-share-link-modal";
+import { ordinal } from "./ordinal";
 
 /** English UI strings — shape: {@link AnniversariesTexts}. */
 export const anniversaries = {
@@ -26,31 +13,7 @@ export const anniversaries = {
   },
   add: "Add anniversary",
   shareList: "Share my list",
-  shareModal: {
-    title: "Share my list",
-    intro:
-      "Add someone to every anniversary you pick. They're invited to the shared calendar for each one.",
-    shareWith: "Share with",
-    placeholder: "someone@example.com",
-    notify: "Email them a calendar invite",
-    selectAll: "Select all",
-    clearAll: "Clear",
-    share: "Share",
-    sharing: "Sharing…",
-    cancel: "Cancel",
-    emailInvalid: "Enter a valid email address.",
-    nothingSelected: "Pick at least one anniversary.",
-    rateLimited: "Google Calendar rate-limited us partway through.",
-    result: (added: number, already: number, failed: number) =>
-      [
-        added > 0 && `Added to ${added}`,
-        already > 0 && `${already} already shared`,
-        failed > 0 && `${failed} failed`,
-      ]
-        .filter(Boolean)
-        .join(" · ") || "Nothing to do.",
-    error: (message: string) => `Something went wrong: ${message}`,
-  },
+  shareModal: createShareLinkModal,
   search: "Search by name or Hebrew date",
   joined: "On my list",
   eyebrow: { birthday: "Birthday", yahrzeit: "Yahrzeit" },

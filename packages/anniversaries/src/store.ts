@@ -10,6 +10,7 @@
 import { eq, inArray } from "drizzle-orm";
 
 import type { HebrewMonthKey } from "@repo/hebcal";
+import { uniqueLowercased } from "@repo/utils";
 
 import { db, dbFor, DatabaseNotConfiguredError, type Db } from "./db/client";
 import {
@@ -20,7 +21,11 @@ import {
   type PersonEventRow,
   type PersonRow,
 } from "./db/schema";
-import { anniversaryKey, type AnniversaryType } from "./person";
+import {
+  anniversaryKey,
+  toAnniversaryType,
+  type AnniversaryType,
+} from "./person";
 
 export { DatabaseNotConfiguredError } from "./db/client";
 /**
@@ -114,17 +119,11 @@ export function prodDatabaseUrl(): string | null {
 
 // --- row <-> record mapping ---
 
-type BatchStmt = Parameters<Db["batch"]>[0][number];
+export type BatchStmt = Parameters<Db["batch"]>[0][number];
 
-async function runBatch(stmts: BatchStmt[]): Promise<void> {
+export async function runBatch(stmts: BatchStmt[]): Promise<void> {
   if (stmts.length === 0) return;
   await db().batch(stmts as [BatchStmt, ...BatchStmt[]]);
-}
-
-function lowerUnique(emails: string[]): string[] {
-  return [
-    ...new Set(emails.map((e) => e.trim().toLowerCase()).filter(Boolean)),
-  ];
 }
 
 function toStoredEvent(row: PersonEventRow): StoredEvent {
@@ -151,7 +150,7 @@ function toRecord(
   return {
     id: p.id,
     name: p.name,
-    type: p.type === "yahrzeit" ? "yahrzeit" : "birthday",
+    type: toAnniversaryType(p.type),
     hebrewName: p.hebrewName ?? undefined,
     origin: p.origin ?? undefined,
     hebYear: p.hebYear ?? undefined,
@@ -285,7 +284,7 @@ export async function createPerson(input: NewPerson): Promise<PersonRecord> {
     input.hebDate.month,
     input.type,
   );
-  const members = lowerUnique(input.members);
+  const members = uniqueLowercased(input.members);
 
   const stmts: BatchStmt[] = [
     db()
@@ -335,7 +334,7 @@ export async function updatePerson(
   ];
 
   if (patch.members !== undefined) {
-    const members = lowerUnique(patch.members);
+    const members = uniqueLowercased(patch.members);
     stmts.push(
       db().delete(personMembers).where(eq(personMembers.personId, id)),
     );
@@ -396,7 +395,7 @@ export async function upsertPerson(record: PersonRecord): Promise<void> {
     db().delete(personEvents).where(eq(personEvents.personId, record.id)),
   ];
 
-  const members = lowerUnique(record.members);
+  const members = uniqueLowercased(record.members);
   if (members.length > 0) {
     stmts.push(
       db()
@@ -461,7 +460,7 @@ export async function upsertUser(input: {
 export async function getEmailSentState(
   emails: string[],
 ): Promise<Map<string, boolean>> {
-  const wanted = lowerUnique(emails);
+  const wanted = uniqueLowercased(emails);
   const state = new Map<string, boolean>(wanted.map((e) => [e, false]));
   if (wanted.length === 0) return state;
   const rows = await db()
@@ -474,7 +473,7 @@ export async function getEmailSentState(
 
 /** Mark that a Google Calendar invite has now been sent to these addresses. */
 export async function markEmailSent(emails: string[]): Promise<void> {
-  const wanted = lowerUnique(emails);
+  const wanted = uniqueLowercased(emails);
   if (wanted.length === 0) return;
   const stmts: BatchStmt[] = wanted.map((email) =>
     db()

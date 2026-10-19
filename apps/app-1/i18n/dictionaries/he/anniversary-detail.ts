@@ -1,4 +1,6 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
+import { createShareLinkModal } from "./create-share-link-modal";
+import { hebrewMonths } from "./hebrew-months";
 
 /** Hebrew UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
@@ -9,6 +11,7 @@ export const anniversaryDetail = {
   upcoming: "אירועים קרובים",
   edit: "עריכה",
   editDetails: "עריכת פרטים",
+  shareThis: "שיתוף של זה",
   viewInCalendar: "יומן Google ↗",
   nightfall: "צאת הכוכבים",
   join: "הוספה לרשימה שלי",
@@ -51,33 +54,7 @@ export const anniversaryDetail = {
     noSuchDate: "תאריך עברי זה אינו קיים (למשל ה-30 בחודש בן 29 יום).",
     rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
     error: (message: string) => `משהו השתבש: ${message}`,
-    months: {
-      Tishrei: "תשרי",
-      Cheshvan: "חשוון",
-      Kislev: "כסלו",
-      Tevet: "טבת",
-      Shvat: "שבט",
-      Adar: "אדר",
-      Adar1: "אדר א׳",
-      Adar2: "אדר ב׳",
-      Nisan: "ניסן",
-      Iyyar: "אייר",
-      Sivan: "סיוון",
-      Tamuz: "תמוז",
-      Av: "אב",
-      Elul: "אלול",
-    },
+    months: hebrewMonths,
   },
-  addMemberForm: {
-    label: "הוספת אדם",
-    placeholder: "someone@example.com",
-    notify: "לשלוח לו הזמנה ליומן",
-    add: "הוספה",
-    adding: "מוסיף…",
-    added: (email: string) => `${email} נוסף.`,
-    already: (email: string) => `${email} כבר ברשימה הזו.`,
-    emailInvalid: "יש להזין כתובת אימייל תקינה.",
-    rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
-    error: (message: string) => `משהו השתבש: ${message}`,
-  },
+  shareModal: createShareLinkModal,
 } as const satisfies AnniversaryDetailTexts;

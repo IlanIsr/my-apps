@@ -3,13 +3,14 @@
 /**
  * The "Add an anniversary" form (`/anniversaries/new`). Collects a name, type
  * (birthday / yahrzeit), a Hebrew date — entered directly or converted from a
- * Gregorian one — an optional Hebrew year, how many years ahead to create,
- * people to share with, and whether to email everyone a calendar invite. On
- * submit it calls {@link addAnniversaryAction}; the backend either creates the
- * person or, if one already matches, adds you and tops up missing years.
+ * Gregorian one — an optional Hebrew year, and how many years ahead to
+ * create. On submit it calls {@link addAnniversaryAction}; the backend either
+ * creates the person or, if one already matches, adds you and tops up
+ * missing years. Sharing with others happens afterward, via a share link
+ * generated from {@link CreateShareLinkModal}.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -20,6 +21,7 @@ import {
   type HebrewMonthKey,
 } from "@repo/hebcal";
 import type { AnniversaryType } from "@repo/anniversaries/person";
+import { resolveErrorMessage } from "@repo/utils";
 
 import { Button } from "@repo/heroui/button";
 
@@ -33,12 +35,7 @@ import {
   hebrewDayOptions,
   hebrewMonthOptions,
 } from "../../home/options";
-import {
-  addAnniversaryAction,
-  getNotifyDefaultsAction,
-} from "../../anniversaries/actions";
-
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+import { addAnniversaryAction } from "../../anniversaries/actions";
 
 /** Text for {@link AnniversaryForm} — every label, hint, and error string. */
 export type AnniversaryFormTexts = {
@@ -54,18 +51,11 @@ export type AnniversaryFormTexts = {
   hebYear: string;
   optional: string;
   years: string;
-  sharedEmails: string;
-  sharedEmailsPlaceholder: string;
-  sharedEmailsHelp: string;
   submit: string;
   submitting: string;
   cancel: string;
   toggle: { hebrew: string; gregorian: string; aria: string };
-  notify: string;
-  notifyHelp: string;
-  notifyWarning: string;
   nameRequired: string;
-  emailInvalid: (email: string) => string;
   notConfigured: string;
   noSuchDate: string;
   rateLimited: string;
@@ -93,57 +83,8 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const [gMonth, setGMonth] = useState("0");
   const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));
   const [years, setYears] = useState("20");
-  const [sharedRaw, setSharedRaw] = useState("");
-  const [notifyOverrides, setNotifyOverrides] = useState<
-    Record<string, boolean>
-  >({});
-  const [notifyDefaults, setNotifyDefaults] = useState<Record<string, boolean>>(
-    {},
-  );
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-
-  // Emails that look valid so far, lowercased + deduped, in typed order.
-  const parsedShared = useMemo(() => {
-    const seen = new Set<string>();
-    const list: string[] = [];
-    for (const raw of sharedRaw.split(",")) {
-      const emailAddr = raw.trim().toLowerCase();
-      if (emailAddr && EMAIL_RE.test(emailAddr) && !seen.has(emailAddr)) {
-        seen.add(emailAddr);
-        list.push(emailAddr);
-      }
-    }
-    return list;
-  }, [sharedRaw]);
-
-  // Default each newly-typed email to "notify" unless we've already sent
-  // them a calendar invite before (they've presumably accepted it by now).
-  const fetchedNotifyDefaults = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const missing = parsedShared.filter(
-      (emailAddr) => !fetchedNotifyDefaults.current.has(emailAddr),
-    );
-    if (missing.length === 0) return;
-    for (const emailAddr of missing) {
-      fetchedNotifyDefaults.current.add(emailAddr);
-    }
-    let cancelled = false;
-    getNotifyDefaultsAction(missing).then((result) => {
-      if (!cancelled) setNotifyDefaults((prev) => ({ ...prev, ...result }));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [parsedShared]);
-
-  const notifyChecked = (emailAddr: string) =>
-    notifyOverrides[emailAddr] ?? notifyDefaults[emailAddr] ?? true;
-  const toggleNotify = (emailAddr: string) =>
-    setNotifyOverrides((prev) => ({
-      ...prev,
-      [emailAddr]: !notifyChecked(emailAddr),
-    }));
 
   const yearOptions = [5, 10, 15, 20, 30, 50].map((n) => ({
     key: String(n),
@@ -177,17 +118,6 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
         ? Number(hebYear.trim())
         : undefined;
 
-    const shared = sharedRaw
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const badEmail = shared.find((e) => !EMAIL_RE.test(e));
-    if (badEmail) {
-      setError(t.emailInvalid(badEmail));
-      return;
-    }
-    const notifyEmails = shared.filter((e) => notifyChecked(e.toLowerCase()));
-
     setPending(true);
     const result = await addAnniversaryAction({
       name: name.trim(),
@@ -198,23 +128,23 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
         hebYearValue && Number.isFinite(hebYearValue)
           ? hebYearValue
           : undefined,
-      sharedEmails: shared,
       years: Number(years),
-      notifyEmails,
       locale,
     });
     setPending(false);
 
     if (!result.ok) {
       setError(
-        result.error === "not-configured" ||
-          result.error === "db-not-configured"
-          ? t.notConfigured
-          : result.error === "no-such-date"
-            ? t.noSuchDate
-            : result.error === "rate-limited"
-              ? t.rateLimited
-              : t.error(result.error),
+        resolveErrorMessage(
+          result.error,
+          {
+            "not-configured": t.notConfigured,
+            "db-not-configured": t.notConfigured,
+            "no-such-date": t.noSuchDate,
+            "rate-limited": t.rateLimited,
+          },
+          t.error,
+        ),
       );
       return;
     }
@@ -342,52 +272,6 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
         value={years}
         onChange={setYears}
       />
-
-      <label className="flex flex-col gap-1.5">
-        <span className={label}>
-          {t.sharedEmails}{" "}
-          <span className="normal-case tracking-normal text-subtle-foreground/70">
-            {t.optional}
-          </span>
-        </span>
-        <input
-          value={sharedRaw}
-          onChange={(e) => setSharedRaw(e.target.value)}
-          placeholder={t.sharedEmailsPlaceholder}
-          className={input}
-          dir="ltr"
-        />
-        <span className="text-xs text-subtle-foreground">
-          {t.sharedEmailsHelp}
-        </span>
-      </label>
-
-      {parsedShared.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <span className={label}>{t.notify}</span>
-          <span className="text-xs text-subtle-foreground">{t.notifyHelp}</span>
-          <div className="flex flex-col gap-1.5 pt-1">
-            {parsedShared.map((emailAddr) => (
-              <label key={emailAddr} className="flex items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  checked={notifyChecked(emailAddr)}
-                  onChange={() => toggleNotify(emailAddr)}
-                  className="h-4 w-4 shrink-0 accent-primary"
-                />
-                <span className="text-sm" dir="ltr">
-                  {emailAddr}
-                </span>
-              </label>
-            ))}
-          </div>
-          {parsedShared.some((emailAddr) => !notifyChecked(emailAddr)) && (
-            <p className="rounded-field border border-border bg-sunken px-3 py-2 text-xs text-muted-foreground">
-              {t.notifyWarning}
-            </p>
-          )}
-        </div>
-      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

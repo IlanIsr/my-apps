@@ -1,4 +1,6 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
+import { createShareLinkModal } from "./create-share-link-modal";
+import { hebrewMonths } from "./hebrew-months";
 
 /** French UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
@@ -9,6 +11,7 @@ export const anniversaryDetail = {
   upcoming: "À venir",
   edit: "Modifier",
   editDetails: "Modifier les infos",
+  shareThis: "Partager celui-ci",
   viewInCalendar: "Google Agenda ↗",
   nightfall: "tombée de la nuit",
   join: "Ajouter à ma liste",
@@ -54,34 +57,7 @@ export const anniversaryDetail = {
     rateLimited:
       "Google Agenda est occupé pour le moment — patientez puis réessayez.",
     error: (message: string) => `Une erreur est survenue : ${message}`,
-    months: {
-      Tishrei: "Tichri",
-      Cheshvan: "Hechvan",
-      Kislev: "Kislev",
-      Tevet: "Tévet",
-      Shvat: "Chevat",
-      Adar: "Adar",
-      Adar1: "Adar I",
-      Adar2: "Adar II",
-      Nisan: "Nissan",
-      Iyyar: "Iyar",
-      Sivan: "Sivan",
-      Tamuz: "Tamouz",
-      Av: "Av",
-      Elul: "Eloul",
-    },
+    months: hebrewMonths,
   },
-  addMemberForm: {
-    label: "Ajouter quelqu’un",
-    placeholder: "quelquun@example.com",
-    notify: "Lui envoyer une invitation agenda",
-    add: "Ajouter",
-    adding: "Ajout…",
-    added: (email: string) => `${email} ajouté.`,
-    already: (email: string) => `${email} est déjà dans cette liste.`,
-    emailInvalid: "Saisissez une adresse email valide.",
-    rateLimited:
-      "Google Agenda est occupé pour le moment — patientez puis réessayez.",
-    error: (message: string) => `Une erreur est survenue : ${message}`,
-  },
+  shareModal: createShareLinkModal,
 } as const satisfies AnniversaryDetailTexts;

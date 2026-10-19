@@ -5,6 +5,11 @@ import type { HebrewMonthKey } from "@repo/hebcal";
 /** What an anniversary marks. Drives the calendar title, colour, and UI accent. */
 export type AnniversaryType = "birthday" | "yahrzeit";
 
+/** Narrows an untyped/widened `type` value (DB row, Firestore doc) to {@link AnniversaryType}. */
+export function toAnniversaryType(type: unknown): AnniversaryType {
+  return type === "yahrzeit" ? "yahrzeit" : "birthday";
+}
+
 /** One upcoming occurrence of a person's anniversary, as shown to the app. */
 export type AnniversaryEvent = {
   /** Google Calendar event id (empty only in the brief window before sync). */

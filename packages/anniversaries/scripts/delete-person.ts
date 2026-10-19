@@ -1,5 +1,5 @@
 /**
- * Delete a person and all their events — from Firestore AND the shared Google
+ * Delete a person and all their events — from the store AND the shared Google
  * Calendar. For when an anniversary was created wrong and you want to re-add it
  * from scratch (the app itself never deletes).
  *
@@ -11,6 +11,8 @@
  *   pnpm --filter @repo/anniversaries delete-person "Salomon Bellaiche" --commit
  */
 
+import { sleep } from "@repo/utils";
+
 import { deleteEvent, listAllEvents } from "../src/calendar";
 import { normalizeName } from "../src/person";
 import { deletePerson, isStoreConfigured, listPersons } from "../src/store";
@@ -21,10 +23,6 @@ const name = args
   .filter((a) => !a.startsWith("--"))
   .join(" ")
   .trim();
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /** Delete an event, tolerating "already gone" (404 / 410). */
 async function deleteEventSafe(id: string): Promise<boolean> {

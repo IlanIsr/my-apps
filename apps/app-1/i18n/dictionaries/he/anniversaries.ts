@@ -1,4 +1,5 @@
 import type { AnniversariesTexts } from "@/app/components/anniversary/AnniversaryList";
+import { createShareLinkModal } from "./create-share-link-modal";
 
 /** Hebrew UI strings — shape: {@link AnniversariesTexts}. */
 export const anniversaries = {
@@ -9,31 +10,7 @@ export const anniversaries = {
   },
   add: "הוספת יום שנה",
   shareList: "שיתוף הרשימה שלי",
-  shareModal: {
-    title: "שיתוף הרשימה שלי",
-    intro:
-      "הוסיפו אדם לכל יום שנה שתבחרו. הוא יוזמן ליומן המשותף של כל אחד מהם.",
-    shareWith: "שיתוף עם",
-    placeholder: "someone@example.com",
-    notify: "לשלוח לו הזמנה ליומן",
-    selectAll: "בחירת הכול",
-    clearAll: "ניקוי",
-    share: "שיתוף",
-    sharing: "משתף…",
-    cancel: "ביטול",
-    emailInvalid: "יש להזין כתובת אימייל תקינה.",
-    nothingSelected: "בחרו לפחות יום שנה אחד.",
-    rateLimited: "יומן Google הגביל אותנו באמצע.",
-    result: (added: number, already: number, failed: number) =>
-      [
-        added > 0 && `נוסף ל-${added}`,
-        already > 0 && `${already} כבר משותפים`,
-        failed > 0 && `${failed} נכשלו`,
-      ]
-        .filter(Boolean)
-        .join(" · ") || "אין מה לעשות.",
-    error: (message: string) => `משהו השתבש: ${message}`,
-  },
+  shareModal: createShareLinkModal,
   search: "חיפוש לפי שם או תאריך עברי",
   joined: "ברשימה שלי",
   eyebrow: { birthday: "יום הולדת", yahrzeit: "אזכרה" },

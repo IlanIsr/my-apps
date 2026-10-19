@@ -1,5 +1,7 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
+import { hebrewMonths } from "./hebrew-months";
+
 const NOT_CONFIGURED =
   "Le calendrier d’anniversaires partagé n’est pas encore configuré.";
 
@@ -17,10 +19,6 @@ export const anniversaryForm = {
   hebYear: "Année hébraïque",
   optional: "facultatif",
   years: "Années à venir",
-  sharedEmails: "Partager avec",
-  sharedEmailsPlaceholder: "quelquun@example.com, autre@example.com",
-  sharedEmailsHelp:
-    "Vous êtes ajouté automatiquement. Les autres personnes ici deviennent des invités optionnels, invisibles entre eux.",
   submit: "Créer l’anniversaire",
   submitting: "Création…",
   cancel: "Annuler",
@@ -29,33 +27,12 @@ export const anniversaryForm = {
     gregorian: "Grégorien",
     aria: "Changer le calendrier de saisie",
   },
-  notify: "Envoyer une invitation agenda",
-  notifyHelp:
-    "Coché par défaut pour qui rejoint pour la première fois. Décochez quelqu’un qui a déjà accepté une invitation de cet agenda — il verra les nouveaux événements sans nouvelle invitation.",
-  notifyWarning:
-    "Toute personne décochée ne recevra pas d’invitation et ne verra pas ces événements, sauf si elle a déjà accepté une invitation de cet agenda.",
   nameRequired: "Le nom est requis.",
-  emailInvalid: (email: string) => `Email invalide : ${email}`,
   notConfigured: NOT_CONFIGURED,
   noSuchDate:
     "Cette date hébraïque n’existe pas (ex. le 30 d’un mois de 29 jours).",
   rateLimited:
     "Google Agenda est occupé pour le moment — patientez puis réessayez.",
   error: (message: string) => `Une erreur est survenue : ${message}`,
-  months: {
-    Tishrei: "Tichri",
-    Cheshvan: "Hechvan",
-    Kislev: "Kislev",
-    Tevet: "Tévet",
-    Shvat: "Chevat",
-    Adar: "Adar",
-    Adar1: "Adar I",
-    Adar2: "Adar II",
-    Nisan: "Nissan",
-    Iyyar: "Iyar",
-    Sivan: "Sivan",
-    Tamuz: "Tamouz",
-    Av: "Av",
-    Elul: "Eloul",
-  },
+  months: hebrewMonths,
 } as const satisfies AnniversaryFormTexts;

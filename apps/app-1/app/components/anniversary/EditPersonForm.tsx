@@ -19,6 +19,7 @@ import {
 } from "@repo/hebcal";
 import { useLanguage } from "@/i18n";
 import type { Anniversary } from "@repo/anniversaries/person";
+import { resolveErrorMessage } from "@repo/utils";
 import { updatePersonAction } from "../../anniversaries/actions";
 import {
   gregorianDayOptions,
@@ -116,13 +117,15 @@ export function EditPersonForm({
     setPending(false);
     if (!result.ok) {
       setError(
-        result.error === "rate-limited"
-          ? t.rateLimited
-          : result.error === "name-required"
-            ? t.nameRequired
-            : result.error === "no-such-date"
-              ? t.noSuchDate
-              : t.error(result.error),
+        resolveErrorMessage(
+          result.error,
+          {
+            "rate-limited": t.rateLimited,
+            "name-required": t.nameRequired,
+            "no-such-date": t.noSuchDate,
+          },
+          t.error,
+        ),
       );
       return;
     }

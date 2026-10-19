@@ -1,19 +1,7 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
-
-function ordinal(n: number): string {
-  const rem100 = n % 100;
-  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
-  switch (n % 10) {
-    case 1:
-      return `${n}st`;
-    case 2:
-      return `${n}nd`;
-    case 3:
-      return `${n}rd`;
-    default:
-      return `${n}th`;
-  }
-}
+import { createShareLinkModal } from "./create-share-link-modal";
+import { hebrewMonths } from "./hebrew-months";
+import { ordinal } from "./ordinal";
 
 /** English UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
@@ -24,6 +12,7 @@ export const anniversaryDetail = {
   upcoming: "Upcoming",
   edit: "Edit",
   editDetails: "Edit details",
+  shareThis: "Share this one",
   viewInCalendar: "Google Calendar ↗",
   nightfall: "nightfall",
   join: "Add to my list",
@@ -69,34 +58,7 @@ export const anniversaryDetail = {
     rateLimited:
       "Google Calendar is busy right now — wait a moment and try again.",
     error: (message: string) => `Something went wrong: ${message}`,
-    months: {
-      Tishrei: "Tishrei",
-      Cheshvan: "Cheshvan",
-      Kislev: "Kislev",
-      Tevet: "Tevet",
-      Shvat: "Shvat",
-      Adar: "Adar",
-      Adar1: "Adar I",
-      Adar2: "Adar II",
-      Nisan: "Nisan",
-      Iyyar: "Iyar",
-      Sivan: "Sivan",
-      Tamuz: "Tamuz",
-      Av: "Av",
-      Elul: "Elul",
-    },
+    months: hebrewMonths,
   },
-  addMemberForm: {
-    label: "Add someone",
-    placeholder: "someone@example.com",
-    notify: "Email them a calendar invite",
-    add: "Add",
-    adding: "Adding…",
-    added: (email: string) => `Added ${email}.`,
-    already: (email: string) => `${email} is already on this list.`,
-    emailInvalid: "Enter a valid email address.",
-    rateLimited:
-      "Google Calendar is busy right now — wait a moment and try again.",
-    error: (message: string) => `Something went wrong: ${message}`,
-  },
+  shareModal: createShareLinkModal,
 } as const satisfies AnniversaryDetailTexts;

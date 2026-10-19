@@ -15,10 +15,10 @@ import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
 import { getDictionary, type Locale } from "@/i18n";
 import {
   addAnniversary,
-  addMember,
   CalendarNotConfiguredError,
   CalendarRateLimitError,
-  getNotifyDefaults,
+  createShareLink,
+  joinShareLink,
   leaveAnniversary,
   NoSuchHebrewDateError,
   StoreNotConfiguredError,
@@ -26,8 +26,6 @@ import {
   updateEvent,
   type AnniversaryType,
 } from "@repo/anniversaries";
-
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function eventSummaryFor(
   locale: Locale,
@@ -78,12 +76,9 @@ export async function addAnniversaryAction(input: {
   hebDay: number;
   hebMonth: string;
   years: number;
-  sharedEmails: string[];
   hebrewName?: string;
   origin?: string;
   hebYear?: number;
-  /** Which of `sharedEmails` to email a Google Calendar invite this round. */
-  notifyEmails: string[];
   locale: Locale;
 }): Promise<ActionResult<{ created: number; joined: boolean }>> {
   try {
@@ -105,16 +100,6 @@ export async function addAnniversaryAction(input: {
   }
 }
 
-/**
- * Whether each email should default to "notify" in the share-with checklist —
- * `false` for anyone we've already sent a calendar invite to.
- */
-export async function getNotifyDefaultsAction(
-  emails: string[],
-): Promise<Record<string, boolean>> {
-  return getNotifyDefaults(emails);
-}
-
 export async function leaveAnniversaryAction(
   id: string,
 ): Promise<ActionResult<{ removed: number; deleted: number }>> {
@@ -130,86 +115,55 @@ export async function leaveAnniversaryAction(
   }
 }
 
-export async function addMemberAction(input: {
-  id: string;
-  /** The anniversary's current name + type, for the calendar title. */
-  name: string;
-  type: AnniversaryType;
-  email: string;
-  notify: boolean;
-  locale: Locale;
-}): Promise<ActionResult<{ added: boolean; already: boolean }>> {
+export async function createShareLinkAction(
+  personIds: string[],
+): Promise<ActionResult<{ id: string; expiresAt: string }>> {
   try {
-    const viewer = await getCurrentUserEmail();
-    if (!viewer) return { ok: false, error: "not-signed-in" };
-    if (!EMAIL_RE.test(input.email.trim())) {
-      return { ok: false, error: "email-invalid" };
-    }
+    const email = await getCurrentUserEmail();
+    if (!email) return { ok: false, error: "not-signed-in" };
 
-    const summary = eventSummaryFor(input.locale, input.type, input.name);
-    const data = await addMember(
-      { id: input.id, email: input.email, notify: input.notify, summary },
-      viewer,
-    );
-    refreshAnniversaries(input.id);
-    return { ok: true, data };
+    const { id, expiresAt } = await createShareLink(personIds, email);
+    return { ok: true, data: { id, expiresAt: expiresAt.toISOString() } };
   } catch (error) {
     return fail(error);
   }
 }
 
-export async function bulkShareAction(input: {
-  email: string;
-  items: { id: string; name: string; type: AnniversaryType }[];
-  notify: boolean;
-  locale: Locale;
-}): Promise<
+export async function joinShareLinkAction(
+  shareLinkId: string,
+  personIds: string[],
+  locale: Locale,
+): Promise<
   ActionResult<{
-    added: number;
-    already: number;
+    joined: number;
+    alreadyJoined: number;
     failed: number;
     rateLimited: boolean;
   }>
 > {
   try {
-    const viewer = await getCurrentUserEmail();
-    if (!viewer) return { ok: false, error: "not-signed-in" };
-    if (!EMAIL_RE.test(input.email.trim())) {
-      return { ok: false, error: "email-invalid" };
-    }
-    if (input.items.length === 0)
-      return { ok: false, error: "nothing-selected" };
+    const [email, userId] = await Promise.all([
+      getCurrentUserEmail(),
+      getCurrentUserId(),
+    ]);
+    if (!email || !userId) return { ok: false, error: "not-signed-in" };
 
-    let added = 0;
-    let already = 0;
-    let failed = 0;
-    let rateLimited = false;
-
-    for (const item of input.items) {
-      const summary = eventSummaryFor(input.locale, item.type, item.name);
-      try {
-        const result = await addMember(
-          { id: item.id, email: input.email, notify: input.notify, summary },
-          viewer,
-        );
-        if (result.added) added++;
-        else if (result.already) already++;
-        else failed++;
-      } catch (error) {
-        if (error instanceof CalendarRateLimitError) {
-          rateLimited = true;
-          break;
-        }
-        console.error(
-          `[anniversaries] bulk share failed for ${item.id}:`,
-          error,
-        );
-        failed++;
-      }
-    }
-
+    const result = await joinShareLink(
+      shareLinkId,
+      personIds,
+      { email, userId },
+      (type, name) => eventSummaryFor(locale, type, name),
+    );
     refreshAnniversaries();
-    return { ok: true, data: { added, already, failed, rateLimited } };
+    return {
+      ok: true,
+      data: {
+        joined: result.joined.length,
+        alreadyJoined: result.alreadyJoined.length,
+        failed: result.failed.length,
+        rateLimited: result.rateLimited,
+      },
+    };
   } catch (error) {
     return fail(error);
   }

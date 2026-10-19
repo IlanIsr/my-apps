@@ -7,9 +7,11 @@ import { anniversaryForm } from "./anniversary-form";
 import { calendarUnavailable } from "./calendar-unavailable";
 import { converter } from "./converter";
 import { eventSummary } from "./event-summary";
+import { footer } from "./footer";
 import { landing } from "./landing";
 import { navbar } from "./navbar";
 import { newAnniversaryHeader } from "./new-anniversary-header";
+import { shareLinkView } from "./share-link-view";
 
 /**
  * The assembled Hebrew message tree. Each key comes from that feature's
@@ -17,6 +19,7 @@ import { newAnniversaryHeader } from "./new-anniversary-header";
  */
 export const he = {
   navbar,
+  footer,
   landing,
   converter,
   anniversaries,
@@ -27,4 +30,5 @@ export const he = {
   agenda,
   admin,
   eventSummary,
+  shareLinkView,
 } as const satisfies Messages;

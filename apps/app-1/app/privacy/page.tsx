@@ -11,6 +11,7 @@ import type { Metadata } from "next";
 import { BackLink } from "../components/BackLink";
 import { Eyebrow } from "../components/Eyebrow";
 import { Ornament } from "../components/Ornament";
+import { CONTACT_EMAIL } from "../../lib/contact";
 
 export const metadata: Metadata = {
   title: "Privacy Policy · Anniversaries",
@@ -19,8 +20,6 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = "September 7, 2026";
-
-const CONTACT_EMAIL = "ilanbellaichepro@gmail.com";
 
 function Section({
   heading,

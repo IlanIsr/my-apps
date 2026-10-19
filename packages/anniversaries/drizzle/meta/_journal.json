@@ -15,6 +15,13 @@
       "when": 1788732034485,
       "tag": "0001_users",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792396269889,
+      "tag": "0002_petite_cammi",
+      "breakpoints": true
     }
   ]
 }
