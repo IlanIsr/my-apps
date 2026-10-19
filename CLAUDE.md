@@ -163,11 +163,13 @@ The `/admin` page (super-user only) has a "Copy from production" button — `syn
 
 Vercel project **`panini`** (root directory `apps/panini`, production branch `main`, Node 24, "skip unaffected projects" on). Neon project **`panini`** (id `winter-fog-78624404`, Frankfurt, in the personal Neon org — the Vercel-managed org can't create projects outside the integration) with branches `main` (prod) and `preprod`. Same flow as app-1: `preprod` → Vercel Preview, `main` → Production; the app's `build` script is `drizzle-kit migrate && next build`, so each deploy migrates its own database.
 
-| Vercel env  | `DATABASE_URL` (manual, not integration-managed) | Clerk keys                        |
-| ----------- | ------------------------------------------------ | --------------------------------- |
-| Production  | Neon `panini` / `main`                           | see below                         |
-| Preview     | Neon `panini` / `preprod`                        | dev instance (`pk_test`, = local) |
-| Development | Neon `panini` / `preprod`                        | dev instance                      |
+| Vercel env  | `DATABASE_URL` (manual, not integration-managed) | Clerk keys                         |
+| ----------- | ------------------------------------------------ | ---------------------------------- |
+| Production  | Neon `panini` / `main`                           | prod instance (`pk_live`, = app-1) |
+| Preview     | Neon `panini` / `preprod`                        | dev instance (`pk_test`, = local)  |
+| Development | Neon `panini` / `preprod`                        | dev instance                       |
+
+Production domain: **`panini.anniversaries.dev`** — a subdomain of app-1's domain so it can use the same Clerk **production** instance (bound to `anniversaries.dev`; a prod Clerk instance doesn't work on `*.vercel.app`), which also shares the sign-in session with app-1. DNS for `anniversaries.dev` is on Cloudflare: `panini` CNAME → `cname.vercel-dns.com` (DNS only, not proxied).
 
 Local `next dev` / `drizzle-kit` read `apps/panini/.env` (`DATABASE_URL` → `preprod`). Clerk user ids differ between the dev and prod Clerk instances, so data created locally / on Preview belongs to a different id than in production.
 
@@ -185,7 +187,7 @@ Plan: use the free `is-a.dev` service.
 
 - `ilanisr.is-a.dev` — personal root/landing
 - `app1.ilanisr.is-a.dev` → Firebase app-1
-- `panini.ilanisr.is-a.dev` → Vercel panini
+- `panini.ilanisr.is-a.dev` → Vercel panini (panini currently lives on `panini.anniversaries.dev`)
 
 The root registration is PR [is-a-dev/register#50502](https://github.com/is-a-dev/register/pull/50502) (from fork `IlanIsr/register`, file `domains/ilanisr.json`). Checks pass; awaiting maintainer merge. An hourly monitor watches the PR.
 

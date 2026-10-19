@@ -21,7 +21,7 @@ const apps = [
     description: "Sticker-album tracker",
     url: isDev
       ? "http://localhost:3001"
-      : "https://panini-ilanisrs-projects.vercel.app/",
+      : "https://panini.anniversaries.dev/",
   },
 ];
 
