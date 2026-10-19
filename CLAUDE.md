@@ -15,14 +15,14 @@ Apps:
   - Per-user Google Calendar scope is **not** used — the app only needs the user's email (`@repo/auth/user` → `getCurrentUserEmail()`) to invite them.
   - `/calendar` is a flat chronological agenda of every upcoming event.
   - Trilingual (en/he/fr).
-- `app-2` (:3001) — placeholder (shows `@repo/utils` output). Slated for a Firestore feature.
+- `panini` (:3001) — **Classeur Panini**, a sticker-album tracker (replaced the old `app-2` placeholder; ported from a claude.ai artifact). One album per Clerk user (`albums.owner_id`, no sharing yet); the user adds their own kids ("collectors") in Réglages, plus one fixed `is_reserve` collector. Per card, a +/− count per collector; tabs: Collection (filters, per-page completion badges), Échanges (duplicates one kid can give another), Réserve (who needs what's in reserve), Pages, Prix. **Page prizes** (`page_rewards`, one per page): `kind = "deadline"` (complete before `deadline`) or `"first_n"` (first `winners` people to finish win); the Prix tab lists them by urgency with each kid's missing cards. Stack: Neon Postgres (own Neon project `panini`) via Drizzle, all in the app itself — `db/` (schema + `neon-http` client), `lib/store.ts` (every function takes the Clerk user id and only touches that user's album; a +/− tap is one atomic `INSERT … ON CONFLICT DO UPDATE SET count = GREATEST(0, count + delta)` so two devices never overwrite each other), `lib/validate.ts` (server-side input validation), `lib/album-logic.ts` (client-safe types + pure helpers), `app/actions.ts` (server actions → `{ ok, data | error }`; mutations return the fresh album). Client root `app/components/PaniniApp.tsx` keeps the album in state, +/− is optimistic with rollback. French only, but with app-1's i18n architecture (`i18n/`, `LOCALES = ["fr"]`, storage key `panini.locale`). `scripts/import-artifact.ts` is the one-time import of the original artifact's JSON export into a given Clerk user id (dry run by default, `--commit` to write, refuses if that user already has an album).
 - `landing` (:3002) — index page linking to the other apps; app list hardcoded in `app/page.tsx` for now, to move to Firestore later.
 
 All three are gated behind Clerk auth — see the Auth section.
 
-All three apps use Tailwind v4 via the shared `@repo/tailwind-config` package: each app's `app/globals.css` is `@import "@repo/tailwind-config";` and has a `postcss.config.mjs` with `@tailwindcss/postcss`. `packages/tailwind-config/styles.css` defines the base palette as CSS vars under `:root` / `.dark` and exposes them via `@theme inline`, so `bg-background` / `text-foreground` follow the active theme. Base light: `#ffe5cc` / `#000000`; dark: `#000000` / `#ffffff`; plus `--color-primary/-secondary/-accent` (placeholders). Dark mode is class-based (`<html class="dark">`); only app-1 toggles it (via `next-themes`) — app-2/landing stay light.
+All three apps use Tailwind v4 via the shared `@repo/tailwind-config` package: each app's `app/globals.css` is `@import "@repo/tailwind-config";` and has a `postcss.config.mjs` with `@tailwindcss/postcss`. `packages/tailwind-config/styles.css` defines the base palette as CSS vars under `:root` / `.dark` and exposes them via `@theme inline`, so `bg-background` / `text-foreground` follow the active theme. Base light: `#ffe5cc` / `#000000`; dark: `#000000` / `#ffffff`; plus `--color-primary/-secondary/-accent` (placeholders). Dark mode is class-based (`<html class="dark">`); only app-1 toggles it (via `next-themes`) — landing stays light; panini follows the OS colour scheme with its own palette in `apps/panini/app/globals.css`.
 
-**app-1 overrides the palette locally.** `apps/app-1/app/globals.css` re-declares the full token set (parchment `#F6F0E4` / ink `#241E17` light, warm near-black dark, `--card/-sunken/-hairline/-border(-strong)`, amber `--birthday*` / dusk-blue `--yahrzeit*` accents, `--ornament`, `--destructive`) plus `--radius-pill/-field/-card` and the font tokens, in its own `:root` / `.dark` + `@theme inline` after the import. app-2 / landing keep the shared palette. Fonts are loaded in `apps/app-1/app/layout.tsx` via `next/font/google` — Spectral (Latin serif) + Frank Ruhl Libre (Hebrew serif) stacked as `--font-display` (Spectral has no Hebrew glyphs so Hebrew falls through to Frank Ruhl automatically), Assistant as `--font-sans`, JetBrains Mono as `--font-mono`. Shared primitives for the identity live in `apps/app-1/app/components/`: `Eyebrow` (mono uppercase label + birthday-dot / yahrzeit-diamond marker), `Ornament` (the one decoration: hairline + rotated square), `Segmented` (2–3 option control, replaced the old `Switch`). The favicon is `apps/app-1/app/icon.tsx` — a generated (`next/og`) rotated-square mark on a ground coloured by `VERCEL_ENV` (amber = production, dusk blue = preview/pre-prod, grey = local); non-prod also gets a `[preprod]` / `[dev]` tab-title prefix (set in `layout.tsx` metadata). Keep both in sync if you add an environment.
+**app-1 overrides the palette locally.** `apps/app-1/app/globals.css` re-declares the full token set (parchment `#F6F0E4` / ink `#241E17` light, warm near-black dark, `--card/-sunken/-hairline/-border(-strong)`, amber `--birthday*` / dusk-blue `--yahrzeit*` accents, `--ornament`, `--destructive`) plus `--radius-pill/-field/-card` and the font tokens, in its own `:root` / `.dark` + `@theme inline` after the import. landing keeps the shared palette. Fonts are loaded in `apps/app-1/app/layout.tsx` via `next/font/google` — Spectral (Latin serif) + Frank Ruhl Libre (Hebrew serif) stacked as `--font-display` (Spectral has no Hebrew glyphs so Hebrew falls through to Frank Ruhl automatically), Assistant as `--font-sans`, JetBrains Mono as `--font-mono`. Shared primitives for the identity live in `apps/app-1/app/components/`: `Eyebrow` (mono uppercase label + birthday-dot / yahrzeit-diamond marker), `Ornament` (the one decoration: hairline + rotated square), `Segmented` (2–3 option control, replaced the old `Switch`). The favicon is `apps/app-1/app/icon.tsx` — a generated (`next/og`) rotated-square mark on a ground coloured by `VERCEL_ENV` (amber = production, dusk blue = preview/pre-prod, grey = local); non-prod also gets a `[preprod]` / `[dev]` tab-title prefix (set in `layout.tsx` metadata). Keep both in sync if you add an environment.
 
 GitHub: `IlanIsr/my-apps` (branch `main`). `gh` is installed and authenticated as `IlanIsr`; `gh auth setup-git` is configured, so git/gh over HTTPS work without prompting.
 
@@ -30,16 +30,16 @@ Requires Node >= 24 and pnpm 11 (`packageManager` is pinned to `pnpm@11.25.0`).
 
 ### Architecture rules to preserve
 
-- Apps are independent and independently buildable/deployable, each with its own backend resources — do not merge them. (app-1 → Vercel + Neon Postgres; app-2 / landing → Firebase, one project per app.)
+- Apps are independent and independently buildable/deployable, each with its own backend resources — do not merge them. (app-1 and panini → Vercel + their own Neon project each; landing → Firebase App Hosting.)
 - Shared code lives in `packages/*`. An app must never import source from another app. A concern used by more than one app becomes a package.
 - Don't over-engineer shared packages. In particular **keep `packages/ui` as-is** (mostly the Turborepo starter) — do not redesign or refactor it unless explicitly asked.
-- Prefer simple, maintainable solutions. Preserve the working pnpm + Turborepo setup and each app's deployment wiring (Vercel for app-1, Firebase App Hosting for app-2 / landing).
+- Prefer simple, maintainable solutions. Preserve the working pnpm + Turborepo setup and each app's deployment wiring (Vercel for app-1 and panini, Firebase App Hosting for landing).
 
 ## Commands
 
 Run from the repo root; Turborepo fans tasks out across the workspace.
 
-- `pnpm dev` — run all apps (app-1 :3000, app-2 :3001, landing :3002)
+- `pnpm dev` — run all apps (app-1 :3000, panini :3001, landing :3002)
 - `pnpm --filter app-1 dev` — run a single app
 - `pnpm build` — build all (respects `^build` order)
 - `pnpm lint` — ESLint across the workspace (`--max-warnings 0`, so warnings fail)
@@ -50,7 +50,7 @@ No test runner is configured — there is no `test` task in `turbo.json` or any 
 
 ### Env vars
 
-Next only reads `.env*` from an app's own directory. `@repo/env/load` (imported at the top of every `apps/*/next.config.js`) backfills from a **monorepo-root `.env`** with `override: false` — so shared defaults live in root `.env` (git-ignored; see `.env.example`), and an app's own `apps/<name>/.env.local` overrides them. Production sets vars per deployment (Vercel project env vars for app-1; App Hosting backend for app-2 / landing), which also win (nothing is committed).
+Next only reads `.env*` from an app's own directory. `@repo/env/load` (imported at the top of every `apps/*/next.config.js`) backfills from a **monorepo-root `.env`** with `override: false` — so **only values shared across apps** (the Clerk keys) live in root `.env` (git-ignored; see `.env.example`), and **app-specific values live in the app's own `apps/<name>/.env`** — notably each app's `DATABASE_URL` (app-1's in `apps/app-1/.env`, panini's in `apps/panini/.env`). Never put a `DATABASE_URL` in the root `.env`: it would leak into every app that doesn't set its own. Production sets vars per deployment (Vercel project env vars for app-1 / panini; App Hosting backend for landing), which also win (nothing is committed).
 
 ## Code architecture
 
@@ -73,7 +73,7 @@ Apps consume these via `workspace:*`. Changes to a package are seen directly by 
 
 - TypeScript `7.0.2` (native compiler) across apps and packages. `@repo/eslint-config` additionally aliases `typescript` to `npm:@typescript/typescript6@6.0.2` for `typescript-eslint` compatibility.
 - ESLint 10 flat config only. Each app's `eslint.config.js` just re-exports `nextJsConfig` from `@repo/eslint-config/next-js`. Note `eslint-plugin-react-hooks` v7 flags the `useEffect(() => setMounted(true))` mount pattern — drive theme-dependent rendering off the `.dark` class in CSS instead.
-- All apps: Next.js 16 App Router, React 19, `"type": "module"`, root `app/` dir. app-1 also has `lib/` and `i18n/` dirs and a `@/*` → `./*` tsconfig path alias (app-2/landing are too small to need one).
+- All apps: Next.js 16 App Router, React 19, `"type": "module"`, root `app/` dir. app-1 and panini also have `lib/` and `i18n/` dirs and a `@/*` → `./*` tsconfig path alias (landing is too small to need one).
 
 ### app-1 i18n (component-owned text types)
 
@@ -92,7 +92,7 @@ All three apps are **fully gated** — every route redirects to `/sign-in` witho
 - **Wiring per app**: `proxy.ts` (Next 16's renamed middleware — re-exports `clerkProxy`, but `config.matcher` must be a literal in the file), `<AuthProvider>` in the root layout, `<AuthControl>` in the header, `app/sign-in/[[...sign-in]]/page.tsx` rendering `<SignInView>`.
 - **`@clerk/nextjs` is v7 / "Core 3"** (March 2026): `<SignedIn>`/`<SignedOut>`/`<Protect>` are gone — use `<Show when="signed-in">`. `createRouteMatcher` is deprecated. The proxy does a plain `auth()` + `NextResponse.redirect` instead.
 - Social-only (Google + Apple) is configured in the Clerk dashboard, not code.
-- **Keys**: put `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` in the root `.env` (see env note below). For app-1 production they're Vercel project env vars (both environments); for app-2 / landing production they're in `apps/<name>/apphosting.yaml`. `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` missing at build → `@clerk/nextjs: Missing publishableKey` → every gated route 500s.
+- **Keys**: put `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` in the root `.env` (see env note below). For app-1 / panini they're Vercel project env vars; for landing production they're in its App Hosting backend. `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` missing at build → `@clerk/nextjs: Missing publishableKey` → every gated route 500s.
 
 ### app-1 `/anniversaries` — storage + calendar
 
@@ -159,25 +159,25 @@ The store used to be **Firestore** (Firebase project `my-app-1` / `my-app-1-312d
 
 The `/admin` page (super-user only) has a "Copy from production" button — `syncFromProd()` reads the prod Neon `persons` (via `PROD_DATABASE_URL`), pseudonymises each one (`maskPersonForPreprod`: name/hebrewName/member emails replaced by a deterministic hash of the prod value — same input always yields the same fake output, so re-syncing stays internally consistent; Hebrew date + `type` untouched, since that's what the occurrence logic under test actually depends on; member emails become `member-<hash>@preprod.invalid` so a re-sync can never email a real person), then mirrors it into pre-prod (upsert matching ids, delete the rest) and creates each person's events fresh on pre-prod's own calendar (`googleEventId`/`htmlLink` are cleared before the upsert — prod's ids point at prod's calendar, not pre-prod's — then `syncPersonEvents` recreates them with `notifyEmails: []`, since masked addresses are never real invite recipients). Gated on `PROD_DATABASE_URL` being set (Preview only); refuses if it equals `DATABASE_URL`. **`PROD_DATABASE_URL` is set** (Vercel Preview, see the env-vars table above) — the button is live.
 
-### app-2 / landing → Firebase (unchanged)
+### panini → Vercel + Neon Postgres
 
-app-2 and `landing` still target **Firebase** (App Hosting, region `europe-west4`, one project per app). Only app-1 moved to Vercel/Neon. `pnpm-workspace.yaml` `allowBuilds` covers `@firebase/util`, `protobufjs`, `esbuild`.
+Vercel project **`panini`** (root directory `apps/panini`, production branch `main`, Node 24, "skip unaffected projects" on). Neon project **`panini`** (id `winter-fog-78624404`, Frankfurt, in the personal Neon org — the Vercel-managed org can't create projects outside the integration) with branches `main` (prod) and `preprod`. Same flow as app-1: `preprod` → Vercel Preview, `main` → Production; the app's `build` script is `drizzle-kit migrate && next build`, so each deploy migrates its own database.
 
-### Firestore — two patterns
+| Vercel env  | `DATABASE_URL` (manual, not integration-managed) | Clerk keys                        |
+| ----------- | ------------------------------------------------ | --------------------------------- |
+| Production  | Neon `panini` / `main`                           | see below                         |
+| Preview     | Neon `panini` / `preprod`                        | dev instance (`pk_test`, = local) |
+| Development | Neon `panini` / `preprod`                        | dev instance                      |
 
-**Admin SDK (server-only, authenticated writes)** — `firebase-admin` + a service account, `getFirestore(app, "<name>")`. No security rules involved (they're bypassed); use it when every call runs inside an authenticated server action and auth is Clerk, not Firebase Auth. app-1 `/anniversaries` used this before moving to Neon Postgres (the pattern is still valid for a future server-authoritative feature).
+Local `next dev` / `drizzle-kit` read `apps/panini/.env` (`DATABASE_URL` → `preprod`). Clerk user ids differ between the dev and prod Clerk instances, so data created locally / on Preview belongs to a different id than in production.
 
-**Client SDK + security rules (read-mostly, browser)** — the intended pattern for app-2. Target a **named** database equal to the app name, **not `(default)`**:
+Migrations: `pnpm --filter panini db:generate` (after editing `db/schema.ts`, offline) / `db:migrate` / `db:studio`.
 
-```ts
-export const db = getFirestore(firebaseApp, "app-2"); // NOT getFirestore(firebaseApp)
-```
+The old `app-2` placeholder and its Firebase App Hosting backend (project `my-app-2-e72f1`) are gone — the Firebase project was deleted.
 
-`getFirestore(firebaseApp)` produces `Database '(default)' not found`. Config comes from `NEXT_PUBLIC_FIREBASE_*` env vars in `apps/<app>/.env.local` (gitignored — never commit the values): `API_KEY`, `AUTH_DOMAIN`, `PROJECT_ID`, `STORAGE_BUCKET`, `MESSAGING_SENDER_ID`, `APP_ID`. The **same vars must also be set in App Hosting and redeployed**.
+### landing → Firebase (unchanged)
 
-Security rules must be published to the **named** database, not `(default)` — a `Missing or insufficient permissions` error usually means they landed on the wrong one. Never fix a permissions error by opening the database to public writes.
-
-**app-2's Firestore feature is not started.** It needs its own Firebase project (`my-app-2`), a named database `app-2`, its own Web App + `.env.local` + App Hosting env vars, and a `lib/firebase.ts`. It must not point at app-1's project.
+`landing` still targets **Firebase** (App Hosting, region `europe-west4`). `pnpm-workspace.yaml` `allowBuilds` covers `@firebase/util`, `protobufjs`, `esbuild` (`firebase-admin` is still a devDependency of `@repo/anniversaries`' historical migration scripts).
 
 ## Custom domains (test/simulation — no domain purchased)
 
@@ -185,17 +185,17 @@ Plan: use the free `is-a.dev` service.
 
 - `ilanisr.is-a.dev` — personal root/landing
 - `app1.ilanisr.is-a.dev` → Firebase app-1
-- `app2.ilanisr.is-a.dev` → Firebase app-2
+- `panini.ilanisr.is-a.dev` → Vercel panini
 
 The root registration is PR [is-a-dev/register#50502](https://github.com/is-a-dev/register/pull/50502) (from fork `IlanIsr/register`, file `domains/ilanisr.json`). Checks pass; awaiting maintainer merge. An hourly monitor watches the PR.
 
-**Do not create the `app1`/`app2` is-a.dev registrations until the root PR is merged.** When configuring the subdomains, pull the _current_ DNS records from Firebase App Hosting (don't reuse stale values).
+**Do not create the `app1`/`panini` is-a.dev registrations until the root PR is merged.** When configuring the subdomains, pull the _current_ DNS records from Vercel / Firebase App Hosting (don't reuse stale values).
 
 ## Likely next tasks
 
 1. Anniversaries persistence is on **Neon Postgres (Drizzle)**, Firestore fully migrated away from (see "One-time Firestore → Neon migration" — Firestore data + Firebase projects left intact, not yet cleaned up). Neon/Vercel env setup is done: prod → branch `main` (integration-managed, Production-only), Preview + Development → branch `preprod` (manual `DATABASE_URL`, no git-branch restriction). `PROD_DATABASE_URL` is set (Preview only, read-only `preprod_reader` role on `main`) — the `/admin` "Copy from production" button is live, pseudonymising prod data on the way in (see the `/anniversaries` description above).
 2. Person editing (**done** — `updateAnniversary` + "Edit details" panel: name, full Hebrew date via a Hebrew/Gregorian toggle, hebrewName, hebYear; type isn't editable here), env-tinted favicon (**done**). Sharing has moved from typed-email invites to **share links** (**done** — see the `/anniversaries` description above): no form anywhere takes an email to invite someone, closing what was an open invite-email-to-anyone-you-type abuse vector once sign-up isn't restricted to a known circle.
-3. Build app-2's Firestore feature using the client-SDK pattern above.
-4. After PR #50502 merges: configure `app1`/`app2.ilanisr.is-a.dev` subdomains (app-1 → Vercel, app-2 → Firebase App Hosting; pull current DNS from each).
+3. Panini: import the original artifact album into the owner's **production** Clerk user id (`pnpm --filter panini import-artifact <export.json> --owner <id> --commit` with `DATABASE_URL` pointed at Neon `panini`/`main`).
+4. After PR #50502 merges: configure `app1`/`panini.ilanisr.is-a.dev` subdomains (both → Vercel; pull current DNS from each).
 
 Before changing anything deploy/backend-related, inspect the actual current repo + Vercel + Neon + Firebase state — setup may have progressed since this was written.

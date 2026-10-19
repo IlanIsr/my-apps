@@ -17,11 +17,11 @@ const apps = [
       : "https://app-1--my-app-1-312d0.europe-west4.hosted.app/",
   },
   {
-    name: "App 2",
-    description: "Second app",
+    name: "Classeur Panini",
+    description: "Sticker-album tracker",
     url: isDev
       ? "http://localhost:3001"
-      : "https://my-apps-2--my-app-2-e72f1.europe-west4.hosted.app/",
+      : "https://panini-ilanisrs-projects.vercel.app/",
   },
 ];
 

@@ -1,0 +1,139 @@
+@import "@repo/tailwind-config";
+
+/*
+ * Panini palette — overrides the shared placeholder palette for this app only.
+ * Follows the OS colour scheme (no toggle). `--c-<color>` / `--c-<color>-soft`
+ * are the collector colours (keys of COLLECTOR_COLORS in lib/album-logic.ts,
+ * plus `slate` for the reserve).
+ */
+:root {
+  --background: #eef0e8;
+  --foreground: #1c2420;
+  --surface: #ffffff;
+  --sunken: #e6e9df;
+  --muted: #5c6459;
+  --line: #d7dbcb;
+  --line-strong: #c3c8b5;
+  --accent: #1f6f5c;
+  --accent-ink: #f2fbf7;
+  --accent-soft: #dceee7;
+  --danger: #b6473c;
+  --danger-soft: #f6e2de;
+  --shadow: 0 1px 2px rgba(28, 36, 32, 0.06),
+    0 8px 24px -12px rgba(28, 36, 32, 0.18);
+
+  --c-rose: #c8436b;
+  --c-rose-soft: #f7dde6;
+  --c-blue: #2d6fb0;
+  --c-blue-soft: #dce8f5;
+  --c-amber: #c07a17;
+  --c-amber-soft: #f3e4c9;
+  --c-green: #3f8a3a;
+  --c-green-soft: #dfeedb;
+  --c-violet: #7a4fc0;
+  --c-violet-soft: #e8def7;
+  --c-teal: #11808a;
+  --c-teal-soft: #d5edef;
+  --c-slate: #5b6b7a;
+  --c-slate-soft: #e1e6ea;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #11160f;
+    --foreground: #eef0e6;
+    --surface: #1a2018;
+    --sunken: #141810;
+    --muted: #a2ab97;
+    --line: #2b3227;
+    --line-strong: #3a4333;
+    --accent: #49d1ae;
+    --accent-ink: #0b1b16;
+    --accent-soft: #1e3a32;
+    --danger: #e58f82;
+    --danger-soft: #3a2420;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+
+    --c-rose: #f493af;
+    --c-rose-soft: #3a2130;
+    --c-blue: #86b8ed;
+    --c-blue-soft: #1e3047;
+    --c-amber: #f0b758;
+    --c-amber-soft: #3a2d14;
+    --c-green: #8fd18a;
+    --c-green-soft: #1f3420;
+    --c-violet: #c2a6f2;
+    --c-violet-soft: #2c2240;
+    --c-teal: #6fd3dc;
+    --c-teal-soft: #163538;
+    --c-slate: #9fb0c2;
+    --c-slate-soft: #28333e;
+  }
+  :root {
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  /* The current collector's colour, set inline via `collectorStyle()`. */
+  --color-kc: var(--kc);
+  --color-kc-soft: var(--kc-soft);
+  --shadow-card: var(--shadow);
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-figtree), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 650;
+    text-wrap: balance;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .field-input {
+    @apply h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm text-foreground placeholder:text-muted;
+  }
+  .btn {
+    @apply rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply border-transparent bg-accent text-accent-ink;
+  }
+  .btn-danger {
+    @apply border-transparent bg-danger text-white;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent text-muted;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-card;
+  }
+}

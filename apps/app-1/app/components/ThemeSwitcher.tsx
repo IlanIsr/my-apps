@@ -3,7 +3,7 @@
 import { useTheme } from "next-themes";
 
 /**
- * Light/dark toggle (app-1 only — app-2 and landing stay light). Dark mode is
+ * Light/dark toggle (app-1 only — landing stays light). Dark mode is
  * class-based (`<html class="dark">`, set by `next-themes` before paint); which
  * icon shows is pure CSS off that class, so there's no hydration flash.
  *
