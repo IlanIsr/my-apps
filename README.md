@@ -8,7 +8,7 @@ A personal pnpm + Turborepo monorepo holding multiple independent web apps plus 
 
 - `app-1` (:3000) — Hebrew-calendar tools (Hebrew date converter + the `/anniversaries` family-anniversary manager). Deploys to Vercel, backed by Neon Postgres.
 - `panini` (:3001) — Classeur Panini, a sticker-album tracker. Deploys to Vercel, backed by its own Neon Postgres project.
-- `landing` (:3002) — index page linking to the other apps. Deploys to Firebase App Hosting.
+- `landing` (:3002) — index page linking to the other apps. No deploy target for now.
 
 ### Packages
 

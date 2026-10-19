@@ -55,11 +55,7 @@ import {
 } from "./share-links";
 
 export { CalendarNotConfiguredError, CalendarRateLimitError } from "./calendar";
-export {
-  DatabaseNotConfiguredError,
-  // Back-compat alias — callers historically caught `StoreNotConfiguredError`.
-  StoreNotConfiguredError,
-} from "./store";
+export { DatabaseNotConfiguredError } from "./store";
 
 export class NoSuchHebrewDateError extends Error {
   constructor() {

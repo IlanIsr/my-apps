@@ -5,7 +5,7 @@ import type { HebrewMonthKey } from "@repo/hebcal";
 /** What an anniversary marks. Drives the calendar title, colour, and UI accent. */
 export type AnniversaryType = "birthday" | "yahrzeit";
 
-/** Narrows an untyped/widened `type` value (DB row, Firestore doc) to {@link AnniversaryType}. */
+/** Narrows an untyped/widened `type` value (e.g. a DB row) to {@link AnniversaryType}. */
 export function toAnniversaryType(type: unknown): AnniversaryType {
   return type === "yahrzeit" ? "yahrzeit" : "birthday";
 }
@@ -29,7 +29,7 @@ export type AnniversaryEvent = {
  * `person_members` / `person_events`); the calendar events are a projection of it.
  */
 export type Anniversary = {
-  /** `persons.id` — a preserved Firestore doc id for migrated rows, else a UUID. */
+  /** `persons.id` — a preserved legacy id for imported rows, else a UUID. */
   id: string;
   name: string;
   type: AnniversaryType;

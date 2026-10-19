@@ -1,9 +1,9 @@
 /**
  * The `landing` index page: a static list of links to the other apps.
  *
- * The app list is hardcoded for now (to move to Firestore later). In dev the
- * links point at the local dev servers so cross-app navigation — and the
- * shared Clerk session across localhost ports — works end to end.
+ * The app list is hardcoded. In dev the links point at the local dev servers
+ * so cross-app navigation — and the shared Clerk session across localhost
+ * ports — works end to end.
  */
 
 const isDev = process.env.NODE_ENV === "development";
@@ -14,7 +14,7 @@ const apps = [
     description: "First app",
     url: isDev
       ? "http://localhost:3000"
-      : "https://app-1--my-app-1-312d0.europe-west4.hosted.app/",
+      : "https://anniversaries.dev/",
   },
   {
     name: "Classeur Panini",

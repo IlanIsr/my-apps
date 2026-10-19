@@ -28,11 +28,6 @@ import {
 } from "./person";
 
 export { DatabaseNotConfiguredError } from "./db/client";
-/**
- * Back-compat alias. Historically the store was Firestore and threw
- * `StoreNotConfiguredError`; callers still catch that name.
- */
-export { DatabaseNotConfiguredError as StoreNotConfiguredError } from "./db/client";
 
 /** A stored event — carries bookkeeping the app-facing `AnniversaryEvent` hides. */
 export type StoredEvent = {
@@ -367,7 +362,7 @@ export async function deletePerson(id: string): Promise<void> {
 
 /**
  * Insert-or-replace a whole person record by id — members and events included.
- * Used by the one-time Firestore migration and the prod → pre-prod sync. Keeps
+ * Used by the prod → pre-prod sync. Keeps
  * the id (and every `googleEventId`) exactly as given.
  */
 export async function upsertPerson(record: PersonRecord): Promise<void> {

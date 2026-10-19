@@ -20,8 +20,8 @@ import {
   createShareLink,
   joinShareLink,
   leaveAnniversary,
+  DatabaseNotConfiguredError,
   NoSuchHebrewDateError,
-  StoreNotConfiguredError,
   updateAnniversary,
   updateEvent,
   type AnniversaryType,
@@ -44,7 +44,7 @@ export type ActionResult<T = undefined> =
     };
 
 function fail(error: unknown): { ok: false; error: string } {
-  if (error instanceof StoreNotConfiguredError) {
+  if (error instanceof DatabaseNotConfiguredError) {
     console.error("[anniversaries] database not configured:", error);
     return { ok: false, error: "db-not-configured" };
   }

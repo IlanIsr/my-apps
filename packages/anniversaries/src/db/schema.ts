@@ -2,8 +2,8 @@
  * Drizzle schema for the anniversaries store (Neon / Postgres).
  *
  * `persons` is the source of truth; Google Calendar is a sync target. The
- * `persons.id` column is a plain `text` PK so Firestore document ids migrate in
- * unchanged and every `googleEventId` reference stays stable.
+ * `persons.id` column is a plain `text` PK so imported ids are kept unchanged
+ * and every `googleEventId` reference stays stable.
  */
 
 import {
@@ -19,7 +19,7 @@ import {
 export const persons = pgTable(
   "persons",
   {
-    /** Preserved Firestore document id (or `crypto.randomUUID()` for new rows). */
+    /** Preserved legacy id for imported rows, else `crypto.randomUUID()`. */
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     /** `"birthday" | "yahrzeit"`. */
