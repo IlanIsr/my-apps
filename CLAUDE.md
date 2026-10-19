@@ -163,13 +163,13 @@ The `/admin` page (super-user only) has a "Copy from production" button — `syn
 
 Vercel project **`panini`** (root directory `apps/panini`, production branch `main`, Node 24, "skip unaffected projects" on). Neon project **`panini`** (id `winter-fog-78624404`, Frankfurt, in the personal Neon org — the Vercel-managed org can't create projects outside the integration) with branches `main` (prod) and `preprod`. Same flow as app-1: `preprod` → Vercel Preview, `main` → Production; the app's `build` script is `drizzle-kit migrate && next build`, so each deploy migrates its own database.
 
-| Vercel env  | `DATABASE_URL` (manual, not integration-managed) | Clerk keys                        |
-| ----------- | ------------------------------------------------ | --------------------------------- |
-| Production  | Neon `panini` / `main`                           | not set yet (see below)           |
-| Preview     | Neon `panini` / `preprod`                        | dev instance (`pk_test`, = local) |
-| Development | Neon `panini` / `preprod`                        | dev instance                      |
+| Vercel env  | `DATABASE_URL` (manual, not integration-managed) | Clerk keys                          |
+| ----------- | ------------------------------------------------ | ----------------------------------- |
+| Production  | Neon `panini` / `main`                           | dev instance (`pk_test`, temporary) |
+| Preview     | Neon `panini` / `preprod`                        | dev instance (`pk_test`, = local)   |
+| Development | Neon `panini` / `preprod`                        | dev instance                        |
 
-Production URL: the Vercel-provided **`panini-weld.vercel.app`** (no custom domain for now). A Clerk production instance only works on its own domain (app-1's is bound to `anniversaries.dev`), so on a `*.vercel.app` URL panini can't use a prod Clerk instance.
+Production URL: the Vercel-provided **`panini-weld.vercel.app`** (no custom domain for now). A Clerk production instance only works on its own domain (app-1's is bound to `anniversaries.dev`), so on a `*.vercel.app` URL panini can't use a prod Clerk instance — **Production temporarily uses the Clerk dev instance** (same keys as Preview/local; "Development mode" banner, dev user cap). Moving to a custom domain + prod instance later changes the owner's Clerk user id: re-point their album with `UPDATE albums SET owner_id = '<new id>' WHERE owner_id = '<old id>'`.
 
 Local `next dev` / `drizzle-kit` read `apps/panini/.env` (`DATABASE_URL` → `preprod`). Clerk user ids differ between the dev and prod Clerk instances, so data created locally / on Preview belongs to a different id than in production.
 
