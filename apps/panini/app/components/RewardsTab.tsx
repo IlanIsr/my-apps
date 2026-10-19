@@ -1,22 +1,38 @@
+"use client";
+
 /**
- * "Prix": every page that has a prize, most urgent first, with each kid's
- * status — complete, or which cards they still need.
+ * "Prix": every page that has a prize (most urgent first by default, or by
+ * date / completion), with each kid's status — complete, or which cards they
+ * still need. Finished deadlines can be hidden and each prize collapsed.
  */
+
+import { useState } from "react";
 
 import {
   daysUntil,
   missingOnPage,
+  rewardExpired,
   sortRewards,
+  sortRewardsByCompletion,
+  sortRewardsByDate,
   type Album,
   type Collector,
   type PageReward,
 } from "@/lib/album-logic";
 
 import { Avatar } from "./Avatar";
-import { CheckIcon, GiftIcon, PlusIcon } from "./icons";
+import { CheckIcon, ChevronIcon, GiftIcon, PlusIcon } from "./icons";
+
+type RewardSort = "urgency" | "date" | "completion";
 
 export type RewardsTexts = {
   add: string;
+  hideExpired: string;
+  sortBy: string;
+  sortUrgency: string;
+  sortDate: string;
+  sortCompletion: string;
+  noMatch: string;
   emptyTitle: string;
   emptyBody: string;
   page: (n: number) => string;
@@ -47,11 +63,53 @@ export function RewardsTab({
   onEdit: (reward: PageReward) => void;
   t: RewardsTexts;
 }) {
-  const rewards = sortRewards(album.rewards);
+  const [sort, setSort] = useState<RewardSort>("urgency");
+  const [hideExpired, setHideExpired] = useState(false);
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+
+  const sorted =
+    sort === "date"
+      ? sortRewardsByDate(album.rewards)
+      : sort === "completion"
+        ? sortRewardsByCompletion(album.rewards, album.cards, kids)
+        : sortRewards(album.rewards);
+  const rewards = hideExpired
+    ? sorted.filter((r) => !rewardExpired(r))
+    : sorted;
+
+  const toggle = (page: number) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(page)) next.add(page);
+      return next;
+    });
 
   return (
     <>
-      <div className="mb-3.5 flex justify-end">
+      <div className="mb-3.5 flex flex-wrap items-center justify-end gap-2">
+        {album.rewards.length > 0 && (
+          <>
+            <label className="mr-auto flex items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                checked={hideExpired}
+                onChange={(e) => setHideExpired(e.target.checked)}
+                className="size-4 accent-accent"
+              />
+              {t.hideExpired}
+            </label>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as RewardSort)}
+              aria-label={t.sortBy}
+              className="field-input h-9.5! w-auto!"
+            >
+              <option value="urgency">{t.sortUrgency}</option>
+              <option value="date">{t.sortDate}</option>
+              <option value="completion">{t.sortCompletion}</option>
+            </select>
+          </>
+        )}
         <button
           type="button"
           className="btn flex items-center gap-1.5"
@@ -60,7 +118,10 @@ export function RewardsTab({
           <PlusIcon /> {t.add}
         </button>
       </div>
-      {!rewards.length && (
+      {album.rewards.length > 0 && !rewards.length && (
+        <p className="px-5 py-12 text-center text-muted">{t.noMatch}</p>
+      )}
+      {!album.rewards.length && (
         <div className="px-5 py-12 text-center text-muted">
           <h3 className="mb-1.5 text-foreground">{t.emptyTitle}</h3>
           <p>{t.emptyBody}</p>
@@ -68,13 +129,23 @@ export function RewardsTab({
       )}
       {rewards.map((r) => {
         const days = r.deadline ? daysUntil(r.deadline) : 0;
-        const expired = r.kind === "deadline" && days < 0;
+        const expired = rewardExpired(r);
+        const isCollapsed = collapsed.has(r.page);
         return (
           <div
             key={r.page}
             className={`card mb-3.5 p-4 ${expired ? "opacity-60" : ""}`}
           >
-            <div className="mb-1 flex items-start gap-2.5">
+            <div
+              role="button"
+              tabIndex={0}
+              aria-expanded={!isCollapsed}
+              onClick={() => toggle(r.page)}
+              onKeyDown={(e) =>
+                (e.key === "Enter" || e.key === " ") && toggle(r.page)
+              }
+              className="mb-1 flex cursor-pointer items-start gap-2.5"
+            >
               <span className="mt-0.5 text-accent">
                 <GiftIcon className="size-5" />
               </span>
@@ -108,12 +179,18 @@ export function RewardsTab({
               <button
                 type="button"
                 className="text-sm font-semibold text-accent"
-                onClick={() => onEdit(r)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(r);
+                }}
               >
                 {t.edit}
               </button>
+              <ChevronIcon
+                className={`mt-0.5 size-4 shrink-0 text-muted transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+              />
             </div>
-            <div className="mt-2.5">
+            <div className={isCollapsed ? "hidden" : "mt-2.5"}>
               {kids.map((k) => {
                 const missing = missingOnPage(album.cards, r.page, k.id);
                 const codes =

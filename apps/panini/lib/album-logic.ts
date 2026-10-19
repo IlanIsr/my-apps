@@ -237,3 +237,28 @@ export function sortRewards(rewards: PageReward[]): PageReward[] {
     return a1! - b1! || a2! - b2!;
   });
 }
+
+export function rewardExpired(r: PageReward): boolean {
+  return r.kind === "deadline" && daysUntil(r.deadline ?? "") < 0;
+}
+
+/** Deadlines by date (earliest first), then "first N" races by page. */
+export function sortRewardsByDate(rewards: PageReward[]): PageReward[] {
+  return [...rewards].sort(
+    (x, y) =>
+      (x.deadline ?? "￿").localeCompare(y.deadline ?? "￿") || x.page - y.page,
+  );
+}
+
+/** Closest to done first: fewest cards still missing across all kids. */
+export function sortRewardsByCompletion(
+  rewards: PageReward[],
+  cards: Card[],
+  kids: Collector[],
+): PageReward[] {
+  const missing = (r: PageReward) =>
+    kids.reduce((n, k) => n + missingOnPage(cards, r.page, k.id).length, 0);
+  return [...rewards].sort(
+    (x, y) => missing(x) - missing(y) || x.page - y.page,
+  );
+}

@@ -5,6 +5,12 @@ import { s } from "./plural";
 
 export const rewards = {
   add: "Ajouter un prix",
+  hideExpired: "Masquer les terminés",
+  sortBy: "Trier par",
+  sortUrgency: "Par urgence",
+  sortDate: "Par date",
+  sortCompletion: "Par complétion",
+  noMatch: "Tous les prix sont terminés.",
   emptyTitle: "Aucun prix pour l'instant",
   emptyBody:
     "Certaines pages font gagner un prix si on les complète avant une date, ou si on est parmi les premiers. Ajoute-les ici pour savoir lesquelles finir en priorité.",
