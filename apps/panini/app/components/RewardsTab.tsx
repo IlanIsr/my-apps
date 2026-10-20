@@ -24,7 +24,11 @@ import {
 } from "@/lib/album-logic";
 
 import { Avatar } from "./Avatar";
+import { Button } from "./Button";
+import { Checkbox } from "./Checkbox";
 import { ArrowIcon, CheckIcon, ChevronIcon, GiftIcon } from "./icons";
+import { Select } from "./Select";
+import { TextInput } from "./TextInput";
 
 export type RewardsTexts = {
   search: string;
@@ -107,59 +111,51 @@ export function RewardsTab({
       <div className="mb-3.5 flex flex-wrap items-center justify-end gap-2">
         {album.rewards.length > 0 && (
           <>
-            <input
+            <TextInput
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t.search}
               aria-label={t.search}
-              className="field-input h-9.5! w-full!"
             />
-            <label className="flex items-center gap-1.5 text-sm">
-              <input
-                type="checkbox"
-                checked={hideExpired}
-                onChange={(e) => setHideExpired(e.target.checked)}
-                className="size-4 accent-accent"
-              />
-              {t.hideExpired}
-            </label>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as RewardSort)}
-              aria-label={t.sortBy}
-              className="field-input ml-auto h-9.5! w-auto!"
+            <Checkbox
+              checked={hideExpired}
+              onChange={setHideExpired}
+              className="flex items-center gap-1.5 text-sm"
             >
-              <option value="date">{t.sortDate}</option>
-              <option value="page">{t.sortPage}</option>
-              <option value="completion">{t.sortCompletion}</option>
-            </select>
+              {t.hideExpired}
+            </Checkbox>
+            <Select
+              value={sort}
+              onChange={(value) => setSort(value as RewardSort)}
+              aria-label={t.sortBy}
+              options={[
+                { key: "date", label: t.sortDate },
+                { key: "page", label: t.sortPage },
+                { key: "completion", label: t.sortCompletion },
+              ]}
+              className="ml-auto"
+            />
             {sort === "completion" && (
-              <select
+              <Select
                 value={person}
-                onChange={(e) => setPerson(e.target.value)}
+                onChange={setPerson}
                 aria-label={t.person}
-                className="field-input h-9.5! w-auto!"
-              >
-                <option value="all">{t.everyone}</option>
-                {kids.map((k) => (
-                  <option key={k.id} value={k.id}>
-                    {k.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { key: "all", label: t.everyone },
+                  ...kids.map((k) => ({ key: k.id, label: k.name })),
+                ]}
+              />
             )}
-            <button
-              type="button"
+            <Button
+              isIconOnly
               onClick={() => setDesc((d) => !d)}
               aria-label={desc ? t.descending : t.ascending}
-              title={desc ? t.descending : t.ascending}
-              className="field-input flex h-9.5! w-9.5! items-center justify-center px-0!"
             >
               <ArrowIcon
                 className={`size-4 transition-transform ${desc ? "rotate-90" : "-rotate-90"}`}
               />
-            </button>
+            </Button>
           </>
         )}
       </div>

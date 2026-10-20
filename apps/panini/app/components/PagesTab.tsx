@@ -10,6 +10,7 @@ import {
 } from "@/lib/album-logic";
 
 import { PageBadge } from "./CollectionTab";
+import { Button } from "./Button";
 import { CheckIcon } from "./icons";
 
 export type PagesTexts = {
@@ -38,11 +39,11 @@ export function PagesTab({
       {pages.map((p) => {
         const onPage = cardsOnPage(album.cards, p);
         return (
-          <button
+          <Button
             key={p}
-            type="button"
+            variant="ghost"
             onClick={() => onOpenPage(p)}
-            className="grid w-full grid-cols-[44px_1fr_auto] items-center gap-2.5 border-t border-line px-4 py-2.75 text-left first:border-t-0 hover:bg-sunken"
+            className="grid h-auto w-full grid-cols-[44px_1fr_auto] items-center gap-2.5 rounded-none border-t border-line px-4 py-2.75 text-start font-normal first:border-t-0"
           >
             <span className="font-mono font-bold">{p}</span>
             <span className="text-xs text-muted">
@@ -66,7 +67,7 @@ export function PagesTab({
                 );
               })}
             </span>
-          </button>
+          </Button>
         );
       })}
     </div>

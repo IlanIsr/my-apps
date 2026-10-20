@@ -5,8 +5,10 @@
 import { useState } from "react";
 
 import { LIMITS } from "@/lib/album-logic";
+import { Button } from "./Button";
 
 import { Field, onFormSubmit } from "./Modal";
+import { TextInput } from "./TextInput";
 
 export type SetupTexts = {
   eyebrow: string;
@@ -57,27 +59,21 @@ export function SetupView({
       <p className="mb-6 text-xs text-muted">{t.intro}</p>
       <form onSubmit={onFormSubmit(submit)}>
         <Field label={t.name} htmlFor="f-name">
-          <input
+          <TextInput
             id="f-name"
             name="name"
             required
             maxLength={LIMITS.name}
             defaultValue={t.defaultName}
-            className="field-input"
           />
         </Field>
         <Field label={t.kids} htmlFor="f-kids" hint={t.kidsHint}>
-          <input
-            id="f-kids"
-            name="kids"
-            placeholder={t.kidsPlaceholder}
-            className="field-input"
-          />
+          <TextInput id="f-kids" name="kids" placeholder={t.kidsPlaceholder} />
         </Field>
         <div className="mt-4.5 flex justify-end">
-          <button type="submit" className="btn btn-primary" disabled={busy}>
+          <Button type="submit" variant="primary" disabled={busy}>
             {t.create}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

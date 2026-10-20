@@ -1,4 +1,7 @@
 @import "@repo/tailwind-config";
+/* HeroUI v3 prebuilt component styles — must come after tailwindcss. Components
+ * are consumed via `@repo/ui/*`, never `@heroui/react` directly. */
+@import "@heroui/styles/css";
 
 /*
  * Panini palette — overrides the shared placeholder palette for this app only.
@@ -74,6 +77,35 @@
   }
 }
 
+/*
+ * HeroUI's theme variables, pointed at the palette above. Our names already
+ * match HeroUI's where they overlap (`--accent`, `--surface`, `--muted` = text,
+ * `--danger`, `--background`/`--foreground`); these fill in the rest. Unlayered,
+ * so they win over HeroUI's defaults (declared in a cascade layer), and they
+ * follow the dark scheme since they only reference our tokens.
+ */
+:root {
+  --accent-foreground: var(--accent-ink);
+  --danger-foreground: #ffffff;
+  --focus: var(--accent);
+  --border: var(--line);
+  --separator: var(--line);
+  --overlay: var(--surface);
+  --overlay-foreground: var(--foreground);
+  --surface-foreground: var(--foreground);
+  --default: var(--sunken);
+  --default-foreground: var(--foreground);
+  --field-background: var(--surface);
+  --field-foreground: var(--foreground);
+  --field-placeholder: var(--muted);
+  --field-border: var(--line);
+  --field-border-width: 1px;
+  --field-radius: 0.5rem;
+  --radius: 0.5rem;
+  --segment: var(--surface);
+  --segment-foreground: var(--foreground);
+}
+
 @theme inline {
   --color-surface: var(--surface);
   --color-sunken: var(--sunken);
@@ -118,21 +150,6 @@
 }
 
 @layer components {
-  .field-input {
-    @apply h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm text-foreground placeholder:text-muted;
-  }
-  .btn {
-    @apply rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-50;
-  }
-  .btn-primary {
-    @apply border-transparent bg-accent text-accent-ink;
-  }
-  .btn-danger {
-    @apply border-transparent bg-danger text-white;
-  }
-  .btn-ghost {
-    @apply border-transparent bg-transparent text-muted;
-  }
   .card {
     @apply rounded-2xl border border-line bg-surface shadow-card;
   }

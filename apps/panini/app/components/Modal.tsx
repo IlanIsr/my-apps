@@ -7,6 +7,8 @@
 
 import { useEffect } from "react";
 
+import { Button } from "./Button";
+
 export type ModalTexts = { close: string };
 
 export function Modal({
@@ -38,14 +40,16 @@ export function Modal({
       >
         <div className="mb-3.5 flex items-center justify-between">
           <h2 className="text-[19px]">{title}</h2>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
             onClick={onClose}
             aria-label={t.close}
-            className="flex size-7.5 items-center justify-center rounded-full text-muted hover:bg-sunken hover:text-foreground"
+            className="rounded-full text-muted"
           >
             ✕
-          </button>
+          </Button>
         </div>
         {children}
       </div>

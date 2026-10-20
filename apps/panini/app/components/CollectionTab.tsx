@@ -16,7 +16,10 @@ import {
 } from "@/lib/album-logic";
 import { collectorStyle } from "@/lib/colors";
 
+import { Button } from "./Button";
 import { CheckIcon, ChevronIcon } from "./icons";
+import { Select } from "./Select";
+import { TextInput } from "./TextInput";
 
 export type CollectionTexts = {
   search: string;
@@ -74,7 +77,7 @@ function Stepper({
       : v === 1
         ? "border-kc bg-kc-soft text-kc"
         : "border-kc bg-kc text-white";
-  const btn = `flex size-6.5 items-center justify-center text-[15px] leading-none ${
+  const btn = `size-6.5 min-w-0 rounded-none bg-transparent px-0 text-[15px] leading-none ${
     v >= 2
       ? "text-white/80 hover:text-white"
       : "text-muted hover:text-foreground"
@@ -85,25 +88,29 @@ function Stepper({
       style={collectorStyle(collector.color)}
       className={`flex items-center overflow-hidden rounded-full border-[1.5px] ${tone}`}
     >
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
+        isIconOnly
         className={btn}
         aria-label={t.removeOne(collector.name)}
         onClick={() => onStep(card, collector, -1)}
       >
         −
-      </button>
+      </Button>
       <span className="min-w-4.5 px-0.5 text-center font-mono text-[13px] font-bold">
         {v}
       </span>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
+        isIconOnly
         className={btn}
         aria-label={t.addOne(collector.name)}
         onClick={() => onStep(card, collector, 1)}
       >
         +
-      </button>
+      </Button>
     </div>
   );
 }
@@ -169,49 +176,47 @@ export function CollectionTab({
   return (
     <>
       <div className="mb-4.5 flex flex-wrap gap-2">
-        <input
+        <TextInput
           type="search"
           value={filters.search}
           onChange={(e) => onFilters({ ...filters, search: e.target.value })}
           placeholder={t.search}
           aria-label={t.search}
-          className="field-input h-9.5! min-w-0 flex-[1_1_180px]"
+          className="min-w-0 flex-[1_1_180px]"
         />
-        <select
-          value={filters.page}
-          onChange={(e) =>
+        <Select
+          value={String(filters.page)}
+          onChange={(value) =>
             onFilters({
               ...filters,
-              page: e.target.value === "all" ? "all" : Number(e.target.value),
+              page: value === "all" ? "all" : Number(value),
             })
           }
-          className="field-input h-9.5! w-auto! flex-[0_1_170px]"
-        >
-          <option value="all">{t.allPages}</option>
-          {pages.map((p) => (
-            <option key={p} value={p}>
-              {t.page(p)}
-            </option>
-          ))}
-        </select>
-        <select
+          aria-label={t.allPages}
+          options={[
+            { key: "all", label: t.allPages },
+            ...pages.map((p) => ({ key: String(p), label: t.page(p) })),
+          ]}
+          className="flex-[0_1_170px]"
+        />
+        <Select
           value={filters.status}
-          onChange={(e) => onFilters({ ...filters, status: e.target.value })}
-          className="field-input h-9.5! w-auto! flex-[0_1_170px]"
-        >
-          <option value="all">{t.all}</option>
-          {kids.map((k) => (
-            <option key={`m${k.id}`} value={`missing:${k.id}`}>
-              {t.missingFor(k.name)}
-            </option>
-          ))}
-          {kids.map((k) => (
-            <option key={`d${k.id}`} value={`dup:${k.id}`}>
-              {t.duplicatesOf(k.name)}
-            </option>
-          ))}
-          {reserve && <option value="reserve">{t.inReserve}</option>}
-        </select>
+          onChange={(status) => onFilters({ ...filters, status })}
+          aria-label={t.all}
+          options={[
+            { key: "all", label: t.all },
+            ...kids.map((k) => ({
+              key: `missing:${k.id}`,
+              label: t.missingFor(k.name),
+            })),
+            ...kids.map((k) => ({
+              key: `dup:${k.id}`,
+              label: t.duplicatesOf(k.name),
+            })),
+            ...(reserve ? [{ key: "reserve", label: t.inReserve }] : []),
+          ]}
+          className="flex-[0_1_170px]"
+        />
       </div>
 
       {!kids.length && (

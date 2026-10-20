@@ -15,7 +15,9 @@ import {
 } from "@/lib/album-logic";
 import { collectorStyle } from "@/lib/colors";
 
+import { Button } from "./Button";
 import { Field, Modal, onFormSubmit, type ModalTexts } from "./Modal";
+import { TextInput } from "./TextInput";
 
 export type SettingsTexts = {
   title: string;
@@ -61,14 +63,15 @@ function ColorPicker({
   return (
     <div className="flex gap-1.5">
       {COLLECTOR_COLORS.map((c) => (
-        <button
+        <Button
           key={c}
-          type="button"
+          variant="ghost"
+          isIconOnly
           onClick={() => onChange(c)}
           aria-label={t.colorLabel(c)}
           aria-pressed={value === c}
           style={collectorStyle(c)}
-          className={`size-6 rounded-full bg-kc ${
+          className={`size-6 min-w-0 rounded-full bg-kc hover:bg-kc ${
             value === c
               ? "ring-2 ring-foreground ring-offset-2 ring-offset-surface"
               : ""
@@ -96,53 +99,47 @@ function KidRow({
   return (
     <div className="flex flex-col gap-2 border-t border-line py-3 first:border-t-0">
       <div className="flex gap-2">
-        <input
+        <TextInput
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={LIMITS.name}
           aria-label={t.kidName}
-          className="field-input"
         />
         {dirty && (
-          <button
-            type="button"
-            className="btn btn-primary"
+          <Button
+            variant="primary"
             disabled={!name.trim()}
             onClick={() =>
               handlers.updateCollector(kid.id, { name: name.trim(), color })
             }
           >
             {t.save}
-          </button>
+          </Button>
         )}
       </div>
       <div className="flex items-center justify-between gap-2">
         <ColorPicker value={color} onChange={setColor} t={t} />
         {confirming ? (
           <span className="flex gap-1.5">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => setConfirming(false)}
-            >
+            <Button variant="ghost" onClick={() => setConfirming(false)}>
               {t.cancel}
-            </button>
-            <button
-              type="button"
-              className="btn btn-danger"
+            </Button>
+            <Button
+              variant="danger"
               onClick={() => handlers.deleteCollector(kid.id)}
             >
               {t.removeKid}
-            </button>
+            </Button>
           </span>
         ) : (
-          <button
-            type="button"
-            className="text-sm font-semibold text-danger"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-danger"
             onClick={() => setConfirming(true)}
           >
             {t.removeKid}
-          </button>
+          </Button>
         )}
       </div>
       {confirming && (
@@ -177,17 +174,16 @@ function AddKidForm({
       className="mt-2 flex flex-col gap-2 rounded-xl bg-sunken p-3"
     >
       <div className="flex gap-2">
-        <input
+        <TextInput
           name="kid"
           required
           maxLength={LIMITS.name}
           placeholder={t.kidName}
           aria-label={t.kidName}
-          className="field-input"
         />
-        <button type="submit" className="btn btn-primary whitespace-nowrap">
+        <Button type="submit" variant="primary" className="whitespace-nowrap">
           {t.addKid}
-        </button>
+        </Button>
       </div>
       <ColorPicker value={color} onChange={setColor} t={t} />
     </form>
@@ -246,20 +242,15 @@ export function SettingsModal({
       <Modal title={t.resetTitle} onClose={onClose} t={modalT}>
         <p className="mb-4.5 text-sm text-muted">{t.resetConfirm}</p>
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => setConfirmingReset(false)}
-          >
+          <Button variant="ghost" onClick={() => setConfirmingReset(false)}>
             {t.cancel}
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger"
+          </Button>
+          <Button
+            variant="danger"
             onClick={async () => (await handlers.reset()) && onClose()}
           >
             {t.resetButton}
-          </button>
+          </Button>
         </div>
       </Modal>
     );
@@ -275,19 +266,18 @@ export function SettingsModal({
         )}
       >
         <Field label={t.albumName} htmlFor="s-name">
-          <input
+          <TextInput
             id="s-name"
             name="name"
             required
             maxLength={LIMITS.name}
             defaultValue={album.name}
-            className="field-input"
           />
         </Field>
         <div className="flex justify-end">
-          <button type="submit" className="btn btn-primary">
+          <Button type="submit" variant="primary">
             {t.save}
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -297,13 +287,9 @@ export function SettingsModal({
       <Divider />
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted">{t.resetHint}</span>
-        <button
-          type="button"
-          className="btn btn-danger"
-          onClick={() => setConfirmingReset(true)}
-        >
+        <Button variant="danger" onClick={() => setConfirmingReset(true)}>
           {t.reset}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

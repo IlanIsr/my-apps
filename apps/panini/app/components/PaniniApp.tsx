@@ -30,6 +30,10 @@ import {
   type Collector,
 } from "@/lib/album-logic";
 
+import { ToggleButton } from "@repo/ui/toggle-button";
+import { ToggleButtonGroup } from "@repo/ui/toggle-button-group";
+
+import { Button } from "./Button";
 import { ReserveTab, TradesTab } from "./CardLists";
 import { CollectionTab, type CollectionFilters } from "./CollectionTab";
 import { GearIcon } from "./icons";
@@ -153,34 +157,36 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
           </p>
           <h1 className="mt-1 text-[clamp(26px,4vw,34px)]">{album.name}</h1>
         </div>
-        <button
-          type="button"
+        <Button
+          isIconOnly
           onClick={() => setModal({ type: "settings" })}
           aria-label={t.app.settings}
-          className="flex size-10 flex-none items-center justify-center rounded-lg border border-line bg-surface text-muted hover:border-line-strong hover:text-foreground"
+          className="flex-none text-muted"
         >
           <GearIcon className="size-4.5" />
-        </button>
+        </Button>
       </div>
 
       <StatsStrip kids={kids} cards={album.cards} t={t.stats} />
 
-      <div className="mb-4.5 flex gap-1 overflow-x-auto rounded-xl bg-sunken p-1">
+      <ToggleButtonGroup
+        aria-label={t.app.eyebrow}
+        selectionMode="single"
+        disallowEmptySelection
+        selectedKeys={[tab]}
+        onSelectionChange={(keys) => {
+          const [key] = keys;
+          if (key !== undefined) setTab(key as Tab);
+        }}
+        fullWidth
+        className="mb-4.5 overflow-x-auto"
+      >
         {TABS.map((key) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={`flex-1 rounded-[10px] px-2.5 py-2.25 text-[13.5px] font-semibold whitespace-nowrap ${
-              tab === key
-                ? "bg-surface text-foreground shadow-card"
-                : "text-muted"
-            }`}
-          >
+          <ToggleButton key={key} id={key} className="whitespace-nowrap">
             {t.app.tabs[key]}
-          </button>
+          </ToggleButton>
         ))}
-      </div>
+      </ToggleButtonGroup>
 
       {tab === "collection" && (
         <CollectionTab
@@ -233,13 +239,16 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
           className="fixed inset-x-4 bottom-24 z-60 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl bg-danger px-4 py-3 text-sm font-semibold text-white shadow-card"
         >
           <span>{error}</span>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
             onClick={() => setError(null)}
             aria-label={t.app.dismiss}
+            className="text-white"
           >
             ✕
-          </button>
+          </Button>
         </div>
       )}
 
