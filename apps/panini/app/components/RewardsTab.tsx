@@ -15,6 +15,7 @@ import {
   rewardCompletion,
   rewardExpired,
   sortRewardsBy,
+  tierRanks,
   type Album,
   type Collector,
   type PageReward,
@@ -44,6 +45,9 @@ export type RewardsTexts = {
   expired: string;
   firstN: (n: number) => string;
   firstNHint: string;
+  tiersTitle: string;
+  tiersHint: string;
+  rank: (from: number, to: number) => string;
   complete: string;
   reserveCompletes: string;
   missing: (n: number, codes: string) => string;
@@ -176,7 +180,8 @@ export function RewardsTab({
               </span>
               <div className="min-w-0 flex-1">
                 <h3 className="text-[15px]">
-                  {t.page(r.page)} — {r.prize}
+                  {t.page(r.page)} —{" "}
+                  {r.kind === "tiers" ? t.tiersTitle : r.prize}
                 </h3>
                 <p className="text-xs font-semibold text-accent">
                   {t.completion(rewardCompletion(album.cards, r.page, forKids))}
@@ -197,12 +202,26 @@ export function RewardsTab({
                         {expired ? t.expired : t.daysLeft(days)}
                       </span>
                     </>
+                  ) : r.kind === "tiers" ? (
+                    t.tiersHint
                   ) : (
                     <>
                       {t.firstN(r.winners ?? 0)} · {t.firstNHint}
                     </>
                   )}
                 </p>
+                {r.kind === "tiers" && r.tiers && (
+                  <ul className="mt-1.5 flex flex-col gap-0.5 text-[13px]">
+                    {tierRanks(r.tiers).map((tier) => (
+                      <li key={tier.from} className="flex gap-2">
+                        <span className="w-16 shrink-0 font-mono text-xs leading-5 text-muted">
+                          {t.rank(tier.from, tier.to)}
+                        </span>
+                        <span>{tier.prize}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <button
                 type="button"

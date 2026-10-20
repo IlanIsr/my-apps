@@ -12,6 +12,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -19,6 +20,8 @@ import {
   unique,
   uuid,
 } from "drizzle-orm/pg-core";
+
+import type { RewardTier } from "@/lib/album-logic";
 
 export const albums = pgTable("albums", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -84,7 +87,9 @@ export const cardCounts = pgTable(
 
 /**
  * A prize for completing a page. `deadline`: complete it before `deadline`.
- * `first_n`: only the first `winners` people to complete it win.
+ * `first_n`: only the first `winners` people to complete it win. `tiers`: a
+ * ranking — `tiers` lists `{ winners, prize }` in finishing order (`prize`
+ * then holds the first tier's prize).
  */
 export const pageRewards = pgTable(
   "page_rewards",
@@ -94,10 +99,11 @@ export const pageRewards = pgTable(
       .references(() => albums.id, { onDelete: "cascade" }),
     page: integer("page").notNull(),
     prize: text("prize").notNull(),
-    /** `"deadline" | "first_n"`. */
+    /** `"deadline" | "first_n" | "tiers"`. */
     kind: text("kind").notNull(),
     deadline: date("deadline", { mode: "string" }),
     winners: integer("winners"),
+    tiers: jsonb("tiers").$type<RewardTier[]>(),
   },
   (t) => [primaryKey({ columns: [t.albumId, t.page] })],
 );

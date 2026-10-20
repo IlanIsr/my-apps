@@ -37,7 +37,10 @@ export type Card = {
   counts: Record<string, number>;
 };
 
-export type RewardKind = "deadline" | "first_n";
+export type RewardKind = "deadline" | "first_n" | "tiers";
+
+/** One step of a ranking: the next `winners` people to finish win `prize`. */
+export type RewardTier = { winners: number; prize: string };
 
 export type PageReward = {
   page: number;
@@ -47,6 +50,8 @@ export type PageReward = {
   deadline: string | null;
   /** Number of winners, set when `kind === "first_n"`. */
   winners: number | null;
+  /** The ranking, in finishing order, set when `kind === "tiers"`. */
+  tiers: RewardTier[] | null;
 };
 
 export type Album = {
@@ -63,6 +68,7 @@ export const LIMITS = {
   page: 999,
   collectors: 12,
   winners: 1_000_000,
+  tiers: 10,
 } as const;
 
 /** Natural order for mixed codes: 1, 2, 12, 12A, 12B, SP1, SP2, SP10… */
@@ -176,6 +182,18 @@ export function daysUntil(isoDate: string, today = new Date()): number {
   const target = Date.UTC(y!, m! - 1, d!);
   const now = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   return Math.round((target - now) / 86_400_000);
+}
+
+/** Each tier's finishing positions: 1–1, 2–3, 4–6… */
+export function tierRanks(
+  tiers: RewardTier[],
+): { from: number; to: number; prize: string }[] {
+  let next = 1;
+  return tiers.map((t) => {
+    const from = next;
+    next += t.winners;
+    return { from, to: next - 1, prize: t.prize };
+  });
 }
 
 export function rewardExpired(r: PageReward): boolean {

@@ -105,6 +105,7 @@ export async function getAlbum(ownerId: string): Promise<Album | null> {
       kind: r.kind as RewardKind,
       deadline: r.deadline,
       winners: r.winners,
+      tiers: r.tiers,
     })),
   };
 }
@@ -270,6 +271,7 @@ export async function setPageReward(
     kind: reward.kind,
     deadline: reward.kind === "deadline" ? reward.deadline : null,
     winners: reward.kind === "first_n" ? reward.winners : null,
+    tiers: reward.kind === "tiers" ? reward.tiers : null,
   };
   await db()
     .insert(pageRewards)

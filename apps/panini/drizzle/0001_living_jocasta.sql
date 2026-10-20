@@ -1,0 +1,1 @@
+ALTER TABLE "page_rewards" ADD COLUMN "tiers" jsonb;

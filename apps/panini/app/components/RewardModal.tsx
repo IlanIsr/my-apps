@@ -1,13 +1,18 @@
 "use client";
 
 /**
- * Set (or remove) the prize for completing a page: either "before a date" or
- * "the first N to finish".
+ * Set (or remove) the prize for completing a page: "before a date", "the
+ * first N to finish", or a ranking of tiers (first one wins X, next two Y…).
  */
 
 import { useState } from "react";
 
-import { LIMITS, type PageReward, type RewardKind } from "@/lib/album-logic";
+import {
+  LIMITS,
+  type PageReward,
+  type RewardKind,
+  type RewardTier,
+} from "@/lib/album-logic";
 
 import { Field, Modal, onFormSubmit, type ModalTexts } from "./Modal";
 
@@ -20,6 +25,12 @@ export type RewardModalTexts = {
   kind: string;
   kindDeadline: string;
   kindFirstN: string;
+  kindTiers: string;
+  tierWinners: string;
+  tierPrize: string;
+  addTier: string;
+  removeTier: string;
+  tiersHint: string;
   deadline: string;
   winners: string;
   winnersHint: string;
@@ -49,7 +60,13 @@ export function RewardModal({
   modalT: ModalTexts;
 }) {
   const [kind, setKind] = useState<RewardKind>(reward?.kind ?? "deadline");
+  const [tiers, setTiers] = useState<RewardTier[]>(
+    reward?.tiers ?? [{ winners: 1, prize: "" }],
+  );
   const [busy, setBusy] = useState(false);
+
+  const setTier = (i: number, patch: Partial<RewardTier>) =>
+    setTiers((ts) => ts.map((t, j) => (j === i ? { ...t, ...patch } : t)));
 
   async function submit(form: FormData) {
     setBusy(true);
@@ -59,6 +76,10 @@ export function RewardModal({
       kind,
       deadline: kind === "deadline" ? String(form.get("deadline")) : null,
       winners: kind === "first_n" ? Number(form.get("winners")) : null,
+      tiers:
+        kind === "tiers"
+          ? tiers.map((t) => ({ winners: t.winners, prize: t.prize.trim() }))
+          : null,
     });
     setBusy(false);
     if (ok) onClose();
@@ -103,17 +124,19 @@ export function RewardModal({
             </select>
           </Field>
         )}
-        <Field label={t.prize} htmlFor="r-prize">
-          <input
-            id="r-prize"
-            name="prize"
-            required
-            maxLength={LIMITS.prize}
-            defaultValue={reward?.prize ?? ""}
-            placeholder={t.prizePlaceholder}
-            className="field-input"
-          />
-        </Field>
+        {kind !== "tiers" && (
+          <Field label={t.prize} htmlFor="r-prize">
+            <input
+              id="r-prize"
+              name="prize"
+              required
+              maxLength={LIMITS.prize}
+              defaultValue={reward?.prize ?? ""}
+              placeholder={t.prizePlaceholder}
+              className="field-input"
+            />
+          </Field>
+        )}
         <div className="mb-3.5 flex flex-col gap-1.5">
           <span className="text-[12.5px] font-semibold text-muted">
             {t.kind}
@@ -121,9 +144,62 @@ export function RewardModal({
           <div className="flex gap-1 rounded-xl bg-sunken p-1">
             {kindButton("deadline", t.kindDeadline)}
             {kindButton("first_n", t.kindFirstN)}
+            {kindButton("tiers", t.kindTiers)}
           </div>
         </div>
-        {kind === "deadline" ? (
+        {kind === "tiers" ? (
+          <div className="mb-3.5 flex flex-col gap-2">
+            <p className="text-xs text-muted">{t.tiersHint}</p>
+            {tiers.map((tier, i) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={LIMITS.winners}
+                  required
+                  value={tier.winners}
+                  onChange={(e) =>
+                    setTier(i, { winners: Number(e.target.value) })
+                  }
+                  aria-label={t.tierWinners}
+                  className="field-input w-20!"
+                />
+                <input
+                  required
+                  maxLength={LIMITS.prize}
+                  value={tier.prize}
+                  onChange={(e) => setTier(i, { prize: e.target.value })}
+                  placeholder={t.tierPrize}
+                  aria-label={t.tierPrize}
+                  className="field-input"
+                />
+                {tiers.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTiers((ts) => ts.filter((_, j) => j !== i))
+                    }
+                    aria-label={t.removeTier}
+                    className="px-1 text-muted hover:text-danger"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            {tiers.length < LIMITS.tiers && (
+              <button
+                type="button"
+                onClick={() =>
+                  setTiers((ts) => [...ts, { winners: 1, prize: "" }])
+                }
+                className="self-start text-sm font-semibold text-accent"
+              >
+                {t.addTier}
+              </button>
+            )}
+          </div>
+        ) : kind === "deadline" ? (
           <Field label={t.deadline} htmlFor="r-deadline">
             <input
               id="r-deadline"

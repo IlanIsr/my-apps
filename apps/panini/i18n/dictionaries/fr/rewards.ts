@@ -24,6 +24,12 @@ export const rewards = {
   expired: "terminé",
   firstN: (n: number) => `Les ${n} premiers`,
   firstNHint: "à finir au plus vite",
+  tiersTitle: "Classement",
+  tiersHint: "Plus tu finis tôt, plus le prix est gros",
+  rank: (from: number, to: number) => {
+    const ord = (n: number) => (n === 1 ? "1er" : `${n}e`);
+    return from === to ? ord(from) : `${ord(from)}–${ord(to)}`;
+  },
   complete: "Complète",
   reserveCompletes: "Complétable avec la réserve",
   missing: (n: number, codes: string) => `Manque ${n} : ${codes}`,
@@ -39,6 +45,13 @@ export const rewardModal = {
   kind: "Comment le gagner",
   kindDeadline: "Avant une date",
   kindFirstN: "Les premiers",
+  kindTiers: "Par paliers",
+  tierWinners: "Nombre de gagnants",
+  tierPrize: "Prix",
+  addTier: "+ Ajouter un palier",
+  removeTier: "Retirer ce palier",
+  tiersHint:
+    "Dans l'ordre d'arrivée : nombre de gagnants, puis le prix. Ex. 1 → vélo, 2 → trottinette (2e et 3e)…",
   deadline: "Date limite",
   winners: "Nombre de gagnants",
   winnersHint: "Les X premiers à compléter la page gagnent.",
