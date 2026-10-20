@@ -5,9 +5,9 @@
  * the signed-in user, via Resend's REST API (no SDK). The sender is always the
  * signed-in account (used as `reply_to`), never a typed address. Needs
  * `RESEND_API_KEY`; the recipient is `CONTACT_TO_EMAIL` (default
- * {@link CONTACT_EMAIL}). With Resend's shared `onboarding@resend.dev` sender
- * (the default `CONTACT_FROM`), mail can only go to the Resend account's own
- * address — which is exactly the owner.
+ * {@link CONTACT_EMAIL}). Sent from `contact@anniversaries.dev` (the domain is
+ * verified in the Resend account owned by anniversaries.calendar@gmail.com);
+ * `CONTACT_FROM` overrides it.
  */
 
 import { getCurrentUserEmail } from "@repo/auth/user";
@@ -56,7 +56,8 @@ export async function sendContactAction(input: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.CONTACT_FROM ?? "Anniversaries <onboarding@resend.dev>",
+      from:
+        process.env.CONTACT_FROM ?? "Anniversaries <contact@anniversaries.dev>",
       to: [process.env.CONTACT_TO_EMAIL ?? CONTACT_EMAIL],
       reply_to: email,
       subject: `[Anniversaries · ${input.kind}] ${firstLine}`,
