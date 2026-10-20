@@ -48,7 +48,7 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
 
   return (
     <header className="border-b border-border bg-card">
-      <nav className="mx-auto flex max-w-2xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 text-sm">
+      <nav className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 text-sm">
         <Link
           href="/anniversaries"
           className="min-w-0 truncate font-display text-base font-semibold whitespace-nowrap"
