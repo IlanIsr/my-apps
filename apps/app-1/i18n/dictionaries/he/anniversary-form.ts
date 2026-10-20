@@ -15,7 +15,7 @@ export const anniversaryForm = {
   day: "יום",
   month: "חודש",
   year: "שנה",
-  afterNightfall: "אחרי רדת הלילה",
+  afterNightfall: "אחרי השקיעה",
   hebYear: "שנה עברית",
   optional: "רשות",
   years: "שנים קדימה",

@@ -29,7 +29,7 @@ export const anniversaryDetail = {
     day: "יום",
     month: "חודש",
     year: "שנה",
-    afterNightfall: "אחרי רדת הלילה",
+    afterNightfall: "אחרי השקיעה",
     hebrewName: "שם עברי",
     hebYear: "שנה עברית",
     optional: "לא חובה",
