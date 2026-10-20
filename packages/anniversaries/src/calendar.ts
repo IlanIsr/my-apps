@@ -5,6 +5,10 @@
  * the store says they should be, and (with `notify`) can email the attendees an
  * invite via `sendUpdates=all`.
  *
+ * Each person is **one recurring event**: its first occurrence is the start,
+ * every other one an `RDATE` date-time (each with its own tzeit hakochavim
+ * time). So joining sends a single invite for all the years at once.
+ *
  * Authenticates AS the bot account via `google-auth-library` + a stored refresh
  * token; talks to the Calendar REST API with `fetch`.
  */
@@ -176,6 +180,8 @@ function buildEventBody(fields: {
   attendees: AttendeeInput[];
   personId?: string;
   colorId?: string;
+  /** `RRULE`/`RDATE` lines; omit to leave the recurrence untouched. */
+  recurrence?: string[];
 }): Record<string, unknown> {
   const [hour = 0, minute = 0] = fields.time.split(":").map(Number);
   const endTotal = minute + EVENT_DURATION_MIN;
@@ -193,6 +199,7 @@ function buildEventBody(fields: {
     guestsCanSeeOtherGuests: false,
     colorId: fields.colorId ?? EVENT_COLOR_ID,
   };
+  if (fields.recurrence) body.recurrence = fields.recurrence;
   if (fields.summary !== undefined) body.summary = fields.summary;
   if (fields.description !== undefined) body.description = fields.description;
   if (fields.personId) {
@@ -207,7 +214,7 @@ export type DesiredEvent = {
   date: string;
   /** `HH:MM`, or `""` to compute tzeit hakochavim. */
   time: string;
-  /** Existing Google event id, or `""` to create one. */
+  /** The person's series id (same for every year), or `""` if not created. */
   googleEventId: string;
 };
 
@@ -215,31 +222,30 @@ export type SyncedEvent = {
   year: number;
   date: string;
   time: string;
+  /** The series id — the same for every year of a person. */
   googleEventId: string;
   htmlLink: string;
 };
 
 export type SyncInput = {
   personId: string;
-  /** Pre-translated event title. Omit to leave existing titles untouched. */
+  /** Pre-translated event title. Omit to leave the existing title untouched. */
   summary?: string;
-  /** Title for brand-new events when `summary` is omitted. */
+  /** Title for a brand-new series when `summary` is omitted. */
   summaryFallback: string;
   /** Event description. Omit to leave it untouched. */
   description?: string;
-  /** Google Calendar colour id for the events. */
+  /** Google Calendar colour id for the series. */
   colorId?: string;
   /** Family member emails (any case). */
   members: string[];
-  /** The events that should exist, after applying manual overrides. */
+  /** Every occurrence the series should have (past ones included). */
   events: DesiredEvent[];
   /**
    * Subset of `members` (any case) who should be emailed a Google Calendar
-   * invite this round, so people who haven't yet interacted with the shared
-   * calendar get one they can accept. Members left out are added/kept as
-   * attendees silently (`sendUpdates=none`) — once someone has accepted, new
-   * events just appear for them without another invite. Omit or pass `[]` to
-   * notify no one.
+   * invite this round — one email for the whole series. Members left out are
+   * added/kept as attendees silently (`sendUpdates=none`). Omit or pass `[]`
+   * to notify no one.
    */
   notifyEmails?: string[];
 };
@@ -248,166 +254,152 @@ export type SyncResult = {
   events: SyncedEvent[];
   /** Emails that declined on the shared calendar — treat as "left". */
   declined: string[];
-  /** True if the Calendar API rate-limited us before every event was synced. */
+  /** True if the Calendar API rate-limited us before the series was synced. */
   rateLimited: boolean;
 };
 
 /** Gap between Calendar writes — the API throttles bursts to a single calendar. */
 const WRITE_GAP_MS = 150;
 
-/** Reconcile a person's Google Calendar events to match `input`. */
-export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
-  // 1. Fetch the events we think already exist (reads — safe to parallelise).
-  const existing = new Map<string, GoogleEvent>();
-  await pool(
-    4,
-    input.events.filter((e) => e.googleEventId),
-    async (e) => {
-      try {
-        existing.set(
-          e.googleEventId,
-          await calendarApi<GoogleEvent>(
-            `/${encodeURIComponent(e.googleEventId)}`,
-          ),
-        );
-      } catch {
-        // deleted on the calendar — it'll be recreated below
-      }
-    },
-  );
+/** `2027-10-03` + `18:31` → `20271003T183100` (an iCalendar local date-time). */
+function icalDateTime(date: string, time: string): string {
+  return `${date.replaceAll("-", "")}T${time.replace(":", "")}00`;
+}
 
-  // 2. Anyone who declined on any existing event has left.
-  const declined = new Set<string>();
-  for (const ev of existing.values()) {
-    for (const a of ev.attendees ?? []) {
-      if (a.responseStatus === "declined" && a.email) {
-        declined.add(a.email.toLowerCase());
+/**
+ * Reconcile a person's recurring Google Calendar event to match `input`: one
+ * series whose start is the earliest occurrence and whose `RDATE` lists the
+ * others. Creates it if no occurrence carries a series id yet.
+ */
+export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
+  const wanted = [...input.events].sort((a, b) => a.date.localeCompare(b.date));
+  const first = wanted[0];
+  if (!first) return { events: [], declined: [], rateLimited: false };
+
+  // 1. The existing series, if any (deleted on the calendar → recreate).
+  const seriesId = wanted.find((e) => e.googleEventId)?.googleEventId ?? "";
+  let found: GoogleEvent | undefined;
+  if (seriesId) {
+    try {
+      found = await calendarApi<GoogleEvent>(
+        `/${encodeURIComponent(seriesId)}`,
+      );
+    } catch (error) {
+      if (error instanceof CalendarRateLimitError) {
+        return { events: [], declined: [], rateLimited: true };
       }
+      // gone from the calendar — it'll be recreated below
+    }
+  }
+
+  // 2. Anyone who declined the series has left.
+  const declined = new Set<string>();
+  for (const a of found?.attendees ?? []) {
+    if (a.responseStatus === "declined" && a.email) {
+      declined.add(a.email.toLowerCase());
     }
   }
   const memberEmails = [
     ...new Set(input.members.map((m) => m.toLowerCase())),
   ].filter((m) => !declined.has(m));
 
-  // 3. Resolve start times up front (hits hebcal.com, not Google).
+  // 3. Resolve start times (hits hebcal.com, not Google).
   const times = new Map<number, string>();
-  await pool(4, input.events, async (want) => {
+  await pool(4, wanted, async (want) => {
     times.set(
       want.year,
       want.time || (await getTsetHakohavimWithFallback(want.date)),
     );
   });
+  const timeOf = (e: DesiredEvent) => times.get(e.year) ?? "18:00";
+  const rest = wanted.slice(1);
+  const recurrence = rest.length
+    ? [
+        `RDATE;TZID=${TIMEZONE}:${rest
+          .map((e) => icalDateTime(e.date, timeOf(e)))
+          .join(",")}`,
+      ]
+    : [];
 
-  // 4. Reconcile each event — SEQUENTIAL: the Calendar API rate-limits bursts
-  //    of writes to one calendar. Stop early on a rate limit and report what
-  //    got done so the caller can persist it and retry the rest.
-  const events: SyncedEvent[] = [];
-  let rateLimited = false;
-
-  // Which members should be emailed this round. When it's everyone or no one,
-  // one write per event suffices. When it's a genuine mix, adding the
-  // to-notify members as a separate follow-up change (rather than in the same
-  // write as the rest) is what makes Google email only them — an unaffected
-  // existing attendee isn't renotified just because sendUpdates=all.
+  // 4. Who gets emailed. When it's everyone or no one, one write suffices.
+  //    When it's a genuine mix, adding the to-notify members as a separate
+  //    follow-up change is what makes Google email only them — an unaffected
+  //    existing attendee isn't renotified just because sendUpdates=all.
   const notifySet = new Set(
     (input.notifyEmails ?? []).map((e) => e.toLowerCase()),
   );
   const toNotify = memberEmails.filter((m) => notifySet.has(m));
   const toKeepSilent = memberEmails.filter((m) => !notifySet.has(m));
   const isSplitNotify = toNotify.length > 0 && toKeepSilent.length > 0;
-  const sendUpdates = isSplitNotify
-    ? "none"
-    : toNotify.length > 0
-      ? "all"
-      : "none";
+  const sendUpdates = !isSplitNotify && toNotify.length > 0 ? "all" : "none";
   const firstPassEmails = isSplitNotify ? toKeepSilent : memberEmails;
 
-  for (const want of input.events) {
-    const time = times.get(want.year) ?? "18:00";
-    const found = want.googleEventId
-      ? existing.get(want.googleEventId)
-      : undefined;
-
-    const priorStatus = new Map<string, string>();
-    for (const a of found?.attendees ?? []) {
-      if (a.email && a.responseStatus) {
-        priorStatus.set(a.email.toLowerCase(), a.responseStatus);
-      }
+  const priorStatus = new Map<string, string>();
+  for (const a of found?.attendees ?? []) {
+    if (a.email && a.responseStatus) {
+      priorStatus.set(a.email.toLowerCase(), a.responseStatus);
     }
-    const attendeesFor = (emails: string[]): AttendeeInput[] =>
-      emails.map((email) => {
-        const responseStatus = priorStatus.get(email);
-        return responseStatus ? { email, responseStatus } : { email };
-      });
+  }
+  const attendeesFor = (emails: string[]): AttendeeInput[] =>
+    emails.map((email) => {
+      const responseStatus = priorStatus.get(email);
+      return responseStatus ? { email, responseStatus } : { email };
+    });
 
-    try {
-      let result: GoogleEvent;
-      if (found) {
-        result = await calendarApi<GoogleEvent>(
+  // 5. One write (two when split-notifying) for the whole series.
+  let result: GoogleEvent;
+  try {
+    const body = buildEventBody({
+      summary: found ? input.summary : (input.summary ?? input.summaryFallback),
+      description: found ? input.description : (input.description ?? ""),
+      date: first.date,
+      time: timeOf(first),
+      attendees: attendeesFor(firstPassEmails),
+      personId: found ? undefined : input.personId,
+      colorId: input.colorId,
+      recurrence,
+    });
+    result = found
+      ? await calendarApi<GoogleEvent>(
           `/${encodeURIComponent(found.id)}?sendUpdates=${sendUpdates}`,
-          {
-            method: "PATCH",
-            body: JSON.stringify(
-              buildEventBody({
-                summary: input.summary,
-                description: input.description,
-                date: want.date,
-                time,
-                attendees: attendeesFor(firstPassEmails),
-                colorId: input.colorId,
-              }),
-            ),
-          },
-        );
-      } else {
-        result = await calendarApi<GoogleEvent>(`?sendUpdates=${sendUpdates}`, {
+          { method: "PATCH", body: JSON.stringify(body) },
+        )
+      : await calendarApi<GoogleEvent>(`?sendUpdates=${sendUpdates}`, {
           method: "POST",
-          body: JSON.stringify(
-            buildEventBody({
-              summary: input.summary ?? input.summaryFallback,
-              description: input.description ?? "",
-              date: want.date,
-              time,
-              attendees: attendeesFor(firstPassEmails),
-              personId: input.personId,
-              colorId: input.colorId,
-            }),
-          ),
+          body: JSON.stringify(body),
         });
-      }
 
-      if (isSplitNotify) {
-        await sleep(WRITE_GAP_MS);
-        result = await calendarApi<GoogleEvent>(
-          `/${encodeURIComponent(result.id)}?sendUpdates=all`,
-          {
-            method: "PATCH",
-            body: JSON.stringify({
-              attendees: mapAttendees(attendeesFor(memberEmails)),
-            }),
-          },
-        );
-      }
-
-      events.push({
-        year: want.year,
-        date: want.date,
-        time,
-        googleEventId: result.id,
-        htmlLink: result.htmlLink ?? found?.htmlLink ?? "",
-      });
-    } catch (error) {
-      if (error instanceof CalendarRateLimitError) {
-        rateLimited = true;
-        break;
-      }
-      throw error;
+    if (isSplitNotify) {
+      await sleep(WRITE_GAP_MS);
+      result = await calendarApi<GoogleEvent>(
+        `/${encodeURIComponent(result.id)}?sendUpdates=all`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({
+            attendees: mapAttendees(attendeesFor(memberEmails)),
+          }),
+        },
+      );
     }
-
-    await sleep(WRITE_GAP_MS);
+  } catch (error) {
+    if (error instanceof CalendarRateLimitError) {
+      return { events: [], declined: [...declined], rateLimited: true };
+    }
+    throw error;
   }
 
-  return { events, declined: [...declined], rateLimited };
+  const htmlLink = result.htmlLink ?? found?.htmlLink ?? "";
+  return {
+    events: wanted.map((want) => ({
+      year: want.year,
+      date: want.date,
+      time: timeOf(want),
+      googleEventId: result.id,
+      htmlLink,
+    })),
+    declined: [...declined],
+    rateLimited: false,
+  };
 }
 
 /** Delete one Google Calendar event. Throws if the API rejects it. */
@@ -417,16 +409,16 @@ export async function deleteEvent(id: string): Promise<void> {
   });
 }
 
-/** Every event on the shared calendar. Used only by the migration script. */
+/**
+ * Every event on the shared calendar, recurring series as one item each (not
+ * expanded into instances — deleting an instance id would only cancel that
+ * occurrence). Used by the maintenance scripts.
+ */
 export async function listAllEvents(): Promise<GoogleEvent[]> {
   const events: GoogleEvent[] = [];
   let pageToken: string | undefined;
   do {
-    const params = new URLSearchParams({
-      singleEvents: "true",
-      orderBy: "startTime",
-      maxResults: "2500",
-    });
+    const params = new URLSearchParams({ maxResults: "2500" });
     if (pageToken) params.set("pageToken", pageToken);
     const page = await calendarApi<{
       items?: GoogleEvent[];

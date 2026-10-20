@@ -98,7 +98,8 @@ function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
     .filter((e) => e.googleEventId && e.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((e) => ({
-      id: e.googleEventId,
+      // Every year shares the person's series id, so add the year.
+      id: `${e.googleEventId}:${e.year}`,
       year: e.year,
       date: e.date,
       time: e.time || undefined,
@@ -123,28 +124,44 @@ function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
 
 /**
  * The events a person should have: the next `years` occurrences, carrying over
- * any manual per-event edits and known Google event ids from `record`.
+ * any manual per-event edits and the series id from `record`, plus the past
+ * occurrences already stored — they stay in the recurring series, so a re-sync
+ * doesn't erase history from people's calendars. `keepPast: false` drops them
+ * (the Hebrew date changed, so they no longer belong to this person).
  */
 function desiredStored(
   record: PersonRecord | null,
   hebDay: number,
   hebMonth: string,
   years: number,
+  { keepPast = true }: { keepPast?: boolean } = {},
 ): StoredEvent[] {
   const priorByYear = new Map<number, StoredEvent>();
   for (const e of record?.events ?? []) priorByYear.set(e.year, e);
+  const seriesId = record?.events.find((e) => e.googleEventId)?.googleEventId;
+  const seriesLink = record?.events.find((e) => e.htmlLink)?.htmlLink;
 
-  return calculateNextOccurrences(hebDay, hebMonth, years).map((o) => {
-    const prev = priorByYear.get(o.hebrewYear);
-    if (prev?.manual) return prev;
-    return {
-      year: o.hebrewYear,
-      date: o.date,
-      time: "",
-      googleEventId: prev?.googleEventId ?? "",
-      htmlLink: prev?.htmlLink ?? "",
-    };
-  });
+  const upcoming = calculateNextOccurrences(hebDay, hebMonth, years).map(
+    (o): StoredEvent => {
+      const prev = priorByYear.get(o.hebrewYear);
+      if (prev?.manual) return prev;
+      return {
+        year: o.hebrewYear,
+        date: o.date,
+        time: "",
+        googleEventId: seriesId ?? "",
+        htmlLink: seriesLink ?? "",
+      };
+    },
+  );
+  const upcomingYears = new Set(upcoming.map((e) => e.year));
+  const today = todayISO();
+  const past = keepPast
+    ? (record?.events ?? []).filter(
+        (e) => e.date < today && !upcomingYears.has(e.year),
+      )
+    : [];
+  return [...past, ...upcoming];
 }
 
 function applySynced(
@@ -337,11 +354,9 @@ export async function addAnniversary(
     existing,
     input.hebDay,
     input.hebMonth,
-    Math.max(years, existing.events.length),
+    Math.max(years, existing.events.filter((e) => e.date >= todayISO()).length),
   );
-  const priorIds = new Set(
-    existing.events.map((e) => e.googleEventId).filter(Boolean),
-  );
+  const priorYears = new Set(existing.events.map((e) => e.year));
 
   const sync = await syncPersonEvents({
     personId: existing.id,
@@ -368,9 +383,7 @@ export async function addAnniversary(
     notifyEmails.filter((e) => finalMembers.includes(e)),
   );
   if (sync.rateLimited) throw new CalendarRateLimitError();
-  const created = sync.events.filter(
-    (e) => !priorIds.has(e.googleEventId),
-  ).length;
+  const created = sync.events.filter((e) => !priorYears.has(e.year)).length;
   return { created, joined: finalMembers.includes(email) };
 }
 
@@ -654,12 +667,16 @@ export async function updateAnniversary(
     hebDay !== person.hebDate.day || hebMonth !== person.hebDate.month;
   const needsResync = nameOrTypeChanged || dateChanged;
 
-  // When the date changes, regenerate occurrences (same count as today) at
-  // the new day/month — reusing the existing record preserves manual
-  // overrides and googleEventIds, so the sync below PATCHes those events in
-  // place instead of creating duplicates and leaving the old ones stale.
+  // When the date changes, regenerate the upcoming occurrences (same count as
+  // today) at the new day/month and drop the past ones (old date). Reusing the
+  // record keeps the series id, so the sync PATCHes the series in place.
+  const upcomingCount = person.events.filter(
+    (e) => e.date >= todayISO(),
+  ).length;
   const base = dateChanged
-    ? desiredStored(person, hebDay, hebMonth, Math.max(1, person.events.length))
+    ? desiredStored(person, hebDay, hebMonth, Math.max(1, upcomingCount), {
+        keepPast: false,
+      })
     : person.events;
   if (dateChanged && base.length === 0) throw new NoSuchHebrewDateError();
 
