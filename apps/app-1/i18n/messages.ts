@@ -14,6 +14,7 @@ import type { NewAnniversaryHeaderTexts } from "@/app/components/anniversary/New
 import type { ShareLinkViewTexts } from "@/app/anniversaries/share/[id]/ShareLinkView";
 import type { FooterTexts } from "@/app/components/Footer";
 import type { NavbarTexts } from "@/app/components/Navbar";
+import type { ContactFormTexts } from "@/app/contact/ContactForm";
 import type { ConverterTexts } from "@/app/home/HomePage";
 import type { LandingTexts } from "@/app/LandingView";
 import type { EventSummaryTexts } from "@/lib/event-summary";
@@ -37,4 +38,5 @@ export type Messages = {
   admin: AdminTexts;
   eventSummary: EventSummaryTexts;
   shareLinkView: ShareLinkViewTexts;
+  contact: ContactFormTexts;
 };

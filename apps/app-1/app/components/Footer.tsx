@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Slim site footer: a privacy-policy link and the contact address, on every
- * page. Keeps the privacy policy discoverable from inside the app (not just the
+ * Slim site footer: a privacy-policy link, the contact form and the contact
+ * address, on every page. Keeps the privacy policy discoverable from inside the app (not just the
  * public landing page) for Google OAuth verification.
  */
 
@@ -18,6 +18,7 @@ import { CONTACT_EMAIL } from "@/lib/contact";
  */
 export type FooterTexts = {
   privacyLink: string;
+  contactLink: string;
 };
 
 /**
@@ -33,6 +34,9 @@ export function Footer() {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-hairline pt-4 text-xs text-subtle-foreground">
         <Link href="/privacy" className="hover:text-foreground">
           {t.privacyLink}
+        </Link>
+        <Link href="/contact" className="hover:text-foreground">
+          {t.contactLink}
         </Link>
         <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-foreground">
           {CONTACT_EMAIL}

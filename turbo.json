@@ -12,6 +12,9 @@
     "DATABASE_URL",
     "PROD_DATABASE_URL",
     "ANNIVERSARIES_ADMIN_EMAILS",
+    "RESEND_API_KEY",
+    "CONTACT_TO_EMAIL",
+    "CONTACT_FROM",
     "VERCEL_ENV"
   ],
   "tasks": {
