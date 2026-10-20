@@ -6,6 +6,9 @@ import { s } from "./plural";
 export const rewards = {
   add: "Ajouter un prix",
   hideExpired: "Masquer les terminés",
+  withReserve: "Avec la réserve",
+  everyone: "Tout le monde",
+  person: "Pour qui",
   sortBy: "Trier par",
   sortDate: "Par date",
   sortPage: "Par page",

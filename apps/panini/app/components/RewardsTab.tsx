@@ -2,8 +2,9 @@
 
 /**
  * "Prix": every page that has a prize, sorted by date / page / completion %
- * (either direction), with each kid's status — complete, or which cards they
- * still need. Finished deadlines can be hidden and each prize collapsed.
+ * (either direction, for everyone or one kid), with each kid's status —
+ * complete, or which cards they still need. Finished deadlines can be hidden,
+ * the reserve can count toward completion, and each prize can be collapsed.
  */
 
 import { useState } from "react";
@@ -26,6 +27,9 @@ import { ArrowIcon, CheckIcon, ChevronIcon, GiftIcon, PlusIcon } from "./icons";
 export type RewardsTexts = {
   add: string;
   hideExpired: string;
+  withReserve: string;
+  everyone: string;
+  person: string;
   sortBy: string;
   sortDate: string;
   sortPage: string;
@@ -52,6 +56,7 @@ const MAX_CODES = 8;
 export function RewardsTab({
   album,
   kids,
+  reserve,
   formatDate,
   onAdd,
   onEdit,
@@ -59,6 +64,7 @@ export function RewardsTab({
 }: {
   album: Album;
   kids: Collector[];
+  reserve: Collector | undefined;
   formatDate: (isoDate: string) => string;
   onAdd: () => void;
   onEdit: (reward: PageReward) => void;
@@ -67,9 +73,24 @@ export function RewardsTab({
   const [sort, setSort] = useState<RewardSort>("date");
   const [desc, setDesc] = useState(false);
   const [hideExpired, setHideExpired] = useState(false);
+  const [useReserve, setUseReserve] = useState(false);
+  const [person, setPerson] = useState("all");
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 
-  const sorted = sortRewardsBy(album.rewards, sort, desc, album.cards, kids);
+  const reserveId = useReserve ? reserve?.id : undefined;
+  // Completion % (shown and sorted on) is for the picked kid, or everyone.
+  const forKids =
+    sort === "completion" && person !== "all"
+      ? kids.filter((k) => k.id === person)
+      : kids;
+  const sorted = sortRewardsBy(
+    album.rewards,
+    sort,
+    desc,
+    album.cards,
+    forKids,
+    reserveId,
+  );
   const rewards = hideExpired
     ? sorted.filter((r) => !rewardExpired(r))
     : sorted;
@@ -86,7 +107,7 @@ export function RewardsTab({
       <div className="mb-3.5 flex flex-wrap items-center justify-end gap-2">
         {album.rewards.length > 0 && (
           <>
-            <label className="mr-auto flex items-center gap-1.5 text-sm">
+            <label className="flex items-center gap-1.5 text-sm">
               <input
                 type="checkbox"
                 checked={hideExpired}
@@ -95,16 +116,42 @@ export function RewardsTab({
               />
               {t.hideExpired}
             </label>
+            {reserve && (
+              <label className="flex items-center gap-1.5 text-sm">
+                <input
+                  type="checkbox"
+                  checked={useReserve}
+                  onChange={(e) => setUseReserve(e.target.checked)}
+                  className="size-4 accent-accent"
+                />
+                {t.withReserve}
+              </label>
+            )}
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as RewardSort)}
               aria-label={t.sortBy}
-              className="field-input h-9.5! w-auto!"
+              className="field-input ml-auto h-9.5! w-auto!"
             >
               <option value="date">{t.sortDate}</option>
               <option value="page">{t.sortPage}</option>
               <option value="completion">{t.sortCompletion}</option>
             </select>
+            {sort === "completion" && (
+              <select
+                value={person}
+                onChange={(e) => setPerson(e.target.value)}
+                aria-label={t.person}
+                className="field-input h-9.5! w-auto!"
+              >
+                <option value="all">{t.everyone}</option>
+                {kids.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <button
               type="button"
               onClick={() => setDesc((d) => !d)}
@@ -162,7 +209,9 @@ export function RewardsTab({
                   {t.page(r.page)} — {r.prize}
                 </h3>
                 <p className="text-xs font-semibold text-accent">
-                  {t.completion(rewardCompletion(album.cards, r.page, kids))}
+                  {t.completion(
+                    rewardCompletion(album.cards, r.page, forKids, reserveId),
+                  )}
                 </p>
                 <p className="text-xs text-muted">
                   {r.kind === "deadline" && r.deadline ? (
@@ -203,7 +252,12 @@ export function RewardsTab({
             </div>
             <div className={isCollapsed ? "hidden" : "mt-2.5"}>
               {kids.map((k) => {
-                const missing = missingOnPage(album.cards, r.page, k.id);
+                const missing = missingOnPage(
+                  album.cards,
+                  r.page,
+                  k.id,
+                  reserveId,
+                );
                 const codes =
                   missing
                     .slice(0, MAX_CODES)

@@ -255,6 +255,7 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
         <RewardsTab
           album={album}
           kids={kids}
+          reserve={reserve}
           formatDate={formatDate}
           onAdd={() => setModal({ type: "reward" })}
           onEdit={(reward) =>

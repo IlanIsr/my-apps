@@ -157,13 +157,21 @@ export function cardsOnPage(cards: Card[], page: number): Card[] {
   return cards.filter((c) => c.page === page);
 }
 
-/** Cards on `page` the collector still lacks. */
+/**
+ * Cards on `page` the collector still lacks. With `reserveId`, a card the
+ * reserve holds counts as covered.
+ */
 export function missingOnPage(
   cards: Card[],
   page: number,
   collectorId: string,
+  reserveId?: string,
 ): Card[] {
-  return cardsOnPage(cards, page).filter((c) => countOf(c, collectorId) === 0);
+  return cardsOnPage(cards, page).filter(
+    (c) =>
+      countOf(c, collectorId) === 0 &&
+      (!reserveId || countOf(c, reserveId) === 0),
+  );
 }
 
 export function pageComplete(
@@ -227,16 +235,20 @@ export function rewardExpired(r: PageReward): boolean {
 
 export type RewardSort = "date" | "page" | "completion";
 
-/** Share of a page's cards the kids own, all kids together (0–100). */
+/**
+ * Share of a page's cards the given kids own, all together (0–100). With
+ * `reserveId`, cards in the reserve count as owned.
+ */
 export function rewardCompletion(
   cards: Card[],
   page: number,
   kids: Collector[],
+  reserveId?: string,
 ): number {
   const total = cardsOnPage(cards, page).length * kids.length;
   if (!total) return 0;
   const missing = kids.reduce(
-    (n, k) => n + missingOnPage(cards, page, k.id).length,
+    (n, k) => n + missingOnPage(cards, page, k.id, reserveId).length,
     0,
   );
   return Math.round(((total - missing) / total) * 100);
@@ -252,10 +264,13 @@ export function sortRewardsBy(
   desc: boolean,
   cards: Card[],
   kids: Collector[],
+  reserveId?: string,
 ): PageReward[] {
   const sign = desc ? -1 : 1;
   const key = (r: PageReward) =>
-    by === "completion" ? rewardCompletion(cards, r.page, kids) : r.page;
+    by === "completion"
+      ? rewardCompletion(cards, r.page, kids, reserveId)
+      : r.page;
   return [...rewards].sort((x, y) => {
     if (by === "date") {
       if (!x.deadline || !y.deadline)
