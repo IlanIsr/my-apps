@@ -34,7 +34,9 @@ export function Select({
         <HeroSelect.Value />
         <HeroSelect.Indicator />
       </HeroSelect.Trigger>
-      <HeroSelect.Popover>
+      {/* Size to the options (≥ the trigger), so a compact trigger doesn't
+          squeeze the selected-item checkmark onto the label. */}
+      <HeroSelect.Popover className="w-max">
         <ListBox>
           {options.map((option) => (
             <ListBox.Item
