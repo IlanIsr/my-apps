@@ -21,6 +21,7 @@ export const converter = {
     day: "יום",
     month: "חודש",
     year: "שנה",
+    afterNightfall: "אחרי רדת הלילה",
     calculate: "חשב",
     invalidDate: "תאריך לא תקין.",
   },

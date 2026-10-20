@@ -25,6 +25,7 @@ import { resolveErrorMessage } from "@repo/utils";
 
 import { useLanguage } from "@/i18n";
 import { Button } from "../Button";
+import { Checkbox } from "../Checkbox";
 import { Segmented } from "../Segmented";
 import { Select } from "../Select";
 import { TextInput } from "../TextInput";
@@ -48,6 +49,7 @@ export type AnniversaryFormTexts = {
   day: string;
   month: string;
   year: string;
+  afterNightfall: string;
   hebYear: string;
   optional: string;
   years: string;
@@ -82,6 +84,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const [gDay, setGDay] = useState("1");
   const [gMonth, setGMonth] = useState("0");
   const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));
+  const [afterNightfall, setAfterNightfall] = useState(false);
   const [years, setYears] = useState("20");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -93,8 +96,13 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
 
   const converted = useMemo(() => {
     if (!fromGregorian) return null;
-    return gregorianToHebrew(Number(gYear), Number(gMonth) + 1, Number(gDay));
-  }, [fromGregorian, gYear, gMonth, gDay]);
+    return gregorianToHebrew(
+      Number(gYear),
+      Number(gMonth) + 1,
+      Number(gDay),
+      afterNightfall,
+    );
+  }, [fromGregorian, gYear, gMonth, gDay, afterNightfall]);
 
   const yahrzeit = type === "yahrzeit";
   const tone = yahrzeit ? "yahrzeit" : "birthday";
@@ -113,7 +121,12 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
 
     // Hebrew year: derived from the Gregorian date, or the optional field.
     const hebYearValue = fromGregorian
-      ? hebrewYearForGregorian(Number(gYear), Number(gMonth) + 1, Number(gDay))
+      ? hebrewYearForGregorian(
+          Number(gYear),
+          Number(gMonth) + 1,
+          Number(gDay),
+          afterNightfall,
+        )
       : hebYear.trim()
         ? Number(hebYear.trim())
         : undefined;
@@ -217,6 +230,13 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
               onChange={setGYear}
             />
           </div>
+          <Checkbox
+            checked={afterNightfall}
+            onChange={setAfterNightfall}
+            className="flex items-center gap-2 text-sm"
+          >
+            {t.afterNightfall}
+          </Checkbox>
           {converted && (
             <p className="text-sm text-muted-foreground">
               {t.hebDate}: {converted.day}{" "}

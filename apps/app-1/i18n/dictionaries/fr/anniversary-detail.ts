@@ -30,6 +30,7 @@ export const anniversaryDetail = {
     day: "Jour",
     month: "Mois",
     year: "Année",
+    afterNightfall: "Après la tombée de la nuit",
     hebrewName: "Nom hébraïque",
     hebYear: "Année hébraïque",
     optional: "facultatif",

@@ -6,6 +6,7 @@ import { calculateHebrewDate, type HebrewResult } from "@repo/hebcal";
 
 import { useLanguage } from "@/i18n";
 import { Button } from "../components/Button";
+import { Checkbox } from "../components/Checkbox";
 import { Ornament } from "../components/Ornament";
 import { Select } from "../components/Select";
 import {
@@ -16,7 +17,8 @@ import {
 
 /**
  * Pick a Gregorian day / month / year; shows the corresponding Hebrew date
- * (via `calculateHebrewDate` from `@repo/hebcal`).
+ * (via `calculateHebrewDate` from `@repo/hebcal`) — the next one when "after
+ * nightfall" is ticked, since the Hebrew day starts at nightfall.
  */
 
 /** Text for {@link GregorianDateForm}. */
@@ -24,6 +26,7 @@ export type GregorianDateFormTexts = {
   day: string;
   month: string;
   year: string;
+  afterNightfall: string;
   calculate: string;
   invalidDate: string;
 };
@@ -37,11 +40,17 @@ export function GregorianDateForm({ t }: { t: GregorianDateFormTexts }) {
   const [day, setDay] = useState("1");
   const [month, setMonth] = useState("0");
   const [year, setYear] = useState(() => String(new Date().getFullYear()));
+  const [afterNightfall, setAfterNightfall] = useState(false);
   const [result, setResult] = useState<HebrewResult | null>(null);
   const [invalid, setInvalid] = useState(false);
 
   const calculate = () => {
-    const hd = calculateHebrewDate(Number(day), Number(month), Number(year));
+    const hd = calculateHebrewDate(
+      Number(day),
+      Number(month),
+      Number(year),
+      afterNightfall,
+    );
     setResult(hd);
     setInvalid(hd === null);
   };
@@ -63,6 +72,13 @@ export function GregorianDateForm({ t }: { t: GregorianDateFormTexts }) {
           onChange={setYear}
         />
       </div>
+      <Checkbox
+        checked={afterNightfall}
+        onChange={setAfterNightfall}
+        className="flex items-center gap-2 text-sm"
+      >
+        {t.afterNightfall}
+      </Checkbox>
 
       <Button type="button" onClick={calculate}>
         {t.calculate}

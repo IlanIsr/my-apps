@@ -21,6 +21,7 @@ export const converter = {
     day: "Day",
     month: "Month",
     year: "Year",
+    afterNightfall: "After nightfall",
     calculate: "Calculate",
     invalidDate: "That’s not a valid date.",
   },

@@ -21,6 +21,7 @@ export const converter = {
     day: "Jour",
     month: "Mois",
     year: "Année",
+    afterNightfall: "Après la tombée de la nuit",
     calculate: "Calculer",
     invalidDate: "Date invalide.",
   },

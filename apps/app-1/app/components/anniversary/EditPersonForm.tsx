@@ -19,6 +19,7 @@ import {
 } from "@repo/hebcal";
 import { useLanguage } from "@/i18n";
 import { Button } from "../Button";
+import { Checkbox } from "../Checkbox";
 import { TextInput } from "../TextInput";
 import type { Anniversary } from "@repo/anniversaries/person";
 import { resolveErrorMessage } from "@repo/utils";
@@ -41,6 +42,7 @@ export type EditPersonFormTexts = {
   day: string;
   month: string;
   year: string;
+  afterNightfall: string;
   hebrewName: string;
   hebYear: string;
   optional: string;
@@ -78,6 +80,7 @@ export function EditPersonForm({
   const [gDay, setGDay] = useState("1");
   const [gMonth, setGMonth] = useState("0");
   const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));
+  const [afterNightfall, setAfterNightfall] = useState(false);
   const [hebrewName, setHebrewName] = useState(anniversary.hebrewName ?? "");
   const [hebYear, setHebYear] = useState(
     anniversary.hebYear ? String(anniversary.hebYear) : "",
@@ -87,8 +90,13 @@ export function EditPersonForm({
 
   const converted = useMemo(() => {
     if (!fromGregorian) return null;
-    return gregorianToHebrew(Number(gYear), Number(gMonth) + 1, Number(gDay));
-  }, [fromGregorian, gYear, gMonth, gDay]);
+    return gregorianToHebrew(
+      Number(gYear),
+      Number(gMonth) + 1,
+      Number(gDay),
+      afterNightfall,
+    );
+  }, [fromGregorian, gYear, gMonth, gDay, afterNightfall]);
 
   const save = async () => {
     if (!name.trim()) {
@@ -99,7 +107,12 @@ export function EditPersonForm({
     const hebDay = converted ? converted.day : Number(day);
     const hebMonth = converted ? toHebrewMonthKey(converted.month) : month;
     const hebYearValue = fromGregorian
-      ? hebrewYearForGregorian(Number(gYear), Number(gMonth) + 1, Number(gDay))
+      ? hebrewYearForGregorian(
+          Number(gYear),
+          Number(gMonth) + 1,
+          Number(gDay),
+          afterNightfall,
+        )
       : hebYear.trim()
         ? Number(hebYear.trim())
         : 0;
@@ -162,32 +175,41 @@ export function EditPersonForm({
       </div>
 
       {fromGregorian ? (
-        <div className="flex flex-wrap items-end gap-3">
-          <Select
-            label={t.day}
-            options={gregDays}
-            value={gDay}
-            onChange={setGDay}
-          />
-          <Select
-            label={t.month}
-            options={gregMonths}
-            value={gMonth}
-            onChange={setGMonth}
-          />
-          <Select
-            label={t.year}
-            options={gregYears}
-            value={gYear}
-            onChange={setGYear}
-          />
-          {converted && (
-            <p className="pb-2.5 text-sm text-muted-foreground">
-              {t.hebDate}: {converted.day}{" "}
-              <span dir="ltr">{converted.month}</span>
-            </p>
-          )}
-        </div>
+        <>
+          <div className="flex flex-wrap items-end gap-3">
+            <Select
+              label={t.day}
+              options={gregDays}
+              value={gDay}
+              onChange={setGDay}
+            />
+            <Select
+              label={t.month}
+              options={gregMonths}
+              value={gMonth}
+              onChange={setGMonth}
+            />
+            <Select
+              label={t.year}
+              options={gregYears}
+              value={gYear}
+              onChange={setGYear}
+            />
+            {converted && (
+              <p className="pb-2.5 text-sm text-muted-foreground">
+                {t.hebDate}: {converted.day}{" "}
+                <span dir="ltr">{converted.month}</span>
+              </p>
+            )}
+          </div>
+          <Checkbox
+            checked={afterNightfall}
+            onChange={setAfterNightfall}
+            className="flex items-center gap-2 text-sm"
+          >
+            {t.afterNightfall}
+          </Checkbox>
+        </>
       ) : (
         <div
           className="flex flex-wrap gap-3"

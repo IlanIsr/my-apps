@@ -127,14 +127,19 @@ const MONTH_NUM_TO_NAME: Record<number, string> = {
   13: "Adar II",
 };
 
-/** Gregorian date → Hebrew `{ day, month }` (month as an English name). */
+/**
+ * Gregorian date → Hebrew `{ day, month }` (month as an English name). With
+ * `afterNightfall`, the Hebrew day has already turned — the next Hebrew date.
+ */
 export function gregorianToHebrew(
   year: number,
   month: number,
   day: number,
+  afterNightfall = false,
 ): { day: number; month: string } | null {
   try {
-    const hd = new HDate(new Date(year, month - 1, day));
+    const base = new HDate(new Date(year, month - 1, day));
+    const hd = afterNightfall ? base.next() : base;
     return {
       day: hd.getDate(),
       month: MONTH_NUM_TO_NAME[hd.getMonth()] ?? "Unknown",

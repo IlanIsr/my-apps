@@ -91,24 +91,32 @@ export function hebrewDateToGregorian(
   return toResult(new HDate(day, month, year));
 }
 
-/** The Hebrew year a Gregorian date (1-based month) falls in. */
+/**
+ * The Hebrew year a Gregorian date (1-based month) falls in. With
+ * `afterNightfall`, the Hebrew day has already turned (e.g. the eve of Rosh
+ * Hashana is in the new year).
+ */
 export function hebrewYearForGregorian(
   year: number,
   month: number,
   day: number,
+  afterNightfall = false,
 ): number {
-  return new HDate(new Date(year, month - 1, day)).getFullYear();
+  const hd = new HDate(new Date(year, month - 1, day));
+  return (afterNightfall ? hd.next() : hd).getFullYear();
 }
 
 /**
  * Convert a Gregorian date to its Hebrew equivalent. `monthIndex` is 0-based
- * (JS `Date` convention). Returns `null` for dates that don't exist
- * (e.g. 30 February).
+ * (JS `Date` convention). `afterNightfall`: the Hebrew day starts at
+ * nightfall, so it's the next Hebrew date. Returns `null` for dates that
+ * don't exist (e.g. 30 February).
  */
 export function calculateHebrewDate(
   day: number,
   monthIndex: number,
   year: number,
+  afterNightfall = false,
 ): HebrewResult | null {
   const date = new Date(year, monthIndex, day);
   const isReal =
@@ -117,5 +125,6 @@ export function calculateHebrewDate(
     date.getDate() === day;
   if (!isReal) return null;
 
-  return toResult(new HDate(date));
+  const hd = new HDate(date);
+  return toResult(afterNightfall ? hd.next() : hd);
 }
