@@ -9,7 +9,6 @@ export const anniversaryDetail = {
   hebDate: "Date hébraïque",
   family: "Famille à cette date",
   upcoming: "À venir",
-  edit: "Modifier",
   editDetails: "Modifier les infos",
   shareThis: "Partager celui-ci",
   viewInCalendar: "Google Agenda ↗",
@@ -24,15 +23,6 @@ export const anniversaryDetail = {
   age: (n: number) => `${n} ans`,
   since: (n: number) => `${n}ᵉ yahrzeit`,
   error: (message: string) => `Une erreur est survenue : ${message}`,
-  editForm: {
-    date: "Date",
-    time: "Heure (HH:MM)",
-    timeHint: "Laisser vide pour la tombée de la nuit (tset hakochavim)",
-    save: "Enregistrer",
-    saving: "Enregistrement…",
-    cancel: "Annuler",
-    error: (message: string) => `Une erreur est survenue : ${message}`,
-  },
   editPersonForm: {
     name: "Nom",
     hebDate: "Date hébraïque",

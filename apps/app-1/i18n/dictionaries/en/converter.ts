@@ -11,8 +11,9 @@ export const converter = {
   hebrewForm: {
     day: "Day",
     month: "Month",
+    year: "Year",
     calculate: "Calculate",
-    nextGregorianDate: "Next Gregorian date:",
+    gregorianDate: "Gregorian date:",
     noSuchDate: "That Hebrew date doesn’t occur.",
     months,
   },

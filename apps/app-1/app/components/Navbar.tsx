@@ -24,6 +24,7 @@ export type NavbarTexts = {
   };
   languageLabel: string;
   themeToggle: string;
+  signIn: string;
 };
 
 /**
@@ -75,7 +76,16 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
         <div className="ms-auto flex shrink-0 items-center gap-2">
           <LanguageSwitcher label={t.languageLabel} />
           <ThemeSwitcher label={t.themeToggle} />
-          <AuthControl />
+          <AuthControl
+            signedOut={
+              <Link
+                href="/sign-in"
+                className="rounded-pill bg-primary px-3 py-1.5 font-semibold whitespace-nowrap text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                {t.signIn}
+              </Link>
+            }
+          />
         </div>
       </nav>
     </header>

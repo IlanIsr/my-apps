@@ -3,8 +3,7 @@ import type { ShareLinkViewTexts } from "@/app/anniversaries/share/[id]/ShareLin
 /** Hebrew UI strings — shape: {@link ShareLinkViewTexts}. */
 export const shareLinkView = {
   title: "להצטרף לימי השנה האלה?",
-  intro:
-    "בחרו לאילו להצטרף — תתווספו לכל אחד מהם ותקבלו הזמנה ליומן.",
+  intro: "בחרו לאילו להצטרף — תתווספו לכל אחד מהם ותקבלו הזמנה ליומן.",
   expiredTitle: "הקישור הזה פג תוקף",
   expiredBody: "קישורי שיתוף תקפים ל-24 שעות בלבד. בקשו קישור חדש.",
   backToList: "חזרה לרשימה שלי",

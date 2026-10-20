@@ -29,7 +29,6 @@ export {
   getAnniversary,
   addAnniversary,
   leaveAnniversary,
-  updateEvent,
   updateAnniversary,
   createShareLink,
   getShareLinkPreview,
@@ -42,7 +41,6 @@ export {
   DatabaseNotConfiguredError,
   ProdSyncNotConfiguredError,
   type AddAnniversaryInput,
-  type UpdateEventInput,
   type UpdatePersonInput,
   type ShareLinkPreviewItem,
 } from "./service";

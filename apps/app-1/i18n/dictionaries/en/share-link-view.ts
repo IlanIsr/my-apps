@@ -12,7 +12,8 @@ export const shareLinkView = {
   join: "Join selected",
   joining: "Joining…",
   nothingSelected: "Pick at least one anniversary.",
-  rateLimited: "Google Calendar is busy right now — some invites may be delayed.",
+  rateLimited:
+    "Google Calendar is busy right now — some invites may be delayed.",
   result: (joined: number, alreadyJoined: number, failed: number) =>
     [
       joined > 0 && `Joined ${joined}`,

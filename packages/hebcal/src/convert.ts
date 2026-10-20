@@ -72,37 +72,23 @@ function monthExistsInYear(monthKey: string, year: number): boolean {
 }
 
 /**
- * Walk forward from today and return the next Gregorian date on which the given
- * Hebrew day + month falls. Returns `null` when the combination never occurs
- * (e.g. the 30th of a month that only ever has 29 days).
+ * The Gregorian date of an exact Hebrew date (day + month + year). Returns
+ * `null` when it doesn't exist (e.g. the 30th of a 29-day month, or Adar I/II
+ * in a non-leap year).
  */
-export function findNextHebrewDate(
+export function hebrewDateToGregorian(
   day: number,
   monthKey: string,
+  year: number,
 ): HebrewResult | null {
   if (!Number.isInteger(day) || day < 1 || day > 30) return null;
-  if (!(monthKey in MONTH_NUMBER)) return null;
+  if (!(monthKey in MONTH_NUMBER) || !Number.isInteger(year)) return null;
   const key = monthKey as HebrewMonthKey;
+  if (!monthExistsInYear(key, year)) return null;
 
-  const today = new HDate();
-  const startYear = today.getFullYear();
-  // A given day/month recurs at least once every 2-3 years, so a few hundred
-  // years is a generous upper bound that also guarantees termination.
-  const MAX_YEARS = 300;
-
-  for (let year = startYear; year <= startYear + MAX_YEARS; year++) {
-    if (!monthExistsInYear(key, year)) continue;
-
-    const month = MONTH_NUMBER[key];
-    if (day > HDate.daysInMonth(month, year)) continue;
-
-    const candidate = new HDate(day, month, year);
-    if (candidate.abs() >= today.abs()) {
-      return toResult(candidate);
-    }
-  }
-
-  return null;
+  const month = MONTH_NUMBER[key];
+  if (day > HDate.daysInMonth(month, year)) return null;
+  return toResult(new HDate(day, month, year));
 }
 
 /** The Hebrew year a Gregorian date (1-based month) falls in. */

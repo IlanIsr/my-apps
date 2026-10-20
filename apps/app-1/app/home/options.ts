@@ -78,6 +78,14 @@ export function gregorianMonthOptions(locale: Locale): Option[] {
   });
 }
 
+/** Hebrew years 5660–5860 (≈ Gregorian 1900–2100). */
+export function hebrewYearOptions(): Option[] {
+  return Array.from({ length: 5860 - 5660 + 1 }, (_, i) => {
+    const year = String(5660 + i);
+    return { key: year, label: year };
+  });
+}
+
 /** Gregorian years 1900–2100. */
 export function gregorianYearOptions(): Option[] {
   return Array.from({ length: 2100 - 1900 + 1 }, (_, i) => {

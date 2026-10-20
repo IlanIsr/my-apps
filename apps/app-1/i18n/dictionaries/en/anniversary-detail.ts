@@ -10,7 +10,6 @@ export const anniversaryDetail = {
   hebDate: "Hebrew date",
   family: "Family on this date",
   upcoming: "Upcoming",
-  edit: "Edit",
   editDetails: "Edit details",
   shareThis: "Share this one",
   viewInCalendar: "Google Calendar ↗",
@@ -25,15 +24,6 @@ export const anniversaryDetail = {
   age: (n: number) => `turns ${n}`,
   since: (n: number) => `${ordinal(n)} yahrzeit`,
   error: (message: string) => `Something went wrong: ${message}`,
-  editForm: {
-    date: "Date",
-    time: "Time (HH:MM)",
-    timeHint: "Leave empty for nightfall (tzeit hakochavim)",
-    save: "Save",
-    saving: "Saving…",
-    cancel: "Cancel",
-    error: (message: string) => `Something went wrong: ${message}`,
-  },
   editPersonForm: {
     name: "Name",
     hebDate: "Hebrew date",

@@ -105,7 +105,10 @@ export const shareLinks = pgTable("share_links", {
   id: text("id").primaryKey(),
   /** Lowercased email of the member who generated the link. */
   createdBy: text("created_by").notNull(),
-  expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+  expiresAt: timestamp("expires_at", {
+    withTimezone: true,
+    mode: "date",
+  }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .notNull()
     .defaultNow(),

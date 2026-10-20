@@ -8,7 +8,7 @@ export const anniversaries = {
     subtitle: (count: number, admin: boolean) =>
       admin ? `${count} אנשים` : `${count} ברשימה שלי`,
   },
-  add: "הוספת יום שנה",
+  add: "הוספת יום הולדת",
   shareList: "שיתוף הרשימה שלי",
   shareModal: createShareLinkModal,
   search: "חיפוש לפי שם או תאריך עברי",

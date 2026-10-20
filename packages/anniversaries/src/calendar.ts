@@ -417,42 +417,6 @@ export async function deleteEvent(id: string): Promise<void> {
   });
 }
 
-/** Patch a single event's date/time/title (a manual per-event edit). */
-export async function patchEvent(input: {
-  googleEventId: string;
-  date: string;
-  time: string;
-  summary?: string;
-  description?: string;
-}): Promise<{ htmlLink: string }> {
-  const event = await calendarApi<GoogleEvent>(
-    `/${encodeURIComponent(input.googleEventId)}`,
-  );
-  const attendees: AttendeeInput[] = (event.attendees ?? [])
-    .filter((a): a is GoogleAttendee & { email: string } => Boolean(a.email))
-    .map((a) =>
-      a.responseStatus
-        ? { email: a.email, responseStatus: a.responseStatus }
-        : { email: a.email },
-    );
-  const patched = await calendarApi<GoogleEvent>(
-    `/${encodeURIComponent(input.googleEventId)}?sendUpdates=none`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(
-        buildEventBody({
-          summary: input.summary,
-          description: input.description,
-          date: input.date,
-          time: input.time,
-          attendees,
-        }),
-      ),
-    },
-  );
-  return { htmlLink: patched.htmlLink ?? event.htmlLink ?? "" };
-}
-
 /** Every event on the shared calendar. Used only by the migration script. */
 export async function listAllEvents(): Promise<GoogleEvent[]> {
   const events: GoogleEvent[] = [];

@@ -4,8 +4,8 @@
  * The `/anniversaries/[id]` detail view: the person's name / Hebrew date, the
  * admin-only "Family on this date" avatar stack, a join / leave button, an
  * "Edit details" panel ({@link EditPersonForm}), a "Share this one" trigger
- * for {@link CreateShareLinkModal}, and the list of upcoming events — each
- * editable inline via {@link EditEventForm}.
+ * for {@link CreateShareLinkModal}, and the list of upcoming events (read-only:
+ * occurrences follow from the Hebrew date, so they aren't edited one by one).
  */
 
 import { useState, useTransition } from "react";
@@ -25,7 +25,6 @@ import {
   CreateShareLinkModal,
   type CreateShareLinkModalTexts,
 } from "./CreateShareLinkModal";
-import { EditEventForm, type EditEventFormTexts } from "./EditEventForm";
 import { EditPersonForm, type EditPersonFormTexts } from "./EditPersonForm";
 
 /** Text for {@link AnniversaryDetail}, including the nested form dictionaries. */
@@ -35,7 +34,6 @@ export type AnniversaryDetailTexts = {
   hebDate: string;
   family: string;
   upcoming: string;
-  edit: string;
   editDetails: string;
   shareThis: string;
   viewInCalendar: string;
@@ -49,7 +47,6 @@ export type AnniversaryDetailTexts = {
   age: (n: number) => string;
   since: (n: number) => string;
   error: (message: string) => string;
-  editForm: EditEventFormTexts;
   editPersonForm: EditPersonFormTexts;
   shareModal: CreateShareLinkModalTexts;
 };
@@ -73,7 +70,6 @@ export function AnniversaryDetail({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingPerson, setEditingPerson] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -272,29 +268,7 @@ export function AnniversaryDetail({
                       {t.viewInCalendar}
                     </a>
                   )}
-                  <Button
-                    onClick={() =>
-                      setEditingId(editingId === event.id ? null : event.id)
-                    }
-                    disabled={pending}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {t.edit}
-                  </Button>
                 </div>
-
-                {editingId === event.id && (
-                  <EditEventForm
-                    anniversary={anniversary}
-                    event={event}
-                    t={t.editForm}
-                    onDone={() => {
-                      setEditingId(null);
-                      router.refresh();
-                    }}
-                  />
-                )}
               </li>
             );
           })}

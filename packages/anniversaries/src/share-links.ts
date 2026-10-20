@@ -33,7 +33,9 @@ export async function createShareLink(input: {
     }),
     db()
       .insert(shareLinkPersons)
-      .values(input.personIds.map((personId) => ({ shareLinkId: id, personId }))),
+      .values(
+        input.personIds.map((personId) => ({ shareLinkId: id, personId })),
+      ),
   ];
   await runBatch(stmts);
   return { id };

@@ -23,7 +23,6 @@ import {
   DatabaseNotConfiguredError,
   NoSuchHebrewDateError,
   updateAnniversary,
-  updateEvent,
   type AnniversaryType,
 } from "@repo/anniversaries";
 
@@ -189,26 +188,6 @@ export async function updatePersonAction(input: {
     const data = await updateAnniversary({ ...input, summary }, email);
     refreshAnniversaries(input.id);
     return { ok: true, data };
-  } catch (error) {
-    return fail(error);
-  }
-}
-
-export async function updateEventAction(input: {
-  id: string;
-  eventId: string;
-  name: string;
-  type: AnniversaryType;
-  hebDateLabel: string;
-  date: string;
-  time?: string;
-  locale: Locale;
-}): Promise<ActionResult> {
-  try {
-    const summary = eventSummaryFor(input.locale, input.type, input.name);
-    await updateEvent({ ...input, summary });
-    refreshAnniversaries(input.id);
-    return { ok: true };
   } catch (error) {
     return fail(error);
   }

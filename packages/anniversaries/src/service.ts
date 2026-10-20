@@ -10,17 +10,12 @@
 
 import { createHash } from "node:crypto";
 
-import {
-  calculateNextOccurrences,
-  getTsetHakohavimWithFallback,
-  type HebrewMonthKey,
-} from "@repo/hebcal";
+import { calculateNextOccurrences, type HebrewMonthKey } from "@repo/hebcal";
 import { uniqueLowercased } from "@repo/utils";
 
 import {
   CalendarRateLimitError,
   isCalendarReachable,
-  patchEvent,
   syncPersonEvents,
 } from "./calendar";
 import {
@@ -603,43 +598,6 @@ export async function joinShareLink(
   }
 
   return { joined, alreadyJoined, failed, rateLimited: false };
-}
-
-export type UpdateEventInput = {
-  /** `persons.id`. */
-  id: string;
-  /** Google Calendar event id. */
-  eventId: string;
-  date: string;
-  time?: string;
-  /** Pre-translated event title. */
-  summary: string;
-};
-
-/** A manual per-event edit: change one occurrence's date and/or time. */
-export async function updateEvent(input: UpdateEventInput): Promise<void> {
-  const person = await getPerson(input.id);
-  if (!person) return;
-  const target = person.events.find((e) => e.googleEventId === input.eventId);
-  if (!target) return;
-
-  const time =
-    input.time?.trim() || (await getTsetHakohavimWithFallback(input.date));
-
-  const { htmlLink } = await patchEvent({
-    googleEventId: input.eventId,
-    date: input.date,
-    time,
-    summary: input.summary,
-    description: "",
-  });
-
-  const events = person.events.map((e) =>
-    e.googleEventId === input.eventId
-      ? { ...e, date: input.date, time, htmlLink, manual: true }
-      : e,
-  );
-  await updatePerson(input.id, { events });
 }
 
 export type UpdatePersonInput = {
