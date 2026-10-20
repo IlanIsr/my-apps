@@ -13,11 +13,10 @@ import {
   type Album,
   type Card,
   type Collector,
-  type PageReward,
 } from "@/lib/album-logic";
 import { collectorStyle } from "@/lib/colors";
 
-import { CheckIcon, ChevronIcon, GiftIcon } from "./icons";
+import { CheckIcon, ChevronIcon } from "./icons";
 
 export type CollectionTexts = {
   search: string;
@@ -29,7 +28,6 @@ export type CollectionTexts = {
   inReserve: string;
   pageComplete: (name: string) => string;
   pageIncomplete: (name: string) => string;
-  reward: (page: number) => string;
   addOne: (name: string) => string;
   removeOne: (name: string) => string;
   noMatchTitle: string;
@@ -158,9 +156,6 @@ export function CollectionTab({
   t: CollectionTexts;
 }) {
   const pages = pagesList(album.cards);
-  const rewards = new Map<number, PageReward>(
-    album.rewards.map((r) => [r.page, r]),
-  );
 
   const panels = pages
     .map((p) => ({
@@ -234,7 +229,6 @@ export function CollectionTab({
 
       {panels.map(({ page, cards }) => {
         const isCollapsed = collapsed.has(page);
-        const reward = rewards.get(page);
         return (
           <div key={page} className="card mb-3.5 overflow-hidden">
             <div
@@ -272,20 +266,9 @@ export function CollectionTab({
                   })}
                 </div>
               </div>
-              <div className="flex items-center gap-1.5">
-                {reward && (
-                  <span
-                    title={reward.prize}
-                    aria-label={t.reward(page)}
-                    className="flex size-7 items-center justify-center rounded-md bg-accent-soft text-accent"
-                  >
-                    <GiftIcon />
-                  </span>
-                )}
-                <ChevronIcon
-                  className={`size-4 text-muted transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
-                />
-              </div>
+              <ChevronIcon
+                className={`size-4 text-muted transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+              />
             </div>
             {!isCollapsed &&
               cards.map((card) => (

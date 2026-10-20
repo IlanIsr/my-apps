@@ -19,7 +19,6 @@ export const collection = {
   inReserve: "En réserve",
   pageComplete: (name: string) => `${name} — page complète`,
   pageIncomplete: (name: string) => `${name} — page incomplète`,
-  reward: (page: number) => `Prix de la page ${page}`,
   addOne: (name: string) => `Ajouter un exemplaire pour ${name}`,
   removeOne: (name: string) => `Retirer un exemplaire pour ${name}`,
   noMatchTitle: "Aucune carte ne correspond",

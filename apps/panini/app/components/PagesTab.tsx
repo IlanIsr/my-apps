@@ -10,13 +10,12 @@ import {
 } from "@/lib/album-logic";
 
 import { PageBadge } from "./CollectionTab";
-import { CheckIcon, GiftIcon } from "./icons";
+import { CheckIcon } from "./icons";
 
 export type PagesTexts = {
   empty: string;
   cardsCount: (n: number) => string;
   progress: (name: string, owned: number, total: number) => string;
-  hasReward: (prize: string) => string;
 };
 
 export function PagesTab({
@@ -38,24 +37,16 @@ export function PagesTab({
     <div className="card overflow-hidden">
       {pages.map((p) => {
         const onPage = cardsOnPage(album.cards, p);
-        const reward = album.rewards.find((r) => r.page === p);
         return (
           <button
             key={p}
             type="button"
             onClick={() => onOpenPage(p)}
-            className="grid w-full grid-cols-[44px_1fr_auto_auto] items-center gap-2.5 border-t border-line px-4 py-2.75 text-left first:border-t-0 hover:bg-sunken"
+            className="grid w-full grid-cols-[44px_1fr_auto] items-center gap-2.5 border-t border-line px-4 py-2.75 text-left first:border-t-0 hover:bg-sunken"
           >
             <span className="font-mono font-bold">{p}</span>
             <span className="text-xs text-muted">
               {t.cardsCount(onPage.length)}
-            </span>
-            <span className="text-accent">
-              {reward && (
-                <span title={t.hasReward(reward.prize)}>
-                  <GiftIcon />
-                </span>
-              )}
             </span>
             <span className="flex gap-1.25">
               {kids.map((k) => {

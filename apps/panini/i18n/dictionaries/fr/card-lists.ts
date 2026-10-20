@@ -25,5 +25,4 @@ export const pages = {
   cardsCount: (n: number) => `${n} carte${s(n)}`,
   progress: (name: string, owned: number, total: number) =>
     `${name} : ${owned}/${total}`,
-  hasReward: (prize: string) => `Prix : ${prize}`,
 } as const satisfies PagesTexts;
