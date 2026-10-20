@@ -4,7 +4,7 @@ import { hebrewMonths } from "./hebrew-months";
 
 /** Hebrew UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
-  back: "כל ימי השנה",
+  back: "כל ימי ההולדת",
   eyebrow: { birthday: "יום הולדת", yahrzeit: "אזכרה" },
   hebDate: "תאריך עברי",
   family: "המשפחה בתאריך זה",
@@ -17,7 +17,7 @@ export const anniversaryDetail = {
   joining: "מוסיף…",
   leave: "יציאה מהרשימה",
   leaving: "מסיר…",
-  leaveConfirm: "להסיר את עצמך מיום שנה זה?",
+  leaveConfirm: "להסיר את עצמך מיום הולדת זה?",
   rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
   age: (n: number) => `מלאו ${n}`,
   since: (n: number) => `שנה ${n} לפטירה`,

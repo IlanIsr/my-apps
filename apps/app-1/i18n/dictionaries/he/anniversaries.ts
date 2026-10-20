@@ -4,7 +4,7 @@ import { createShareLinkModal } from "./create-share-link-modal";
 /** Hebrew UI strings — shape: {@link AnniversariesTexts}. */
 export const anniversaries = {
   listPage: {
-    title: "ימי שנה עבריים",
+    title: "ימי הולדת עבריים",
     subtitle: (count: number, admin: boolean) =>
       admin ? `${count} אנשים` : `${count} ברשימה שלי`,
   },
@@ -15,7 +15,7 @@ export const anniversaries = {
   joined: "ברשימה שלי",
   eyebrow: { birthday: "יום הולדת", yahrzeit: "אזכרה" },
   empty: {
-    title: "אין עדיין ימי שנה",
+    title: "אין עדיין ימי הולדת",
     body: "הוסיפו יום הולדת או אזכרה, והם יופיעו כאן עם התאריך העברי והשנים הקרובות.",
     cta: "הוספת הראשון",
     noResults: "אין תוצאות לחיפוש.",

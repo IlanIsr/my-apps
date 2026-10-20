@@ -8,7 +8,7 @@ import type { CreateShareLinkModalTexts } from "@/app/components/anniversary/Cre
 export const createShareLinkModal = {
   title: "שיתוף קישור",
   intro:
-    "בחרו אילו ימי שנה לכלול. מי שפותח את הקישור מחליט אילו מהם להצטרף אליהם — לא מבקשים מכם אימייל של אף אחד.",
+    "בחרו אילו ימי הולדת לכלול. מי שפותח את הקישור מחליט אילו מהם להצטרף אליהם — לא מבקשים מכם אימייל של אף אחד.",
   selectAll: "בחירת הכול",
   clearAll: "ניקוי",
   generate: "יצירת קישור",
@@ -18,6 +18,6 @@ export const createShareLinkModal = {
   copied: "הועתק!",
   linkIntro: "שתפו את הקישור הזה עם מי שתרצו:",
   expiresIn: "תקף ל-24 שעות. כל אחד יכול לפתוח אותו ולהצטרף עד אז.",
-  nothingSelected: "בחרו לפחות יום שנה אחד.",
+  nothingSelected: "בחרו לפחות יום הולדת אחד.",
   error: (message: string) => `משהו השתבש: ${message}`,
 } as const satisfies CreateShareLinkModalTexts;

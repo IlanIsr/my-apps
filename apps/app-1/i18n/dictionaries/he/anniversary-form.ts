@@ -2,7 +2,7 @@ import type { AnniversaryFormTexts } from "@/app/components/anniversary/Annivers
 
 import { hebrewMonths } from "./hebrew-months";
 
-const NOT_CONFIGURED = "לוח ימי השנה המשותף עדיין לא מוגדר.";
+const NOT_CONFIGURED = "לוח ימי ההולדת המשותף עדיין לא מוגדר.";
 
 /** Hebrew UI strings — shape: {@link AnniversaryFormTexts}. */
 export const anniversaryForm = {
@@ -18,7 +18,7 @@ export const anniversaryForm = {
   hebYear: "שנה עברית",
   optional: "רשות",
   years: "שנים קדימה",
-  submit: "יצירת יום שנה",
+  submit: "יצירת יום הולדת",
   submitting: "יוצר…",
   cancel: "ביטול",
   toggle: {

@@ -2,7 +2,7 @@ import type { ShareLinkViewTexts } from "@/app/anniversaries/share/[id]/ShareLin
 
 /** Hebrew UI strings — shape: {@link ShareLinkViewTexts}. */
 export const shareLinkView = {
-  title: "להצטרף לימי השנה האלה?",
+  title: "להצטרף לימי ההולדת האלה?",
   intro: "בחרו לאילו להצטרף — תתווספו לכל אחד מהם ותקבלו הזמנה ליומן.",
   expiredTitle: "הקישור הזה פג תוקף",
   expiredBody: "קישורי שיתוף תקפים ל-24 שעות בלבד. בקשו קישור חדש.",
@@ -10,7 +10,7 @@ export const shareLinkView = {
   alreadyJoined: "כבר ברשימה שלכם",
   join: "הצטרפות לנבחרים",
   joining: "מצטרף…",
-  nothingSelected: "בחרו לפחות יום שנה אחד.",
+  nothingSelected: "בחרו לפחות יום הולדת אחד.",
   rateLimited: "יומן Google עסוק כרגע — חלק מההזמנות עלולות להתעכב.",
   result: (joined: number, alreadyJoined: number, failed: number) =>
     [
