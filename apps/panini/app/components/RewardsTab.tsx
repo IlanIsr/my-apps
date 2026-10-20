@@ -22,10 +22,9 @@ import {
 } from "@/lib/album-logic";
 
 import { Avatar } from "./Avatar";
-import { ArrowIcon, CheckIcon, ChevronIcon, GiftIcon, PlusIcon } from "./icons";
+import { ArrowIcon, CheckIcon, ChevronIcon, GiftIcon } from "./icons";
 
 export type RewardsTexts = {
-  add: string;
   hideExpired: string;
   everyone: string;
   person: string;
@@ -58,7 +57,6 @@ export function RewardsTab({
   kids,
   reserve,
   formatDate,
-  onAdd,
   onEdit,
   t,
 }: {
@@ -66,7 +64,6 @@ export function RewardsTab({
   kids: Collector[];
   reserve: Collector | undefined;
   formatDate: (isoDate: string) => string;
-  onAdd: () => void;
   onEdit: (reward: PageReward) => void;
   t: RewardsTexts;
 }) {
@@ -145,13 +142,6 @@ export function RewardsTab({
             </button>
           </>
         )}
-        <button
-          type="button"
-          className="btn flex items-center gap-1.5"
-          onClick={onAdd}
-        >
-          <PlusIcon /> {t.add}
-        </button>
       </div>
       {album.rewards.length > 0 && !rewards.length && (
         <p className="px-5 py-12 text-center text-muted">{t.noMatch}</p>

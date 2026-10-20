@@ -4,7 +4,6 @@ import type { RewardsTexts } from "@/app/components/RewardsTab";
 import { s } from "./plural";
 
 export const rewards = {
-  add: "Ajouter un prix",
   hideExpired: "Masquer les terminés",
   everyone: "Tout le monde",
   person: "Pour qui",
@@ -17,8 +16,7 @@ export const rewards = {
   completion: (pct: number) => `${pct} % complété`,
   noMatch: "Tous les prix sont terminés.",
   emptyTitle: "Aucun prix pour l'instant",
-  emptyBody:
-    "Certaines pages font gagner un prix si on les complète avant une date, ou si on est parmi les premiers. Ajoute-les ici pour savoir lesquelles finir en priorité.",
+  emptyBody: "Les prix de cet album ne sont pas encore renseignés.",
   page: (n: number) => `Page ${n}`,
   before: (date: string) => `Avant le ${date}`,
   daysLeft: (days: number) =>
