@@ -1,10 +1,13 @@
 "use client";
 
+import { ToggleButton } from "@repo/ui/toggle-button";
+import { ToggleButtonGroup } from "@repo/ui/toggle-button-group";
+
 export type SegmentedOption<T extends string> = { value: T; label: string };
 
 /**
- * A small segmented control (2–3 options). Replaces a labelled on/off Switch
- * where both sides are real, named choices.
+ * A small segmented control (2–3 options) — HeroUI's `ToggleButtonGroup` in
+ * single-selection mode (via `@repo/ui`). `tone` tints the selected option.
  */
 export function Segmented<T extends string>({
   options,
@@ -21,36 +24,33 @@ export function Segmented<T extends string>({
 }) {
   const active =
     tone === "birthday"
-      ? "text-birthday"
+      ? "data-[selected=true]:text-birthday"
       : tone === "yahrzeit"
-        ? "text-yahrzeit"
-        : "text-foreground";
+        ? "data-[selected=true]:text-yahrzeit"
+        : "";
 
   return (
-    <div
-      role="radiogroup"
+    <ToggleButtonGroup
       aria-label={ariaLabel}
-      className="inline-flex w-fit self-start gap-1 rounded-field border border-border bg-sunken p-[3px] text-sm"
+      selectionMode="single"
+      disallowEmptySelection
+      selectedKeys={[value]}
+      onSelectionChange={(keys) => {
+        const [key] = keys;
+        if (key !== undefined) onChange(String(key) as T);
+      }}
+      size="sm"
+      className="w-fit self-start"
     >
-      {options.map((option) => {
-        const selected = option.value === value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onChange(option.value)}
-            className={`rounded-pill px-3.5 py-1.5 font-medium whitespace-nowrap transition-colors ${
-              selected
-                ? `bg-card shadow-sm ${active}`
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
+      {options.map((option) => (
+        <ToggleButton
+          key={option.value}
+          id={option.value}
+          className={`whitespace-nowrap ${active}`}
+        >
+          {option.label}
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
   );
 }

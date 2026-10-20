@@ -7,7 +7,6 @@
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "generate:component": "turbo gen react-component",
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {
@@ -19,8 +18,12 @@
     "eslint": "10.9.1",
     "typescript": "7.0.2"
   },
+  "type": "module",
   "dependencies": {
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "@heroui/react": "^3.2.4"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
   }
 }

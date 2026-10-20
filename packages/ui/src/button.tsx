@@ -1,27 +1,11 @@
 "use client";
 
-import { ReactNode } from "react";
-
-/** Props for {@link Button}. */
-interface ButtonProps {
-  children: ReactNode;
-  className?: string;
-  /** App name echoed in the demo `alert()`. */
-  appName: string;
-}
-
 /**
- * Starter button from the Turborepo template — kept as-is on purpose (see
- * CLAUDE.md: do not redesign `@repo/ui`). Real app-1 buttons live in
- * `apps/app-1/app/components/Button.tsx`.
+ * HeroUI's `Button`, re-exported unchanged. `@repo/ui` is the **override seam**
+ * for HeroUI: apps import from `@repo/ui/*`, never `@heroui/react` directly, so
+ * a component can later be wrapped, restyled or swapped here without touching
+ * any call site. Styling needs `@import "@heroui/styles/css";` in the app's
+ * global stylesheet (after `tailwindcss`).
  */
-export const Button = ({ children, className, appName }: ButtonProps) => {
-  return (
-    <button
-      className={className}
-      onClick={() => alert(`Hello from your ${appName} app!`)}
-    >
-      {children}
-    </button>
-  );
-};
+
+export { Button, type ButtonProps } from "@heroui/react/button";

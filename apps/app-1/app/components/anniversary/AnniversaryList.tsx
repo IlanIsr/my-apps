@@ -8,6 +8,8 @@ import { occurrencesSince, type Anniversary } from "@repo/anniversaries/person";
 
 import { Eyebrow } from "../Eyebrow";
 import { Ornament } from "../Ornament";
+import { Button } from "../Button";
+import { TextInput } from "../TextInput";
 import {
   CreateShareLinkModal,
   type CreateShareLinkModalTexts,
@@ -92,13 +94,9 @@ export function AnniversaryList({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {myList.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setShareOpen(true)}
-              className="rounded-field border border-border-strong bg-card px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-muted"
-            >
+            <Button onClick={() => setShareOpen(true)} variant="outline">
               {t.shareList}
-            </button>
+            </Button>
           )}
           <Link
             href="/anniversaries/new"
@@ -118,16 +116,13 @@ export function AnniversaryList({
       )}
 
       {anniversaries.length > 0 && (
-        <div className="flex items-center gap-2.5 rounded-field border border-border bg-card px-3 py-2.5">
-          <SearchIcon />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t.search}
-            className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-subtle-foreground"
-          />
-        </div>
+        <TextInput
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t.search}
+          aria-label={t.search}
+        />
       )}
 
       {anniversaries.length === 0 ? (
@@ -262,21 +257,4 @@ function EmptyState({ t }: { t: AnniversariesTexts["empty"] }) {
 
 function Sep() {
   return <span className="text-border-strong">|</span>;
-}
-
-function SearchIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-3.5 w-3.5 shrink-0 text-subtle-foreground"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden
-    >
-      <circle cx="10.5" cy="10.5" r="6.5" />
-      <path d="m15.5 15.5 4.5 4.5" />
-    </svg>
-  );
 }

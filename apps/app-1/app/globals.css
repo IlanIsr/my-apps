@@ -1,6 +1,6 @@
 @import "@repo/tailwind-config";
 /* HeroUI v3 prebuilt component styles — must come after tailwindcss. Components
- * are consumed via `@repo/heroui/*`, never `@heroui/react` directly. */
+ * are consumed via `@repo/ui/*`, never `@heroui/react` directly. */
 @import "@heroui/styles/css";
 
 /*
@@ -16,7 +16,7 @@
   --card: #fdfbf5;
   --card-foreground: #241e17;
   --sunken: #efe7d7;
-  --muted: #efe6d5;
+  --muted-bg: #efe6d5; /* not `--muted`: HeroUI uses that for text */
   --muted-foreground: #6b6055;
   --subtle-foreground: #8b8172;
   --border: #e2d9c7;
@@ -42,7 +42,7 @@
   --card: #241f18;
   --card-foreground: #f2ede2;
   --sunken: #131519;
-  --muted: #2b251d;
+  --muted-bg: #2b251d;
   --muted-foreground: #a79c8c;
   --subtle-foreground: #8b8172;
   --border: #342e25;
@@ -62,13 +62,43 @@
   --destructive: #e08573;
 }
 
+/*
+ * HeroUI's theme variables, pointed at the palette above (light and dark both
+ * follow, since these only reference our tokens). Unlayered, so they win over
+ * HeroUI's own defaults (declared in a cascade layer).
+ */
+:root {
+  --muted: var(--muted-foreground);
+  --surface: var(--card);
+  --surface-foreground: var(--card-foreground);
+  --overlay: var(--card);
+  --overlay-foreground: var(--card-foreground);
+  --default: var(--sunken);
+  --default-foreground: var(--foreground);
+  --accent: var(--primary);
+  --accent-foreground: var(--primary-foreground);
+  --focus: var(--ring);
+  --danger: var(--destructive);
+  --danger-foreground: var(--primary-foreground);
+  --field-background: var(--card);
+  --field-foreground: var(--foreground);
+  --field-placeholder: var(--subtle-foreground);
+  --field-border: var(--border);
+  --field-border-width: 1px;
+  --field-radius: 0.625rem;
+  --radius: 0.5rem;
+  --segment: var(--card);
+  --segment-foreground: var(--foreground);
+  --separator: var(--border);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-sunken: var(--sunken);
-  --color-muted: var(--muted);
+  --color-muted: var(--muted-bg);
   --color-muted-foreground: var(--muted-foreground);
   --color-subtle-foreground: var(--subtle-foreground);
   --color-border: var(--border);

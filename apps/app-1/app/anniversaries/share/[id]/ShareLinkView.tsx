@@ -21,6 +21,8 @@ import type { ShareLinkPreviewItem } from "@repo/anniversaries";
 import { resolveErrorMessage } from "@repo/utils";
 import { joinShareLinkAction } from "../../actions";
 import { CalendarUnavailable } from "../../../components/anniversary/CalendarUnavailable";
+import { Button } from "../../../components/Button";
+import { Checkbox } from "../../../components/Checkbox";
 
 /** Text for {@link ShareLinkView}. */
 export type ShareLinkViewTexts = {
@@ -70,9 +72,7 @@ export function ShareLinkView({
   if (preview.expired) {
     return (
       <div className="flex flex-col items-center gap-2 py-16 text-center">
-        <p className="font-display text-xl font-semibold">
-          {t.expiredTitle}
-        </p>
+        <p className="font-display text-xl font-semibold">{t.expiredTitle}</p>
         <p className="max-w-xs text-sm text-muted-foreground">
           {t.expiredBody}
         </p>
@@ -130,18 +130,14 @@ export function ShareLinkView({
       <ul className="flex flex-col divide-y divide-hairline overflow-hidden rounded-card border border-border bg-card">
         {preview.items.map((item) => (
           <li key={item.id}>
-            <label
-              className={`flex items-center gap-2.5 px-3 py-2.5 text-sm ${
+            <Checkbox
+              checked={item.alreadyJoined || selected.has(item.id)}
+              disabled={item.alreadyJoined}
+              onChange={() => toggle(item.id)}
+              className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-sm ${
                 item.alreadyJoined ? "" : "cursor-pointer hover:bg-sunken"
               }`}
             >
-              <input
-                type="checkbox"
-                checked={item.alreadyJoined || selected.has(item.id)}
-                disabled={item.alreadyJoined}
-                onChange={() => toggle(item.id)}
-                className="h-4 w-4 accent-primary disabled:opacity-50"
-              />
               <span className="font-display">{item.name}</span>
               <span
                 className={`ms-auto text-[11px] ${
@@ -156,7 +152,7 @@ export function ShareLinkView({
                   {t.alreadyJoined}
                 </span>
               )}
-            </label>
+            </Checkbox>
           </li>
         ))}
       </ul>
@@ -165,14 +161,9 @@ export function ShareLinkView({
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {joinable.length > 0 && (
-        <button
-          type="button"
-          onClick={submit}
-          disabled={pending}
-          className="self-start rounded-field bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-40"
-        >
+        <Button onClick={submit} disabled={pending} className="self-start">
           {pending ? t.joining : t.join}
-        </button>
+        </Button>
       )}
     </div>
   );

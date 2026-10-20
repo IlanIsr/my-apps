@@ -32,9 +32,9 @@ importers:
       '@repo/hebcal':
         specifier: workspace:*
         version: link:../../packages/hebcal
-      '@repo/heroui':
+      '@repo/ui':
         specifier: workspace:*
-        version: link:../../packages/heroui
+        version: link:../../packages/ui
       '@repo/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -344,37 +344,6 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
-  packages/heroui:
-    dependencies:
-      '@heroui/react':
-        specifier: ^3.2.4
-        version: 3.2.4(@react-aria/i18n@3.13.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@react-aria/ssr@3.10.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@react-aria/utils@3.34.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@react-spectrum/provider@3.11.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-aria-components@1.21.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-aria@3.52.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(tailwindcss@4.3.3)
-      react:
-        specifier: ^19
-        version: 19.2.8
-      react-dom:
-        specifier: ^19
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@repo/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/react':
-        specifier: 19.2.18
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: 19.2.5
-        version: 19.2.5(@types/react@19.2.18)
-      eslint:
-        specifier: 10.9.1
-        version: 10.9.1(jiti@2.7.0)(supports-color@7.2.0)
-      typescript:
-        specifier: 7.0.2
-        version: 7.0.2
-
   packages/tailwind-config:
     devDependencies:
       tailwindcss:
@@ -385,11 +354,14 @@ importers:
 
   packages/ui:
     dependencies:
+      '@heroui/react':
+        specifier: ^3.2.4
+        version: 3.2.4(@react-aria/i18n@3.13.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@react-aria/ssr@3.10.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@react-aria/utils@3.34.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@react-spectrum/provider@3.11.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-aria-components@1.21.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-aria@3.52.1(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(tailwindcss@4.3.3)
       react:
-        specifier: 19.2.8
+        specifier: ^19
         version: 19.2.8
       react-dom:
-        specifier: 19.2.8
+        specifier: ^19
         version: 19.2.8(react@19.2.8)
     devDependencies:
       '@repo/eslint-config':

@@ -18,6 +18,7 @@ import {
   leaveAnniversaryAction,
 } from "../../anniversaries/actions";
 import { BackLink } from "../BackLink";
+import { Button } from "../Button";
 import { Eyebrow } from "../Eyebrow";
 import { Ornament } from "../Ornament";
 import {
@@ -177,46 +178,45 @@ export function AnniversaryDetail({
           )}
 
           {anniversary.joined ? (
-            <button
-              type="button"
+            <Button
               onClick={handleLeave}
               disabled={pending}
-              className="shrink-0 rounded-field border border-border-strong bg-card px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-40"
+              variant="outline"
+              className="shrink-0"
             >
               {pending ? t.leaving : t.leave}
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
+            <Button
               onClick={handleJoin}
               disabled={pending}
-              className={`shrink-0 rounded-field px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-40 ${
-                yahrzeit ? "bg-yahrzeit" : "bg-primary"
-              }`}
+              className={yahrzeit ? "shrink-0 bg-yahrzeit" : "shrink-0"}
             >
               {pending ? t.joining : t.join}
-            </button>
+            </Button>
           )}
         </div>
 
         {(anniversary.joined || anniversary.admin) && (
           <div className="flex gap-2">
             {!editingPerson && (
-              <button
-                type="button"
+              <Button
                 onClick={() => setEditingPerson(true)}
-                className="w-fit rounded-pill border border-border px-3 py-1 text-[12.5px] text-muted-foreground hover:text-foreground"
+                variant="outline"
+                size="sm"
+                className="w-fit"
               >
                 {t.editDetails}
-              </button>
+              </Button>
             )}
-            <button
-              type="button"
+            <Button
               onClick={() => setShareOpen(true)}
-              className="w-fit rounded-pill border border-border px-3 py-1 text-[12.5px] text-muted-foreground hover:text-foreground"
+              variant="outline"
+              size="sm"
+              className="w-fit"
             >
               {t.shareThis}
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -272,16 +272,16 @@ export function AnniversaryDetail({
                       {t.viewInCalendar}
                     </a>
                   )}
-                  <button
-                    type="button"
+                  <Button
                     onClick={() =>
                       setEditingId(editingId === event.id ? null : event.id)
                     }
                     disabled={pending}
-                    className="rounded-pill border border-border px-2.5 py-1 text-[12.5px] text-muted-foreground hover:text-foreground disabled:opacity-40"
+                    variant="outline"
+                    size="sm"
                   >
                     {t.edit}
-                  </button>
+                  </Button>
                 </div>
 
                 {editingId === event.id && (

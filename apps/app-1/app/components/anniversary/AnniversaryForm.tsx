@@ -23,11 +23,11 @@ import {
 import type { AnniversaryType } from "@repo/anniversaries/person";
 import { resolveErrorMessage } from "@repo/utils";
 
-import { Button } from "@repo/heroui/button";
-
 import { useLanguage } from "@/i18n";
+import { Button } from "../Button";
 import { Segmented } from "../Segmented";
 import { Select } from "../Select";
+import { TextInput } from "../TextInput";
 import {
   gregorianDayOptions,
   gregorianMonthOptions,
@@ -153,18 +153,16 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
 
   const label =
     "font-mono text-[10.5px] font-medium uppercase tracking-[0.12em] text-subtle-foreground";
-  const input =
-    "min-h-[44px] rounded-field border border-border bg-card px-3 text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20";
 
   return (
     <form onSubmit={submit} className="flex max-w-md flex-col gap-5">
       <label className="flex flex-col gap-1.5">
         <span className={label}>{t.name}</span>
-        <input
+        <TextInput
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t.namePlaceholder}
-          className={`${input} font-display text-base`}
+          className="font-display text-base"
         />
       </label>
 
@@ -251,14 +249,14 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
                   {t.optional}
                 </span>
               </span>
-              <input
+              <TextInput
                 inputMode="numeric"
                 value={hebYear}
                 onChange={(e) =>
                   setHebYear(e.target.value.replace(/[^0-9]/g, ""))
                 }
                 placeholder="5754"
-                className={`${input} w-32`}
+                className="w-32"
                 dir="ltr"
               />
             </label>
@@ -276,8 +274,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex items-center gap-2 pt-1">
-        {/* HeroUI button via @repo/heroui — unstyled-to-our-theme for now. */}
-        <Button type="submit" variant="primary" isDisabled={pending}>
+        <Button type="submit" disabled={pending}>
           {pending ? t.submitting : t.submit}
         </Button>
         <Link

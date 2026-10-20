@@ -15,6 +15,9 @@ import { useEffect, useState } from "react";
 import type { Anniversary } from "@repo/anniversaries/person";
 import { resolveErrorMessage } from "@repo/utils";
 import { createShareLinkAction } from "../../anniversaries/actions";
+import { Button } from "../Button";
+import { Checkbox } from "../Checkbox";
+import { TextInput } from "../TextInput";
 
 /** Text for {@link CreateShareLinkModal}. */
 export type CreateShareLinkModalTexts = {
@@ -113,29 +116,21 @@ export function CreateShareLinkModal({
           <div className="flex flex-col gap-3">
             <p className="text-sm text-muted-foreground">{t.linkIntro}</p>
             <div className="flex items-center gap-2">
-              <input
+              <TextInput
                 readOnly
                 value={link}
                 dir="ltr"
                 onFocus={(e) => e.target.select()}
-                className="flex-1 rounded-field border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                className="flex-1"
               />
-              <button
-                type="button"
-                onClick={copyLink}
-                className="shrink-0 rounded-field border border-border px-3 py-2 text-sm font-medium"
-              >
+              <Button onClick={copyLink} variant="outline" className="shrink-0">
                 {copied ? t.copied : t.copy}
-              </button>
+              </Button>
             </div>
             <p className="text-xs text-subtle-foreground">{t.expiresIn}</p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="self-start rounded-field border border-border px-4 py-2 text-sm font-medium"
-            >
+            <Button onClick={onClose} variant="outline" className="self-start">
               {t.cancel}
-            </button>
+            </Button>
           </div>
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-4">
@@ -144,45 +139,40 @@ export function CreateShareLinkModal({
                 {selected.size}/{anniversaries.length}
               </span>
               <div className="flex gap-2">
-                <button
-                  type="button"
+                <Button
                   onClick={() =>
                     setSelected(new Set(anniversaries.map((a) => a.id)))
                   }
-                  className="text-muted-foreground hover:text-foreground"
+                  variant="ghost"
                 >
                   {t.selectAll}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelected(new Set())}
-                  className="text-muted-foreground hover:text-foreground"
-                >
+                </Button>
+                <Button onClick={() => setSelected(new Set())} variant="ghost">
                   {t.clearAll}
-                </button>
+                </Button>
               </div>
             </div>
 
             <ul className="flex flex-col divide-y divide-hairline overflow-hidden rounded-field border border-border">
               {anniversaries.map((a) => (
                 <li key={a.id}>
-                  <label className="flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm hover:bg-sunken">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(a.id)}
-                      onChange={() => toggle(a.id)}
-                      className="h-4 w-4 accent-primary"
-                    />
+                  <Checkbox
+                    checked={selected.has(a.id)}
+                    onChange={() => toggle(a.id)}
+                    className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm hover:bg-sunken"
+                  >
                     <span className="font-display">{a.name}</span>
                     <span
                       className={`ms-auto text-[11px] ${
-                        a.type === "yahrzeit" ? "text-yahrzeit" : "text-birthday"
+                        a.type === "yahrzeit"
+                          ? "text-yahrzeit"
+                          : "text-birthday"
                       }`}
                       dir="ltr"
                     >
                       {a.hebDateLabel}
                     </span>
-                  </label>
+                  </Checkbox>
                 </li>
               ))}
             </ul>
@@ -190,21 +180,12 @@ export function CreateShareLinkModal({
             {error && <p className="text-xs text-destructive">{error}</p>}
 
             <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={pending}
-                className="rounded-field bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-40"
-              >
+              <Button type="submit" disabled={pending}>
                 {pending ? t.generating : t.generate}
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={pending}
-                className="rounded-field border border-border px-4 py-2 text-sm font-medium"
-              >
+              </Button>
+              <Button onClick={onClose} disabled={pending} variant="outline">
                 {t.cancel}
-              </button>
+              </Button>
             </div>
           </form>
         )}

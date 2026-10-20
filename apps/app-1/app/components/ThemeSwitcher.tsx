@@ -2,6 +2,8 @@
 
 import { useTheme } from "next-themes";
 
+import { Button } from "./Button";
+
 /**
  * Light/dark toggle (app-1 only — landing stays light). Dark mode is
  * class-based (`<html class="dark">`, set by `next-themes` before paint); which
@@ -13,11 +15,12 @@ export function ThemeSwitcher({ label }: { label: string }) {
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
+      size="sm"
+      isIconOnly
       aria-label={label}
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="flex h-9 w-9 items-center justify-center rounded-pill border border-border transition-colors hover:bg-muted"
     >
       {/*
        * Which icon shows is driven purely by the `.dark` class on <html> (set by
@@ -25,7 +28,7 @@ export function ThemeSwitcher({ label }: { label: string }) {
        */}
       <SunIcon className="h-5 w-5 dark:hidden" />
       <MoonIcon className="hidden h-5 w-5 dark:block" />
-    </button>
+    </Button>
   );
 }
 

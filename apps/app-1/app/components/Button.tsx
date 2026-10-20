@@ -1,32 +1,43 @@
+"use client";
+
 /**
- * app-1's button — a thin wrapper over `<button>` with three visual variants
- * drawn from the parchment/ink palette. (Not `@repo/ui/button`, which is the
- * untouched starter component.)
+ * app-1's button — HeroUI's `Button` (via `@repo/ui/button`), themed to the
+ * parchment/ink palette through the HeroUI variables in `globals.css`. Keeps a
+ * DOM-like API (`onClick`, `disabled`) so call sites read like plain buttons.
  */
 
-type Variant = "primary" | "outline" | "ghost";
+import {
+  Button as HeroButton,
+  type ButtonProps as HeroButtonProps,
+} from "@repo/ui/button";
 
-const VARIANTS: Record<Variant, string> = {
-  primary:
-    "bg-primary text-primary-foreground font-semibold shadow-sm hover:opacity-90",
-  outline:
-    "border border-border-strong bg-card text-foreground font-medium hover:bg-muted",
-  ghost: "text-muted-foreground font-medium hover:text-foreground",
+type Props = Omit<
+  HeroButtonProps,
+  "variant" | "size" | "onPress" | "isDisabled" | "className"
+> & {
+  /** `"primary"` (default), `"outline"` or `"ghost"`. */
+  variant?: "primary" | "outline" | "ghost";
+  /** `"md"` (default) or `"sm"` for compact pill buttons. */
+  size?: "sm" | "md";
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
 };
 
-/**
- * @param variant - `"primary"` (default), `"outline"`, or `"ghost"`.
- * All other `<button>` props (including `className`, which is appended) pass through.
- */
 export function Button({
   variant = "primary",
-  className = "",
+  size = "md",
+  disabled,
+  onClick,
   ...props
-}: React.ComponentProps<"button"> & { variant?: Variant }) {
+}: Props) {
   return (
-    <button
+    <HeroButton
       {...props}
-      className={`inline-flex items-center justify-center gap-2 rounded-field px-4 py-2.5 text-sm transition-opacity disabled:opacity-40 ${VARIANTS[variant]} ${className}`}
+      variant={variant}
+      size={size}
+      isDisabled={disabled}
+      onPress={onClick}
     />
   );
 }

@@ -18,6 +18,8 @@ import {
   type HebrewMonthKey,
 } from "@repo/hebcal";
 import { useLanguage } from "@/i18n";
+import { Button } from "../Button";
+import { TextInput } from "../TextInput";
 import type { Anniversary } from "@repo/anniversaries/person";
 import { resolveErrorMessage } from "@repo/utils";
 import { updatePersonAction } from "../../anniversaries/actions";
@@ -132,8 +134,6 @@ export function EditPersonForm({
     onDone();
   };
 
-  const field =
-    "rounded-field border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20";
   const labelCls =
     "font-mono text-[10.5px] font-medium uppercase tracking-[0.12em] text-subtle-foreground";
 
@@ -141,10 +141,10 @@ export function EditPersonForm({
     <div className="flex flex-col gap-4 rounded-card border border-border bg-sunken p-4">
       <label className="flex flex-col gap-1.5">
         <span className={labelCls}>{t.name}</span>
-        <input
+        <TextInput
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className={`${field} font-display`}
+          className="font-display"
         />
       </label>
 
@@ -207,14 +207,14 @@ export function EditPersonForm({
                 {t.optional}
               </span>
             </span>
-            <input
+            <TextInput
               inputMode="numeric"
               value={hebYear}
               onChange={(e) =>
                 setHebYear(e.target.value.replace(/[^0-9]/g, ""))
               }
               placeholder="5754"
-              className={`${field} w-32`}
+              className="w-32"
               dir="ltr"
             />
           </label>
@@ -228,10 +228,9 @@ export function EditPersonForm({
             {t.optional}
           </span>
         </span>
-        <input
+        <TextInput
           value={hebrewName}
           onChange={(e) => setHebrewName(e.target.value)}
-          className={field}
           dir="rtl"
         />
       </label>
@@ -239,22 +238,12 @@ export function EditPersonForm({
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={save}
-          disabled={pending}
-          className="rounded-field bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-40"
-        >
+        <Button onClick={save} disabled={pending}>
           {pending ? t.saving : t.save}
-        </button>
-        <button
-          type="button"
-          onClick={onDone}
-          disabled={pending}
-          className="rounded-field border border-border px-4 py-2 text-sm font-medium"
-        >
+        </Button>
+        <Button onClick={onDone} disabled={pending} variant="outline">
           {t.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   );
