@@ -3,12 +3,7 @@
  * cleaned value or throws `InvalidInputError` — never trust what the client sent.
  */
 
-import {
-  COLLECTOR_COLORS,
-  LIMITS,
-  type ImportEntry,
-  type PageReward,
-} from "./album-logic";
+import { COLLECTOR_COLORS, LIMITS, type PageReward } from "./album-logic";
 
 export class InvalidInputError extends Error {
   constructor(field: string) {
@@ -58,15 +53,6 @@ export function color(value: unknown): string {
     throw new InvalidInputError("color");
   }
   return value as string;
-}
-
-export function cardEntry(value: unknown): ImportEntry {
-  const v = (value ?? {}) as Record<string, unknown>;
-  return {
-    code: text(v.code, "code", LIMITS.code),
-    page: int(v.page, "page", 1, LIMITS.page),
-    label: text(v.label ?? "", "label", LIMITS.label, { required: false }),
-  };
 }
 
 export function reward(value: unknown): PageReward {

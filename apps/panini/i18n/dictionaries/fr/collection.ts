@@ -22,7 +22,6 @@ export const collection = {
   reward: (page: number) => `Prix de la page ${page}`,
   addOne: (name: string) => `Ajouter un exemplaire pour ${name}`,
   removeOne: (name: string) => `Retirer un exemplaire pour ${name}`,
-  editCard: (code: string) => `Modifier la carte ${code}`,
   noMatchTitle: "Aucune carte ne correspond",
   noMatchBody: "Essaie un autre filtre, ou ajoute une carte avec le bouton +.",
   noKidsTitle: "Aucun enfant pour l'instant.",

@@ -10,18 +10,13 @@
 import { useCallback, useMemo, useState } from "react";
 
 import {
-  addCardAction,
   addCollectorAction,
-  bulkAddCardsAction,
   createAlbumAction,
-  deleteCardAction,
   deleteCollectorAction,
   deletePageRewardAction,
-  importCardsAction,
   resetAlbumAction,
   setPageRewardAction,
   stepCountAction,
-  updateCardAction,
   updateCollectorAction,
   updateSettingsAction,
   type ActionErrorCode,
@@ -39,10 +34,9 @@ import {
   type PageReward,
 } from "@/lib/album-logic";
 
-import { CardModal } from "./CardModal";
 import { ReserveTab, TradesTab } from "./CardLists";
 import { CollectionTab, type CollectionFilters } from "./CollectionTab";
-import { GearIcon, PlusIcon } from "./icons";
+import { GearIcon } from "./icons";
 import { PagesTab } from "./PagesTab";
 import { RewardModal } from "./RewardModal";
 import { RewardsTab } from "./RewardsTab";
@@ -56,17 +50,13 @@ type Tab = (typeof TABS)[number];
 export type AppTexts = {
   eyebrow: string;
   settings: string;
-  addCard: string;
   dismiss: string;
   tabs: Record<Tab, string>;
   errors: Record<ActionErrorCode, string>;
 };
 
 type ModalState =
-  | { type: "add-card" }
-  | { type: "edit-card"; card: Card }
-  | { type: "settings" }
-  | { type: "reward"; page?: number; reward?: PageReward };
+  { type: "settings" } | { type: "reward"; page?: number; reward?: PageReward };
 
 function withCount(
   album: Album,
@@ -157,19 +147,9 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
     addCollector: (input) => apply(addCollectorAction(input)),
     updateCollector: (id, input) => apply(updateCollectorAction(id, input)),
     deleteCollector: (id) => apply(deleteCollectorAction(id)),
-    importCards: async (entries) => {
-      const result = await importCardsAction(entries);
-      if (!(await apply(Promise.resolve(result))) || !result.ok) return null;
-      return result.summary;
-    },
-    bulkAdd: (count) => apply(bulkAddCardsAction(count)),
     reset: () => apply(resetAlbumAction()),
   };
 
-  const maxNumericCode = album.cards.reduce(
-    (max, c) => (/^\d+$/.test(c.code) ? Math.max(max, Number(c.code)) : max),
-    0,
-  );
   const closeModal = () => setModal(null);
   const rewardFor = (page: number) =>
     album.rewards.find((r) => r.page === page);
@@ -228,7 +208,6 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
             })
           }
           onStep={step}
-          onEditCard={(card) => setModal({ type: "edit-card", card })}
           onEditReward={(page) =>
             setModal({ type: "reward", page, reward: rewardFor(page) })
           }
@@ -265,17 +244,6 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
         />
       )}
 
-      {tab === "collection" && (
-        <button
-          type="button"
-          onClick={() => setModal({ type: "add-card" })}
-          aria-label={t.app.addCard}
-          className="fixed right-5.5 bottom-[calc(22px+env(safe-area-inset-bottom))] z-20 flex size-13 items-center justify-center rounded-full bg-accent text-accent-ink shadow-card hover:brightness-105"
-        >
-          <PlusIcon className="size-5.5" />
-        </button>
-      )}
-
       {error && (
         <div
           role="alert"
@@ -292,19 +260,6 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
         </div>
       )}
 
-      {(modal?.type === "add-card" || modal?.type === "edit-card") && (
-        <CardModal
-          card={modal.type === "edit-card" ? modal.card : undefined}
-          defaultCode={String(maxNumericCode + 1)}
-          defaultPage={pages.at(-1) ?? 1}
-          onAdd={(input) => apply(addCardAction(input))}
-          onUpdate={(id, input) => apply(updateCardAction(id, input))}
-          onDelete={(id) => apply(deleteCardAction(id))}
-          onClose={closeModal}
-          t={t.cardModal}
-          modalT={t.modal}
-        />
-      )}
       {modal?.type === "settings" && (
         <SettingsModal
           album={album}

@@ -2,7 +2,7 @@ import type { Messages } from "../../messages";
 import { app, modal } from "./app";
 import { cardLists, pages } from "./card-lists";
 import { collection, stats } from "./collection";
-import { cardModal, settings } from "./modals";
+import { settings } from "./modals";
 import { rewardModal, rewards } from "./rewards";
 import { setup } from "./setup";
 
@@ -19,7 +19,6 @@ export const fr = {
   cardLists,
   pages,
   rewards,
-  cardModal,
   rewardModal,
   settings,
 } as const satisfies Messages;

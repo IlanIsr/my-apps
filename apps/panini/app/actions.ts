@@ -10,7 +10,7 @@
 import { getCurrentUserId } from "@repo/auth/user";
 
 import { DatabaseNotConfiguredError } from "@/db/client";
-import { LIMITS, type Album, type ImportEntry } from "@/lib/album-logic";
+import { LIMITS, type Album } from "@/lib/album-logic";
 import * as store from "@/lib/store";
 import * as v from "@/lib/validate";
 
@@ -22,8 +22,7 @@ export type ActionErrorCode =
   | "unknown";
 
 export type ActionResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: ActionErrorCode };
+  { ok: true; data: T } | { ok: false; error: ActionErrorCode };
 
 class NotSignedInError extends Error {}
 
@@ -38,7 +37,8 @@ async function run<T>(
     if (error instanceof NotSignedInError) {
       return { ok: false, error: "not-signed-in" };
     }
-    if (error instanceof store.AlbumError) return { ok: false, error: error.code };
+    if (error instanceof store.AlbumError)
+      return { ok: false, error: error.code };
     if (error instanceof v.InvalidInputError) {
       return { ok: false, error: "invalid" };
     }
@@ -62,8 +62,6 @@ function mutate(
 
 export async function createAlbumAction(input: {
   name: string;
-  total: number;
-  perPage: number;
   kids: string[];
   reserveName: string;
 }) {
@@ -73,8 +71,6 @@ export async function createAlbumAction(input: {
     }
     return store.createAlbum(ownerId, {
       name: v.text(input.name, "name", LIMITS.name),
-      total: v.int(input.total, "total", 1, LIMITS.totalCards),
-      perPage: v.int(input.perPage, "perPage", 1, LIMITS.perPage),
       kids: input.kids.map((k) => v.text(k, "kid", LIMITS.name)),
       reserveName: v.text(input.reserveName, "reserveName", LIMITS.name),
     });
@@ -89,64 +85,14 @@ export async function stepCountAction(
 ) {
   return run((ownerId) => {
     if (delta !== 1 && delta !== -1) throw new v.InvalidInputError("delta");
-    return store.stepCount(
-      ownerId,
-      v.id(cardId),
-      v.id(collectorId),
-      delta,
-    );
+    return store.stepCount(ownerId, v.id(cardId), v.id(collectorId), delta);
   });
 }
 
-export async function addCardAction(input: ImportEntry) {
-  return mutate((ownerId) => store.addCard(ownerId, v.cardEntry(input)));
-}
-
-export async function updateCardAction(
-  cardId: string,
-  input: { page: number; label: string },
-) {
-  return mutate((ownerId) =>
-    store.updateCard(ownerId, v.id(cardId), {
-      page: v.int(input.page, "page", 1, LIMITS.page),
-      label: v.text(input.label, "label", LIMITS.label, { required: false }),
-    }),
-  );
-}
-
-export async function deleteCardAction(cardId: string) {
-  return mutate((ownerId) => store.deleteCard(ownerId, v.id(cardId)));
-}
-
-export async function importCardsAction(entries: ImportEntry[]) {
-  let summary = { added: 0, updated: 0 };
-  const result = await mutate(async (ownerId) => {
-    if (
-      !Array.isArray(entries) ||
-      !entries.length ||
-      entries.length > LIMITS.totalCards
-    ) {
-      throw new v.InvalidInputError("entries");
-    }
-    summary = await store.importCards(ownerId, entries.map(v.cardEntry));
-  });
-  return result.ok ? { ...result, summary } : result;
-}
-
-export async function bulkAddCardsAction(count: number) {
-  return mutate((ownerId) =>
-    store.bulkAddCards(ownerId, v.int(count, "count", 1, LIMITS.bulkAdd)),
-  );
-}
-
-export async function updateSettingsAction(input: {
-  name: string;
-  perPage: number;
-}) {
+export async function updateSettingsAction(input: { name: string }) {
   return mutate((ownerId) =>
     store.updateSettings(ownerId, {
       name: v.text(input.name, "name", LIMITS.name),
-      perPage: v.int(input.perPage, "perPage", 1, LIMITS.perPage),
     }),
   );
 }
@@ -180,9 +126,7 @@ export async function updateCollectorAction(
 }
 
 export async function deleteCollectorAction(collectorId: string) {
-  return mutate((ownerId) =>
-    store.deleteCollector(ownerId, v.id(collectorId)),
-  );
+  return mutate((ownerId) => store.deleteCollector(ownerId, v.id(collectorId)));
 }
 
 export async function setPageRewardAction(input: unknown) {

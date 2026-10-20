@@ -1,6 +1,6 @@
 "use client";
 
-/** First run: create the album (name, numbered cards, kids). */
+/** First run: create the album (name, kids) — the card list is fixed. */
 
 import { useState } from "react";
 
@@ -14,9 +14,6 @@ export type SetupTexts = {
   intro: string;
   name: string;
   defaultName: string;
-  total: string;
-  totalHint: string;
-  perPage: string;
   kids: string;
   kidsPlaceholder: string;
   kidsHint: string;
@@ -30,8 +27,6 @@ export function SetupView({
 }: {
   onCreate: (input: {
     name: string;
-    total: number;
-    perPage: number;
     kids: string[];
     reserveName: string;
   }) => Promise<boolean>;
@@ -43,8 +38,6 @@ export function SetupView({
     setBusy(true);
     await onCreate({
       name: String(form.get("name") ?? "").trim() || t.defaultName,
-      total: Number(form.get("total")),
-      perPage: Number(form.get("perPage")),
       kids: String(form.get("kids") ?? "")
         .split(",")
         .map((k) => k.trim())
@@ -78,30 +71,6 @@ export function SetupView({
             id="f-kids"
             name="kids"
             placeholder={t.kidsPlaceholder}
-            className="field-input"
-          />
-        </Field>
-        <Field label={t.total} htmlFor="f-total" hint={t.totalHint}>
-          <input
-            id="f-total"
-            name="total"
-            type="number"
-            min={1}
-            max={LIMITS.totalCards}
-            defaultValue={240}
-            required
-            className="field-input"
-          />
-        </Field>
-        <Field label={t.perPage} htmlFor="f-perpage">
-          <input
-            id="f-perpage"
-            name="perPage"
-            type="number"
-            min={1}
-            max={LIMITS.perPage}
-            defaultValue={6}
-            required
             className="field-input"
           />
         </Field>

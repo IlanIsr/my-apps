@@ -51,24 +51,16 @@ export type PageReward = {
 
 export type Album = {
   name: string;
-  cardsPerPage: number;
   /** Kids first (by position), the reserve last. */
   collectors: Collector[];
   cards: Card[];
   rewards: PageReward[];
 };
 
-export type ImportEntry = { code: string; page: number; label: string };
-
 export const LIMITS = {
   name: 60,
-  code: 20,
-  label: 60,
   prize: 120,
   page: 999,
-  perPage: 50,
-  totalCards: 2000,
-  bulkAdd: 500,
   collectors: 12,
   winners: 1_000_000,
 } as const;
@@ -91,49 +83,6 @@ export function naturalCompare(a: string, b: string): number {
 
 export function sortCards(cards: Card[]): Card[] {
   return [...cards].sort((a, b) => naturalCompare(a.code, b.code));
-}
-
-/**
- * Parses a pasted list, one card per line: `code`, `code, page` or
- * `code, page, label` (comma / semicolon / tab / space separated). A line
- * `Page N` sets the page for following lines that don't give their own.
- */
-export function parseImportText(text: string): ImportEntry[] {
-  let lastPage = 1;
-  const entries: ImportEntry[] = [];
-  for (const line of text.split("\n")) {
-    const raw = line.trim();
-    if (!raw) continue;
-    const pageLine = /^page\s+(\d+)\s*:?$/i.exec(raw);
-    if (pageLine) {
-      lastPage = Number(pageLine[1]);
-      continue;
-    }
-    const sep = raw.includes("\t")
-      ? "\t"
-      : raw.includes(";")
-        ? ";"
-        : raw.includes(",")
-          ? ","
-          : /\s+/;
-    const parts = raw
-      .split(sep)
-      .map((p) => p.trim())
-      .filter(Boolean);
-    const [code, second, ...rest] = parts;
-    if (!code) continue;
-    let page = lastPage;
-    let label: string;
-    if (second && /^\d+$/.test(second)) {
-      page = Number(second);
-      lastPage = page;
-      label = rest.join(" ");
-    } else {
-      label = parts.slice(1).join(" ");
-    }
-    entries.push({ code, page, label });
-  }
-  return entries;
 }
 
 // ---------------- derived ----------------
@@ -235,20 +184,16 @@ export function rewardExpired(r: PageReward): boolean {
 
 export type RewardSort = "date" | "page" | "completion";
 
-/**
- * Share of a page's cards the given kids own, all together (0–100). With
- * `reserveId`, cards in the reserve count as owned.
- */
+/** Share of a page's cards the given kids own, all together (0–100). */
 export function rewardCompletion(
   cards: Card[],
   page: number,
   kids: Collector[],
-  reserveId?: string,
 ): number {
   const total = cardsOnPage(cards, page).length * kids.length;
   if (!total) return 0;
   const missing = kids.reduce(
-    (n, k) => n + missingOnPage(cards, page, k.id, reserveId).length,
+    (n, k) => n + missingOnPage(cards, page, k.id).length,
     0,
   );
   return Math.round(((total - missing) / total) * 100);
@@ -264,13 +209,10 @@ export function sortRewardsBy(
   desc: boolean,
   cards: Card[],
   kids: Collector[],
-  reserveId?: string,
 ): PageReward[] {
   const sign = desc ? -1 : 1;
   const key = (r: PageReward) =>
-    by === "completion"
-      ? rewardCompletion(cards, r.page, kids, reserveId)
-      : r.page;
+    by === "completion" ? rewardCompletion(cards, r.page, kids) : r.page;
   return [...rewards].sort((x, y) => {
     if (by === "date") {
       if (!x.deadline || !y.deadline)

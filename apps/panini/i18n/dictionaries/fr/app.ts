@@ -4,7 +4,6 @@ import type { ModalTexts } from "@/app/components/Modal";
 export const app = {
   eyebrow: "Classeur Panini",
   settings: "Réglages",
-  addCard: "Ajouter une carte",
   dismiss: "Fermer",
   tabs: {
     collection: "Collection",
@@ -18,7 +17,6 @@ export const app = {
     "no-album": "Aucun classeur trouvé. Recharge la page.",
     "album-exists": "Tu as déjà un classeur. Recharge la page.",
     "not-found": "Élément introuvable — recharge la page.",
-    "duplicate-code": "Ce code existe déjà dans le classeur.",
     "too-many-collectors": "Nombre maximum d'enfants atteint.",
     invalid: "Valeur invalide — vérifie les champs.",
     "db-not-configured": "La base de données n'est pas configurée.",

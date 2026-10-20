@@ -5,7 +5,6 @@
  */
 
 import type { CardListsTexts } from "@/app/components/CardLists";
-import type { CardModalTexts } from "@/app/components/CardModal";
 import type { CollectionTexts } from "@/app/components/CollectionTab";
 import type { ModalTexts } from "@/app/components/Modal";
 import type { PagesTexts } from "@/app/components/PagesTab";
@@ -29,7 +28,6 @@ export type Messages = {
   cardLists: CardListsTexts;
   pages: PagesTexts;
   rewards: RewardsTexts;
-  cardModal: CardModalTexts;
   rewardModal: RewardModalTexts;
   settings: SettingsTexts;
 };

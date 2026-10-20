@@ -6,7 +6,6 @@ import { s } from "./plural";
 export const rewards = {
   add: "Ajouter un prix",
   hideExpired: "Masquer les terminés",
-  withReserve: "Avec la réserve",
   everyone: "Tout le monde",
   person: "Pour qui",
   sortBy: "Trier par",
@@ -28,6 +27,7 @@ export const rewards = {
   firstN: (n: number) => `Les ${n} premiers`,
   firstNHint: "à finir au plus vite",
   complete: "Complète",
+  reserveCompletes: "Complétable avec la réserve",
   missing: (n: number, codes: string) => `Manque ${n} : ${codes}`,
   edit: "Modifier",
 } as const satisfies RewardsTexts;

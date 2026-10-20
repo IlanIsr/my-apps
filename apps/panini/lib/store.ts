@@ -24,17 +24,13 @@ import {
   RESERVE_COLOR,
   sortCards,
   type Album,
-  type ImportEntry,
   type PageReward,
   type RewardKind,
 } from "./album-logic";
+import { ALBUM_CARDS } from "./album-cards";
 
 export type AlbumErrorCode =
-  | "no-album"
-  | "album-exists"
-  | "not-found"
-  | "duplicate-code"
-  | "too-many-collectors";
+  "no-album" | "album-exists" | "not-found" | "too-many-collectors";
 
 /** An expected, user-facing failure. Mapped to an error code by the actions. */
 export class AlbumError extends Error {
@@ -88,7 +84,6 @@ export async function getAlbum(ownerId: string): Promise<Album | null> {
 
   return {
     name: album.name,
-    cardsPerPage: album.cardsPerPage,
     collectors: collectorRows.map((c) => ({
       id: c.id,
       name: c.name,
@@ -114,16 +109,11 @@ export async function getAlbum(ownerId: string): Promise<Album | null> {
   };
 }
 
-const pageFor = (n: number, perPage: number) =>
-  Math.max(1, Math.ceil(n / perPage));
-
-/** Creates the album, its kids + reserve, and cards numbered 1…total. Atomic. */
+/** Creates the album, its kids + reserve, and the fixed card list. Atomic. */
 export async function createAlbum(
   ownerId: string,
   input: {
     name: string;
-    total: number;
-    perPage: number;
     kids: string[];
     reserveName: string;
   },
@@ -135,17 +125,14 @@ export async function createAlbum(
   if (existing) throw new AlbumError("album-exists");
 
   const albumId = crypto.randomUUID();
-  const cardRows = Array.from({ length: input.total }, (_, i) => ({
-    albumId,
-    code: String(i + 1),
-    page: pageFor(i + 1, input.perPage),
-  }));
+  const cardRows = ALBUM_CARDS.map((c) => ({ albumId, ...c }));
   await db().batch([
     db().insert(albums).values({
       id: albumId,
       ownerId,
       name: input.name,
-      cardsPerPage: input.perPage,
+      // Legacy column (numbered-card generation) — unused since the list is fixed.
+      cardsPerPage: 0,
     }),
     db()
       .insert(collectors)
@@ -194,112 +181,13 @@ export async function stepCount(
   return Number(row.count);
 }
 
-export async function addCard(
-  ownerId: string,
-  input: ImportEntry,
-): Promise<void> {
-  const albumId = await albumIdOf(ownerId);
-  const inserted = await db()
-    .insert(cards)
-    .values({ albumId, ...input })
-    .onConflictDoNothing()
-    .returning({ id: cards.id });
-  if (!inserted.length) throw new AlbumError("duplicate-code");
-}
-
-export async function updateCard(
-  ownerId: string,
-  cardId: string,
-  input: { page: number; label: string },
-): Promise<void> {
-  const albumId = await albumIdOf(ownerId);
-  const updated = await db()
-    .update(cards)
-    .set(input)
-    .where(and(eq(cards.id, cardId), eq(cards.albumId, albumId)))
-    .returning({ id: cards.id });
-  if (!updated.length) throw new AlbumError("not-found");
-}
-
-export async function deleteCard(
-  ownerId: string,
-  cardId: string,
-): Promise<void> {
-  const albumId = await albumIdOf(ownerId);
-  await db()
-    .delete(cards)
-    .where(and(eq(cards.id, cardId), eq(cards.albumId, albumId)));
-}
-
-/**
- * Upserts by code: new codes are added, existing ones get the new page (and
- * label, when one is given). Never duplicates, never touches counts.
- */
-export async function importCards(
-  ownerId: string,
-  entries: ImportEntry[],
-): Promise<{ added: number; updated: number }> {
-  const albumId = await albumIdOf(ownerId);
-  // Last line wins for a repeated code — one statement can't hit a row twice.
-  const byCode = new Map(entries.map((e) => [e.code, e]));
-  const rows = [...byCode.values()].map((e) => ({ albumId, ...e }));
-
-  let added = 0;
-  let updated = 0;
-  for (let i = 0; i < rows.length; i += 500) {
-    const result = await db()
-      .insert(cards)
-      .values(rows.slice(i, i + 500))
-      .onConflictDoUpdate({
-        target: [cards.albumId, cards.code],
-        set: {
-          page: sql`excluded.page`,
-          label: sql`CASE WHEN excluded.label <> '' THEN excluded.label ELSE ${cards.label} END`,
-        },
-      })
-      // xmax = 0 only on a freshly inserted row.
-      .returning({ inserted: sql<boolean>`(xmax = 0)` });
-    for (const r of result) {
-      if (r.inserted) added++;
-      else updated++;
-    }
-  }
-  return { added, updated };
-}
-
-/** Appends `count` numbered cards after the highest numeric code. */
-export async function bulkAddCards(
-  ownerId: string,
-  count: number,
-): Promise<void> {
-  const [album] = await db()
-    .select({ id: albums.id, perPage: albums.cardsPerPage })
-    .from(albums)
-    .where(eq(albums.ownerId, ownerId));
-  if (!album) throw new AlbumError("no-album");
-  const codes = await db()
-    .select({ code: cards.code })
-    .from(cards)
-    .where(eq(cards.albumId, album.id));
-  const maxN = codes.reduce(
-    (max, { code }) => (/^\d+$/.test(code) ? Math.max(max, Number(code)) : max),
-    0,
-  );
-  const rows = Array.from({ length: count }, (_, i) => ({
-    albumId: album.id,
-    code: String(maxN + i + 1),
-    page: pageFor(maxN + i + 1, album.perPage),
-  }));
-  await db().insert(cards).values(rows).onConflictDoNothing();
-}
-
 export async function updateSettings(
   ownerId: string,
-  input: { name: string; perPage: number },
+  input: { name: string },
 ): Promise<void> {
   const updated = await db()
     .update(albums)
-    .set({ name: input.name, cardsPerPage: input.perPage })
+    .set({ name: input.name })
     .where(eq(albums.ownerId, ownerId))
     .returning({ id: albums.id });
   if (!updated.length) throw new AlbumError("no-album");

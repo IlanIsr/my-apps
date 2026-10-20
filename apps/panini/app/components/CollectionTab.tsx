@@ -17,7 +17,7 @@ import {
 } from "@/lib/album-logic";
 import { collectorStyle } from "@/lib/colors";
 
-import { CheckIcon, ChevronIcon, GiftIcon, MoreIcon } from "./icons";
+import { CheckIcon, ChevronIcon, GiftIcon } from "./icons";
 
 export type CollectionTexts = {
   search: string;
@@ -32,7 +32,6 @@ export type CollectionTexts = {
   reward: (page: number) => string;
   addOne: (name: string) => string;
   removeOne: (name: string) => string;
-  editCard: (code: string) => string;
   noMatchTitle: string;
   noMatchBody: string;
   noKidsTitle: string;
@@ -146,7 +145,6 @@ export function CollectionTab({
   collapsed,
   onToggle,
   onStep,
-  onEditCard,
   onEditReward,
   t,
 }: {
@@ -158,7 +156,6 @@ export function CollectionTab({
   collapsed: Set<number>;
   onToggle: (page: number) => void;
   onStep: (card: Card, collector: Collector, delta: 1 | -1) => void;
-  onEditCard: (card: Card) => void;
   onEditReward: (page: number) => void;
   t: CollectionTexts;
 }) {
@@ -335,14 +332,6 @@ export function CollectionTab({
                       </>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onEditCard(card)}
-                    aria-label={t.editCard(card.code)}
-                    className="flex size-6.5 items-center justify-center rounded-md text-muted hover:bg-sunken hover:text-foreground"
-                  >
-                    <MoreIcon />
-                  </button>
                 </div>
               ))}
           </div>
