@@ -9,7 +9,6 @@ import type { CollectionTexts } from "@/app/components/CollectionTab";
 import type { ModalTexts } from "@/app/components/Modal";
 import type { PagesTexts } from "@/app/components/PagesTab";
 import type { AppTexts } from "@/app/components/PaniniApp";
-import type { RewardModalTexts } from "@/app/components/RewardModal";
 import type { RewardsTexts } from "@/app/components/RewardsTab";
 import type { SettingsTexts } from "@/app/components/SettingsModal";
 import type { SetupTexts } from "@/app/components/SetupView";
@@ -28,6 +27,5 @@ export type Messages = {
   cardLists: CardListsTexts;
   pages: PagesTexts;
   rewards: RewardsTexts;
-  rewardModal: RewardModalTexts;
   settings: SettingsTexts;
 };

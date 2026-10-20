@@ -128,13 +128,3 @@ export async function updateCollectorAction(
 export async function deleteCollectorAction(collectorId: string) {
   return mutate((ownerId) => store.deleteCollector(ownerId, v.id(collectorId)));
 }
-
-export async function setPageRewardAction(input: unknown) {
-  return mutate((ownerId) => store.setPageReward(ownerId, v.reward(input)));
-}
-
-export async function deletePageRewardAction(page: number) {
-  return mutate((ownerId) =>
-    store.deletePageReward(ownerId, v.int(page, "page", 1, LIMITS.page)),
-  );
-}

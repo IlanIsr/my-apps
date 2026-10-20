@@ -3,7 +3,7 @@
  * cleaned value or throws `InvalidInputError` — never trust what the client sent.
  */
 
-import { COLLECTOR_COLORS, LIMITS, type PageReward } from "./album-logic";
+import { COLLECTOR_COLORS } from "./album-logic";
 
 export class InvalidInputError extends Error {
   constructor(field: string) {
@@ -53,63 +53,4 @@ export function color(value: unknown): string {
     throw new InvalidInputError("color");
   }
   return value as string;
-}
-
-export function reward(value: unknown): PageReward {
-  const v = (value ?? {}) as Record<string, unknown>;
-  const page = int(v.page, "page", 1, LIMITS.page);
-  if (v.kind === "tiers") {
-    if (
-      !Array.isArray(v.tiers) ||
-      !v.tiers.length ||
-      v.tiers.length > LIMITS.tiers
-    ) {
-      throw new InvalidInputError("tiers");
-    }
-    const tiers = v.tiers.map((t: unknown) => {
-      const tier = (t ?? {}) as Record<string, unknown>;
-      return {
-        winners: int(tier.winners, "winners", 1, LIMITS.winners),
-        prize: text(tier.prize, "prize", LIMITS.prize),
-      };
-    });
-    return {
-      page,
-      prize: tiers[0]!.prize,
-      kind: "tiers",
-      deadline: null,
-      winners: null,
-      tiers,
-    };
-  }
-  const prize = text(v.prize, "prize", LIMITS.prize);
-  if (v.kind === "deadline") {
-    if (
-      typeof v.deadline !== "string" ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(v.deadline) ||
-      Number.isNaN(Date.parse(v.deadline))
-    ) {
-      throw new InvalidInputError("deadline");
-    }
-    return {
-      page,
-      prize,
-      kind: "deadline",
-      deadline: v.deadline,
-      winners: null,
-      tiers: null,
-    };
-  }
-  if (v.kind === "first_n") {
-    const winners = int(v.winners, "winners", 1, LIMITS.winners);
-    return {
-      page,
-      prize,
-      kind: "first_n",
-      deadline: null,
-      winners,
-      tiers: null,
-    };
-  }
-  throw new InvalidInputError("kind");
 }

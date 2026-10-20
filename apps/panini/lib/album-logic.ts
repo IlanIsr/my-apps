@@ -64,11 +64,7 @@ export type Album = {
 
 export const LIMITS = {
   name: 60,
-  prize: 120,
-  page: 999,
   collectors: 12,
-  winners: 1_000_000,
-  tiers: 10,
 } as const;
 
 /** Natural order for mixed codes: 1, 2, 12, 12A, 12B, SP1, SP2, SP10… */

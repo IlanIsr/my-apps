@@ -1,9 +1,9 @@
-import type { RewardModalTexts } from "@/app/components/RewardModal";
 import type { RewardsTexts } from "@/app/components/RewardsTab";
 
 import { s } from "./plural";
 
 export const rewards = {
+  search: "Chercher une page ou un prix",
   hideExpired: "Masquer les terminés",
   everyone: "Tout le monde",
   person: "Pour qui",
@@ -32,30 +32,7 @@ export const rewards = {
   },
   complete: "Complète",
   reserveCompletes: "Complétable avec la réserve",
-  missing: (n: number, codes: string) => `Manque ${n} : ${codes}`,
-  edit: "Modifier",
+  missing: (n: number) => `Manque ${n}`,
+  owned: "Possédée",
+  inReserve: "Dans la réserve",
 } as const satisfies RewardsTexts;
-
-export const rewardModal = {
-  title: (page: number) => `Prix de la page ${page}`,
-  newTitle: "Nouveau prix",
-  page: "Page",
-  prize: "Prix à gagner",
-  prizePlaceholder: "ex. Ballon officiel",
-  kind: "Comment le gagner",
-  kindDeadline: "Avant une date",
-  kindFirstN: "Les premiers",
-  kindTiers: "Par paliers",
-  tierWinners: "Nombre de gagnants",
-  tierPrize: "Prix",
-  addTier: "+ Ajouter un palier",
-  removeTier: "Retirer ce palier",
-  tiersHint:
-    "Dans l'ordre d'arrivée : nombre de gagnants, puis le prix. Ex. 1 → vélo, 2 → trottinette (2e et 3e)…",
-  deadline: "Date limite",
-  winners: "Nombre de gagnants",
-  winnersHint: "Les X premiers à compléter la page gagnent.",
-  save: "Enregistrer",
-  cancel: "Annuler",
-  remove: "Supprimer",
-} as const satisfies RewardModalTexts;

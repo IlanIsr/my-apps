@@ -24,7 +24,6 @@ import {
   RESERVE_COLOR,
   sortCards,
   type Album,
-  type PageReward,
   type RewardKind,
 } from "./album-logic";
 import { ALBUM_CARDS } from "./album-cards";
@@ -260,34 +259,3 @@ export async function deleteCollector(
 }
 
 // ---------------- page rewards ----------------
-
-export async function setPageReward(
-  ownerId: string,
-  reward: PageReward,
-): Promise<void> {
-  const albumId = await albumIdOf(ownerId);
-  const values = {
-    prize: reward.prize,
-    kind: reward.kind,
-    deadline: reward.kind === "deadline" ? reward.deadline : null,
-    winners: reward.kind === "first_n" ? reward.winners : null,
-    tiers: reward.kind === "tiers" ? reward.tiers : null,
-  };
-  await db()
-    .insert(pageRewards)
-    .values({ albumId, page: reward.page, ...values })
-    .onConflictDoUpdate({
-      target: [pageRewards.albumId, pageRewards.page],
-      set: values,
-    });
-}
-
-export async function deletePageReward(
-  ownerId: string,
-  page: number,
-): Promise<void> {
-  const albumId = await albumIdOf(ownerId);
-  await db()
-    .delete(pageRewards)
-    .where(and(eq(pageRewards.albumId, albumId), eq(pageRewards.page, page)));
-}

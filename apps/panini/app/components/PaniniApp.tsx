@@ -13,9 +13,7 @@ import {
   addCollectorAction,
   createAlbumAction,
   deleteCollectorAction,
-  deletePageRewardAction,
   resetAlbumAction,
-  setPageRewardAction,
   stepCountAction,
   updateCollectorAction,
   updateSettingsAction,
@@ -26,19 +24,16 @@ import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 import {
   countOf,
   kidsOf,
-  pagesList,
   reserveOf,
   type Album,
   type Card,
   type Collector,
-  type PageReward,
 } from "@/lib/album-logic";
 
 import { ReserveTab, TradesTab } from "./CardLists";
 import { CollectionTab, type CollectionFilters } from "./CollectionTab";
 import { GearIcon } from "./icons";
 import { PagesTab } from "./PagesTab";
-import { RewardModal } from "./RewardModal";
 import { RewardsTab } from "./RewardsTab";
 import { SettingsModal, type SettingsHandlers } from "./SettingsModal";
 import { SetupView } from "./SetupView";
@@ -55,8 +50,7 @@ export type AppTexts = {
   errors: Record<ActionErrorCode, string>;
 };
 
-type ModalState =
-  { type: "settings" } | { type: "reward"; page?: number; reward?: PageReward };
+type ModalState = { type: "settings" };
 
 function withCount(
   album: Album,
@@ -130,7 +124,6 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
 
   const kids = kidsOf(album);
   const reserve = reserveOf(album);
-  const pages = pagesList(album.cards);
 
   function step(card: Card, collector: Collector, delta: 1 | -1) {
     if (delta < 0 && countOf(card, collector.id) === 0) return;
@@ -151,9 +144,6 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
   };
 
   const closeModal = () => setModal(null);
-  const rewardFor = (page: number) =>
-    album.rewards.find((r) => r.page === page);
-
   return (
     <div className="mx-auto max-w-220 px-[clamp(16px,4vw,32px)] pt-2 pb-16">
       <div className="mb-5.5 flex items-start justify-between gap-3">
@@ -208,9 +198,6 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
             })
           }
           onStep={step}
-          onEditReward={(page) =>
-            setModal({ type: "reward", page, reward: rewardFor(page) })
-          }
           t={t.collection}
         />
       )}
@@ -236,9 +223,6 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
           kids={kids}
           reserve={reserve}
           formatDate={formatDate}
-          onEdit={(reward) =>
-            setModal({ type: "reward", page: reward.page, reward })
-          }
           t={t.rewards}
         />
       )}
@@ -266,18 +250,6 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
           handlers={settingsHandlers}
           onClose={closeModal}
           t={t.settings}
-          modalT={t.modal}
-        />
-      )}
-      {modal?.type === "reward" && (
-        <RewardModal
-          page={modal.page}
-          pages={pages}
-          reward={modal.reward}
-          onSave={(reward) => apply(setPageRewardAction(reward))}
-          onDelete={(page) => apply(deletePageRewardAction(page))}
-          onClose={closeModal}
-          t={t.rewardModal}
           modalT={t.modal}
         />
       )}

@@ -3,7 +3,7 @@ import { app, modal } from "./app";
 import { cardLists, pages } from "./card-lists";
 import { collection, stats } from "./collection";
 import { settings } from "./modals";
-import { rewardModal, rewards } from "./rewards";
+import { rewards } from "./rewards";
 import { setup } from "./setup";
 
 /**
@@ -19,6 +19,5 @@ export const fr = {
   cardLists,
   pages,
   rewards,
-  rewardModal,
   settings,
 } as const satisfies Messages;

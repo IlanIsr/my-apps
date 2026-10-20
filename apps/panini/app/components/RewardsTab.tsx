@@ -10,6 +10,8 @@
 import { useState } from "react";
 
 import {
+  cardsOnPage,
+  countOf,
   daysUntil,
   missingOnPage,
   rewardCompletion,
@@ -18,7 +20,6 @@ import {
   tierRanks,
   type Album,
   type Collector,
-  type PageReward,
   type RewardSort,
 } from "@/lib/album-logic";
 
@@ -26,6 +27,7 @@ import { Avatar } from "./Avatar";
 import { ArrowIcon, CheckIcon, ChevronIcon, GiftIcon } from "./icons";
 
 export type RewardsTexts = {
+  search: string;
   hideExpired: string;
   everyone: string;
   person: string;
@@ -50,29 +52,27 @@ export type RewardsTexts = {
   rank: (from: number, to: number) => string;
   complete: string;
   reserveCompletes: string;
-  missing: (n: number, codes: string) => string;
-  edit: string;
+  missing: (n: number) => string;
+  owned: string;
+  inReserve: string;
 };
-
-const MAX_CODES = 8;
 
 export function RewardsTab({
   album,
   kids,
   reserve,
   formatDate,
-  onEdit,
   t,
 }: {
   album: Album;
   kids: Collector[];
   reserve: Collector | undefined;
   formatDate: (isoDate: string) => string;
-  onEdit: (reward: PageReward) => void;
   t: RewardsTexts;
 }) {
   const [sort, setSort] = useState<RewardSort>("date");
   const [desc, setDesc] = useState(false);
+  const [search, setSearch] = useState("");
   const [hideExpired, setHideExpired] = useState(false);
   const [person, setPerson] = useState("all");
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
@@ -83,9 +83,17 @@ export function RewardsTab({
       ? kids.filter((k) => k.id === person)
       : kids;
   const sorted = sortRewardsBy(album.rewards, sort, desc, album.cards, forKids);
-  const rewards = hideExpired
-    ? sorted.filter((r) => !rewardExpired(r))
-    : sorted;
+  // Search a page number ("8") or any prize text, tiers included.
+  const query = search.trim().toLowerCase();
+  const rewards = sorted.filter(
+    (r) =>
+      (!hideExpired || !rewardExpired(r)) &&
+      (!query ||
+        String(r.page) === query ||
+        [r.prize, ...(r.tiers ?? []).map((tier) => tier.prize)].some((p) =>
+          p.toLowerCase().includes(query),
+        )),
+  );
 
   const toggle = (page: number) =>
     setCollapsed((prev) => {
@@ -99,6 +107,14 @@ export function RewardsTab({
       <div className="mb-3.5 flex flex-wrap items-center justify-end gap-2">
         {album.rewards.length > 0 && (
           <>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t.search}
+              aria-label={t.search}
+              className="field-input h-9.5! w-full!"
+            />
             <label className="flex items-center gap-1.5 text-sm">
               <input
                 type="checkbox"
@@ -223,16 +239,6 @@ export function RewardsTab({
                   </ul>
                 )}
               </div>
-              <button
-                type="button"
-                className="text-sm font-semibold text-accent"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(r);
-                }}
-              >
-                {t.edit}
-              </button>
               <ChevronIcon
                 className={`mt-0.5 size-4 shrink-0 text-muted transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
               />
@@ -245,33 +251,62 @@ export function RewardsTab({
                   !!reserve &&
                   missing.length > 0 &&
                   !missingOnPage(album.cards, r.page, k.id, reserve.id).length;
-                const codes =
-                  missing
-                    .slice(0, MAX_CODES)
-                    .map((c) => c.code)
-                    .join(", ") + (missing.length > MAX_CODES ? "…" : "");
                 return (
                   <div
                     key={k.id}
-                    className="flex items-center gap-2 border-t border-line py-1.75 text-[13.5px] first:border-t-0"
+                    className="border-t border-line py-2 text-[13.5px] first:border-t-0"
                   >
-                    <Avatar collector={k} small />
-                    <span className="font-medium">{k.name}</span>
-                    {missing.length ? (
-                      <>
-                        <span className="ml-auto truncate text-muted">
-                          {t.missing(missing.length, codes)}
-                        </span>
-                        {reserveCompletes && (
-                          <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">
-                            {t.reserveCompletes}
+                    <div className="flex items-center gap-2">
+                      <Avatar collector={k} small />
+                      <span className="font-medium">{k.name}</span>
+                      {missing.length ? (
+                        <>
+                          <span className="ml-auto text-muted">
+                            {t.missing(missing.length)}
                           </span>
-                        )}
-                      </>
-                    ) : (
-                      <span className="ml-auto flex items-center gap-1 font-semibold text-accent">
-                        <CheckIcon className="size-3.5" /> {t.complete}
-                      </span>
+                          {reserveCompletes && (
+                            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">
+                              {t.reserveCompletes}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="ml-auto flex items-center gap-1 font-semibold text-accent">
+                          <CheckIcon className="size-3.5" /> {t.complete}
+                        </span>
+                      )}
+                    </div>
+                    {missing.length > 0 && (
+                      // Every card on the page: owned ones filled, ones the
+                      // reserve could give outlined, the rest muted.
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {cardsOnPage(album.cards, r.page).map((c) => {
+                          const owned = countOf(c, k.id) > 0;
+                          const fromReserve =
+                            !owned && !!reserve && countOf(c, reserve.id) > 0;
+                          return (
+                            <span
+                              key={c.id}
+                              title={
+                                owned
+                                  ? t.owned
+                                  : fromReserve
+                                    ? t.inReserve
+                                    : undefined
+                              }
+                              className={`rounded-md px-1.5 py-0.5 font-mono text-[11.5px] ${
+                                owned
+                                  ? "bg-accent font-semibold text-accent-ink"
+                                  : fromReserve
+                                    ? "border border-dashed border-accent text-accent"
+                                    : "bg-sunken text-muted"
+                              }`}
+                            >
+                              {c.code}
+                            </span>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 );

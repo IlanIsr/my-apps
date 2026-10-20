@@ -145,7 +145,6 @@ export function CollectionTab({
   collapsed,
   onToggle,
   onStep,
-  onEditReward,
   t,
 }: {
   album: Album;
@@ -156,7 +155,6 @@ export function CollectionTab({
   collapsed: Set<number>;
   onToggle: (page: number) => void;
   onStep: (card: Card, collector: Collector, delta: 1 | -1) => void;
-  onEditReward: (page: number) => void;
   t: CollectionTexts;
 }) {
   const pages = pagesList(album.cards);
@@ -275,22 +273,15 @@ export function CollectionTab({
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditReward(page);
-                  }}
-                  aria-label={t.reward(page)}
-                  title={reward?.prize ?? t.reward(page)}
-                  className={`flex size-7 items-center justify-center rounded-md ${
-                    reward
-                      ? "bg-accent-soft text-accent"
-                      : "text-muted/60 hover:text-foreground"
-                  }`}
-                >
-                  <GiftIcon />
-                </button>
+                {reward && (
+                  <span
+                    title={reward.prize}
+                    aria-label={t.reward(page)}
+                    className="flex size-7 items-center justify-center rounded-md bg-accent-soft text-accent"
+                  >
+                    <GiftIcon />
+                  </span>
+                )}
                 <ChevronIcon
                   className={`size-4 text-muted transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
                 />
