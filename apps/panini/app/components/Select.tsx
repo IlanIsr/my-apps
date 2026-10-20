@@ -34,15 +34,16 @@ export function Select({
         <HeroSelect.Value />
         <HeroSelect.Indicator />
       </HeroSelect.Trigger>
-      {/* Size to the options (≥ the trigger), so a compact trigger doesn't
-          squeeze the selected-item checkmark onto the label. */}
-      <HeroSelect.Popover className="w-max">
+      <HeroSelect.Popover>
         <ListBox>
           {options.map((option) => (
             <ListBox.Item
               key={option.key}
               id={option.key}
               textValue={option.label}
+              // HeroUI leaves only ~4px between the longest label and the
+              // checkmark (pe-7 with the mark at end-2) — give it room.
+              className="pe-10"
             >
               {option.label}
               <ListBox.ItemIndicator />

@@ -12,7 +12,9 @@ import { Figtree, Fraunces, JetBrains_Mono } from "next/font/google";
 import { AuthControl } from "@repo/auth/nav";
 import { AuthProvider } from "@repo/auth/provider";
 
-import { I18nProvider } from "@/i18n";
+import { I18nProvider as AriaI18nProvider } from "@repo/ui/i18n-provider";
+
+import { I18nProvider, LOCALE_TAG } from "@/i18n";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -66,10 +68,14 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
         <AuthProvider>
           <I18nProvider>
-            <header className="flex justify-end px-4 pt-4">
-              <AuthControl />
-            </header>
-            {children}
+            {/* HeroUI / React Aria take their direction from this, not from
+                <html dir> — pin it so a Hebrew browser doesn't flip panini. */}
+            <AriaI18nProvider locale={LOCALE_TAG.fr}>
+              <header className="flex justify-end px-4 pt-4">
+                <AuthControl />
+              </header>
+              {children}
+            </AriaI18nProvider>
           </I18nProvider>
         </AuthProvider>
       </body>
