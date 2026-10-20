@@ -42,6 +42,7 @@ import { addAnniversaryAction } from "../../anniversaries/actions";
 export type AnniversaryFormTexts = {
   name: string;
   namePlaceholder: string;
+  hebrewName: string;
   type: string;
   types: { birthday: string; yahrzeit: string };
   hebDate: string;
@@ -76,6 +77,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const gregYears = useMemo(() => gregorianYearOptions(), []);
 
   const [name, setName] = useState("");
+  const [hebrewName, setHebrewName] = useState("");
   const [type, setType] = useState<AnniversaryType>("birthday");
   const [fromGregorian, setFromGregorian] = useState(false);
   const [day, setDay] = useState("1");
@@ -134,6 +136,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
     setPending(true);
     const result = await addAnniversaryAction({
       name: name.trim(),
+      hebrewName: hebrewName.trim() || undefined,
       type,
       hebDay,
       hebMonth,
@@ -176,6 +179,21 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
           onChange={(e) => setName(e.target.value)}
           placeholder={t.namePlaceholder}
           className="font-display text-base"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className={label}>
+          {t.hebrewName}{" "}
+          <span className="normal-case tracking-normal text-subtle-foreground/70">
+            {t.optional}
+          </span>
+        </span>
+        <TextInput
+          value={hebrewName}
+          onChange={(e) => setHebrewName(e.target.value)}
+          className="font-display text-base"
+          dir="rtl"
         />
       </label>
 

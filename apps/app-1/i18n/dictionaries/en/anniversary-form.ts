@@ -8,6 +8,7 @@ const NOT_CONFIGURED = "The shared anniversaries calendar isn’t set up yet.";
 export const anniversaryForm = {
   name: "Name",
   namePlaceholder: "Ilan Israel Bellaiche",
+  hebrewName: "Hebrew name",
   type: "What is it?",
   types: { birthday: "Birthday", yahrzeit: "Yahrzeit" },
   hebDate: "Hebrew date",

@@ -8,6 +8,7 @@ const NOT_CONFIGURED = "לוח ימי ההולדת המשותף עדיין לא 
 export const anniversaryForm = {
   name: "שם",
   namePlaceholder: "אילן ישראל בלייש",
+  hebrewName: "שם עברי",
   type: "מהו האירוע?",
   types: { birthday: "יום הולדת", yahrzeit: "אזכרה" },
   hebDate: "תאריך עברי",

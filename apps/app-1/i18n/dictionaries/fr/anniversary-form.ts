@@ -9,6 +9,7 @@ const NOT_CONFIGURED =
 export const anniversaryForm = {
   name: "Nom",
   namePlaceholder: "Ilan Israel Bellaiche",
+  hebrewName: "Nom hébraïque",
   type: "De quoi s’agit-il ?",
   types: { birthday: "Anniversaire", yahrzeit: "Yahrzeit" },
   hebDate: "Date hébraïque",
