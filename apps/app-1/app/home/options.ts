@@ -8,40 +8,8 @@
 import { HEBREW_MONTH_KEYS, type HebrewMonthKey } from "@repo/hebcal";
 
 import { LOCALE_TAG, type Locale } from "@/i18n";
+import { HEBREW_DAY_LETTERS } from "@/lib/heb-date";
 import type { Option } from "../components/Select";
-
-const HEBREW_DAY_LETTERS = [
-  "א",
-  "ב",
-  "ג",
-  "ד",
-  "ה",
-  "ו",
-  "ז",
-  "ח",
-  "ט",
-  "י",
-  "יא",
-  "יב",
-  "יג",
-  "יד",
-  "טו",
-  "טז",
-  "יז",
-  "יח",
-  "יט",
-  "כ",
-  "כא",
-  "כב",
-  "כג",
-  "כד",
-  "כה",
-  "כו",
-  "כז",
-  "כח",
-  "כט",
-  "ל",
-];
 
 /** Hebrew day 1–30: Hebrew numerals for `he`, plain digits otherwise. */
 export function hebrewDayOptions(locale: Locale): Option[] {

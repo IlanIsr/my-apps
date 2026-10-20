@@ -17,6 +17,7 @@ import { resolveErrorMessage } from "@repo/utils";
 import { createShareLinkAction } from "../../anniversaries/actions";
 import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
+import { HebDate } from "../HebDate";
 import { TextInput } from "../TextInput";
 
 /** Text for {@link CreateShareLinkModal}. */
@@ -168,9 +169,8 @@ export function CreateShareLinkModal({
                           ? "text-yahrzeit"
                           : "text-birthday"
                       }`}
-                      dir="ltr"
                     >
-                      {a.hebDateLabel}
+                      <HebDate hebDate={a.hebDate} label={a.hebDateLabel} />
                     </span>
                   </Checkbox>
                 </li>

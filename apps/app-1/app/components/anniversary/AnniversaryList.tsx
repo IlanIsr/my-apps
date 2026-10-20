@@ -7,6 +7,7 @@ import { LOCALE_TAG, useLanguage } from "@/i18n";
 import { occurrencesSince, type Anniversary } from "@repo/anniversaries/person";
 
 import { Eyebrow } from "../Eyebrow";
+import { HebDate } from "../HebDate";
 import { Ornament } from "../Ornament";
 import { Button } from "../Button";
 import { TextInput } from "../TextInput";
@@ -184,9 +185,13 @@ function AnniversaryCard({
             className={`font-display text-[15px] ${
               yahrzeit ? "text-yahrzeit" : "text-birthday"
             }`}
-            dir="ltr"
           >
-            {anniversary.hebDateLabel}
+            {/* Inline, so the block aligns with the page (right in Hebrew)
+                rather than with the name's width. */}
+            <HebDate
+              hebDate={anniversary.hebDate}
+              label={anniversary.hebDateLabel}
+            />
           </div>
         </div>
         {anniversary.joined && (

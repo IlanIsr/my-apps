@@ -478,6 +478,7 @@ export type ShareLinkPreviewItem = {
   id: string;
   name: string;
   type: AnniversaryType;
+  hebDate: { day: number; month: HebrewMonthKey };
   hebDateLabel: string;
   /** The viewer is already a member — show it pre-checked and disabled. */
   alreadyJoined: boolean;
@@ -538,6 +539,7 @@ export async function getShareLinkPreview(
       id: person.id,
       name: person.name,
       type: person.type,
+      hebDate: person.hebDate,
       hebDateLabel: formatHebDateLabel(person.hebDate),
       alreadyJoined: person.members.includes(email),
     });

@@ -23,6 +23,7 @@ import { joinShareLinkAction } from "../../actions";
 import { CalendarUnavailable } from "../../../components/anniversary/CalendarUnavailable";
 import { Button } from "../../../components/Button";
 import { Checkbox } from "../../../components/Checkbox";
+import { HebDate } from "../../../components/HebDate";
 
 /** Text for {@link ShareLinkView}. */
 export type ShareLinkViewTexts = {
@@ -143,9 +144,8 @@ export function ShareLinkView({
                 className={`ms-auto text-[11px] ${
                   item.type === "yahrzeit" ? "text-yahrzeit" : "text-birthday"
                 }`}
-                dir="ltr"
               >
-                {item.hebDateLabel}
+                <HebDate hebDate={item.hebDate} label={item.hebDateLabel} />
               </span>
               {item.alreadyJoined && (
                 <span className="text-[11px] text-subtle-foreground">

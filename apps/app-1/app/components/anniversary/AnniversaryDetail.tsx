@@ -20,6 +20,7 @@ import {
 import { BackLink } from "../BackLink";
 import { Button } from "../Button";
 import { Eyebrow } from "../Eyebrow";
+import { HebDate } from "../HebDate";
 import { Ornament } from "../Ornament";
 import {
   CreateShareLinkModal,
@@ -140,8 +141,11 @@ export function AnniversaryDetail({
           >
             {anniversary.name}
           </h1>
-          <p className={`mt-0.5 font-display text-lg ${accentText}`} dir="ltr">
-            {anniversary.hebDateLabel}
+          <p className={`mt-0.5 font-display text-lg ${accentText}`}>
+            <HebDate
+              hebDate={anniversary.hebDate}
+              label={anniversary.hebDateLabel}
+            />
           </p>
           <Ornament full className="mt-4" />
         </div>
