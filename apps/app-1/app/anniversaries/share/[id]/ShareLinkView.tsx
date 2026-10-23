@@ -117,6 +117,11 @@ export function ShareLinkView({
       return;
     }
     const { joined, alreadyJoined, failed, rateLimited } = result.data;
+    // All went through → straight to the list; otherwise stay and explain.
+    if (failed === 0 && !rateLimited) {
+      router.push("/anniversaries");
+      return;
+    }
     setMessage(
       (rateLimited ? `${t.rateLimited} ` : "") +
         t.result(joined, alreadyJoined, failed),
