@@ -31,7 +31,7 @@ Requires Node >= 24 and pnpm 11 (`packageManager` is pinned to `pnpm@11.25.0`).
 
 ### Architecture rules to preserve
 
-- Apps are independent and independently buildable/deployable, each with its own backend resources — do not merge them. (app-1 and panini → Vercel + their own Neon project each; landing → no deploy target for now.)
+- Apps are independent and independently buildable/deployable, each with its own backend resources — do not merge them. (app-1 and panini → Vercel + their own Neon project each; landing → Vercel `myappshub`, no backend.)
 - Shared code lives in `packages/*`. An app must never import source from another app. A concern used by more than one app becomes a package.
 - Don't over-engineer shared packages. **Every UI control comes from HeroUI through `packages/ui`** (`@repo/ui/*`) — never import `@heroui/react` from an app, and don't hand-roll a `<button>` / `<input>` / `<select>` / checkbox in app-1 or panini (each has `app/components/Button`, `TextInput`, `Select`, `Checkbox` — plus `Segmented` in app-1 — sitting on `@repo/ui`). Occurrences are never edited one by one (the per-event editor was removed); they follow from the Hebrew date.
 - Prefer simple, maintainable solutions. Preserve the working pnpm + Turborepo setup and each app's deployment wiring (Vercel for app-1 and panini).
@@ -154,15 +154,15 @@ Vercel project **`panini`** (root directory `apps/panini`, production branch `ma
 | Preview     | Neon `panini` / `preprod`                        | dev instance (`pk_test`, = local)   |
 | Development | Neon `panini` / `preprod`                        | dev instance                        |
 
-Production URL: the Vercel-provided **`panini-weld.vercel.app`** (no custom domain for now). A Clerk production instance only works on its own domain (app-1's is bound to `anniversaries.dev`), so on a `*.vercel.app` URL panini can't use a prod Clerk instance — **Production temporarily uses the Clerk dev instance** (same keys as Preview/local; "Development mode" banner, dev user cap). Moving to a custom domain + prod instance later changes the owner's Clerk user id: re-point their album with `UPDATE albums SET owner_id = '<new id>' WHERE owner_id = '<old id>'`.
+Production URL: **`panini.myappshub.dev`** (CNAME at Cloudflare, DNS only; the old `panini-weld.vercel.app` alias is being retired). A Clerk production instance only works on its own domain (app-1's is bound to `anniversaries.dev`), and none exists for `myappshub.dev` yet — **Production temporarily uses the Clerk dev instance** (same keys as Preview/local; "Development mode" banner, dev user cap). Moving to a custom domain + prod instance later changes the owner's Clerk user id: re-point their album with `UPDATE albums SET owner_id = '<new id>' WHERE owner_id = '<old id>'`.
 
 Local `next dev` / `drizzle-kit` read `apps/panini/.env` (`DATABASE_URL` → `preprod`). Clerk user ids differ between the dev and prod Clerk instances, so data created locally / on Preview belongs to a different id than in production.
 
 Migrations: `pnpm --filter panini db:generate` (after editing `db/schema.ts`, offline) / `db:migrate` / `db:studio`.
 
-### landing
+### landing → Vercel (`myappshub.dev`)
 
-`landing` has **no deploy target** at the moment (it used to be on Firebase App Hosting; Firebase has been removed from the repo). If it gets deployed again, use a Vercel project like app-1 / panini.
+Vercel project **`myappshub`** (root directory `apps/landing`, production branch `main`, Node 24, "skip unaffected projects" on, no database). Domain **`myappshub.dev`** (registered outside Vercel, DNS at **Cloudflare**); `www.myappshub.dev` 308-redirects to the apex. The other sub-apps go on subdomains of it (`panini.myappshub.dev`, …) — except app-1, which keeps `anniversaries.dev`. Clerk keys = the **dev** instance (`pk_test`) in all three environments for now, same as panini.
 
 ## Custom domains (test/simulation — no domain purchased)
 
@@ -170,7 +170,7 @@ Plan: use the free `is-a.dev` service.
 
 - `ilanisr.is-a.dev` — personal root/landing
 - `app1.ilanisr.is-a.dev` → Vercel app-1 (app-1 currently lives on `anniversaries.dev`)
-- `panini.ilanisr.is-a.dev` → Vercel panini (panini currently lives on `panini-weld.vercel.app`)
+- `panini.ilanisr.is-a.dev` → Vercel panini (superseded: panini now lives on `panini.myappshub.dev`)
 
 The root registration is PR [is-a-dev/register#50502](https://github.com/is-a-dev/register/pull/50502) (from fork `IlanIsr/register`, file `domains/ilanisr.json`). Checks pass; awaiting maintainer merge. An hourly monitor watches the PR.
 
