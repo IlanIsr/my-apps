@@ -1,6 +1,9 @@
 /* Shared Tailwind base config for all apps. Placeholder palette — will evolve. */
 @import "tailwindcss";
 
+/* Shared components (`@repo/ui`) live outside each app — scan them too. */
+@source "../ui/src";
+
 /* Class-based dark mode: set `class="dark"` on <html> (next-themes does this). */
 @custom-variant dark (&:where(.dark, .dark *));
 
