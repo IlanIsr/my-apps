@@ -73,8 +73,18 @@ export function CreateShareLinkModal({
       return next;
     });
 
+  // Freeze the page behind the modal while it's open.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    const { style } = document.documentElement;
+    const previous = style.overflow;
+    style.overflow = "hidden";
+    return () => {
+      style.overflow = previous;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKey =(e: KeyboardEvent) => {
       if (e.key === "Escape" && !pending) onClose();
     };
     document.addEventListener("keydown", onKey);
@@ -125,7 +135,7 @@ export function CreateShareLinkModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85vh] w-full max-w-md flex-col gap-4 overflow-y-auto rounded-card border border-border bg-card p-5 shadow-xl"
+        className="flex max-h-[85vh] w-full max-w-md flex-col gap-4 overflow-y-auto overscroll-contain rounded-card border border-border bg-card p-5 shadow-xl"
       >
         <div>
           <h2 className="font-display text-xl font-semibold">{t.title}</h2>
