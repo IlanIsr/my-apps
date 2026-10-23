@@ -84,7 +84,7 @@ export function CreateShareLinkModal({
   }, []);
 
   useEffect(() => {
-    const onKey =(e: KeyboardEvent) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !pending) onClose();
     };
     document.addEventListener("keydown", onKey);
