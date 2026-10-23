@@ -19,5 +19,7 @@ export const createShareLinkModal = {
   linkIntro: "Share this link with whoever you like:",
   expiresIn: "Expires in 24 hours. Anyone can open it and join until then.",
   nothingSelected: "Pick at least one anniversary.",
+  search: "Search…",
+  noResults: "No match.",
   error: (message: string) => `Something went wrong: ${message}`,
 } as const satisfies CreateShareLinkModalTexts;

@@ -20,5 +20,7 @@ export const createShareLinkModal = {
   expiresIn:
     "Expire dans 24 heures. Tout le monde peut l’ouvrir et rejoindre jusque-là.",
   nothingSelected: "Choisissez au moins un anniversaire.",
+  search: "Rechercher…",
+  noResults: "Aucun résultat.",
   error: (message: string) => `Une erreur est survenue : ${message}`,
 } as const satisfies CreateShareLinkModalTexts;

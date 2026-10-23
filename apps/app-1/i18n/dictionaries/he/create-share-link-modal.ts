@@ -19,5 +19,7 @@ export const createShareLinkModal = {
   linkIntro: "שתפו את הקישור הזה עם מי שתרצו:",
   expiresIn: "תקף ל-24 שעות. כל אחד יכול לפתוח אותו ולהצטרף עד אז.",
   nothingSelected: "בחרו לפחות יום הולדת אחד.",
+  search: "חיפוש…",
+  noResults: "אין תוצאות.",
   error: (message: string) => `משהו השתבש: ${message}`,
 } as const satisfies CreateShareLinkModalTexts;

@@ -170,10 +170,17 @@ export function ShareLinkView({
       {message && <p className="text-sm text-muted-foreground">{message}</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {joinable.length > 0 && (
+      {joinable.length > 0 ? (
         <Button onClick={submit} disabled={pending} className="self-start">
           {pending ? t.joining : t.join}
         </Button>
+      ) : (
+        <Link
+          href="/anniversaries"
+          className="self-start text-sm font-semibold text-primary hover:underline"
+        >
+          {t.backToList}
+        </Link>
       )}
     </div>
   );

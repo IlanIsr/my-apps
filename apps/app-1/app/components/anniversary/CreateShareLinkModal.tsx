@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 
 import type { Anniversary } from "@repo/anniversaries/person";
 import { resolveErrorMessage } from "@repo/utils";
+import { fuzzyMatch } from "@/lib/fuzzy";
 import { createShareLinkAction } from "../../anniversaries/actions";
 import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
@@ -34,6 +35,8 @@ export type CreateShareLinkModalTexts = {
   linkIntro: string;
   expiresIn: string;
   nothingSelected: string;
+  search: string;
+  noResults: string;
   error: (message: string) => string;
 };
 
@@ -53,6 +56,22 @@ export function CreateShareLinkModal({
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+
+  // Search only filters what's shown — selection of hidden items is kept, and
+  // "select all / clear all" act on the visible ones.
+  const visible = anniversaries.filter((a) =>
+    fuzzyMatch(query, [a.name, a.hebrewName ?? "", a.hebDateLabel].join(" ")),
+  );
+  const setVisible = (on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const a of visible) {
+        if (on) next.add(a.id);
+        else next.delete(a.id);
+      }
+      return next;
+    });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -135,27 +154,37 @@ export function CreateShareLinkModal({
           </div>
         ) : (
           <form onSubmit={submit} className="flex flex-col gap-4">
+            {anniversaries.length > 5 && (
+              <TextInput
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t.search}
+                aria-label={t.search}
+              />
+            )}
+
             <div className="flex items-center justify-between text-xs">
               <span className="text-subtle-foreground">
                 {selected.size}/{anniversaries.length}
               </span>
               <div className="flex gap-2">
-                <Button
-                  onClick={() =>
-                    setSelected(new Set(anniversaries.map((a) => a.id)))
-                  }
-                  variant="ghost"
-                >
+                <Button onClick={() => setVisible(true)} variant="ghost">
                   {t.selectAll}
                 </Button>
-                <Button onClick={() => setSelected(new Set())} variant="ghost">
+                <Button onClick={() => setVisible(false)} variant="ghost">
                   {t.clearAll}
                 </Button>
               </div>
             </div>
 
-            <ul className="flex flex-col divide-y divide-hairline overflow-hidden rounded-field border border-border">
-              {anniversaries.map((a) => (
+            {visible.length === 0 && (
+              <p className="py-2 text-center text-sm text-muted-foreground">
+                {t.noResults}
+              </p>
+            )}
+            <ul className="flex flex-col divide-y divide-hairline overflow-hidden rounded-field border border-border empty:hidden">
+              {visible.map((a) => (
                 <li key={a.id}>
                   <Checkbox
                     checked={selected.has(a.id)}
