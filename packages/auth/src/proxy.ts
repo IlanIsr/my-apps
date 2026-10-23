@@ -39,7 +39,11 @@ export function createClerkProxy(publicPaths: readonly string[] = []) {
     const { pathname } = request.nextUrl;
 
     if (!userId && !isAlwaysPublic(pathname) && !isExtraPublic(pathname)) {
-      return NextResponse.redirect(new URL("/sign-in", request.url));
+      // `redirect_url` sends the user back here after signing in (Clerk's
+      // <SignIn> reads it) — otherwise e.g. a share link is lost on the way.
+      const signIn = new URL("/sign-in", request.url);
+      signIn.searchParams.set("redirect_url", request.url);
+      return NextResponse.redirect(signIn);
     }
   });
 }

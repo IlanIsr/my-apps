@@ -8,6 +8,9 @@ export const shareLinkView = {
   expiredTitle: "Ce lien a expiré",
   expiredBody:
     "Les liens de partage ne durent que 24 heures. Demandez-en un nouveau.",
+  emptyTitle: "Rien à rejoindre",
+  emptyBody:
+    "Les anniversaires de ce lien n'existent plus. Demandez-en un nouveau.",
   backToList: "Retour à ma liste",
   alreadyJoined: "Déjà dans votre liste",
   join: "Rejoindre la sélection",

@@ -31,6 +31,8 @@ export type ShareLinkViewTexts = {
   intro: string;
   expiredTitle: string;
   expiredBody: string;
+  emptyTitle: string;
+  emptyBody: string;
   backToList: string;
   alreadyJoined: string;
   join: string;
@@ -70,12 +72,15 @@ export function ShareLinkView({
   }
   if (!preview) return null;
 
-  if (preview.expired) {
+  // Expired, or every anniversary it covered has been deleted since.
+  if (preview.expired || preview.items.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 py-16 text-center">
-        <p className="font-display text-xl font-semibold">{t.expiredTitle}</p>
+        <p className="font-display text-xl font-semibold">
+          {preview.expired ? t.expiredTitle : t.emptyTitle}
+        </p>
         <p className="max-w-xs text-sm text-muted-foreground">
-          {t.expiredBody}
+          {preview.expired ? t.expiredBody : t.emptyBody}
         </p>
         <Link
           href="/anniversaries"

@@ -7,6 +7,9 @@ export const shareLinkView = {
     "Pick the ones you'd like to join — you'll be added to each and get a calendar invite.",
   expiredTitle: "This link has expired",
   expiredBody: "Share links only last 24 hours. Ask for a new one.",
+  emptyTitle: "Nothing to join",
+  emptyBody:
+    "The anniversaries in this link no longer exist. Ask for a new one.",
   backToList: "Back to my list",
   alreadyJoined: "Already on your list",
   join: "Join selected",
