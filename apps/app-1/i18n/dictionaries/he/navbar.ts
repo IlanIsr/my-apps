@@ -12,4 +12,5 @@ export const navbar = {
   languageLabel: "שפה",
   themeToggle: "החלפת ערכת נושא",
   signIn: "התחברות",
+  menu: "תפריט",
 } as const satisfies NavbarTexts;

@@ -12,4 +12,5 @@ export const navbar = {
   languageLabel: "Langue",
   themeToggle: "Changer de thème",
   signIn: "Se connecter",
+  menu: "Menu",
 } as const satisfies NavbarTexts;
