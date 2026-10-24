@@ -1,14 +1,14 @@
 /**
  * Next.js 16 network-boundary handler. Delegates to the shared Clerk proxy
  * (`@repo/auth/proxy`), gating every route behind a session — except the
- * home page (`/`, just links; each app gates itself) and the privacy policy
- * (`/privacy`), which must be public for the Google OAuth consent screen. `config.matcher` must be a literal here — Next can't read it
+ * privacy policy (`/privacy`), which must be public for the Google OAuth
+ * consent screen. The hub stays gated: it lists every app. `config.matcher` must be a literal here — Next can't read it
  * through the re-export.
  */
 
 import { createClerkProxy } from "@repo/auth/proxy";
 
-export default createClerkProxy(["/", "/privacy"]);
+export default createClerkProxy(["/privacy"]);
 
 export const config = {
   matcher: [

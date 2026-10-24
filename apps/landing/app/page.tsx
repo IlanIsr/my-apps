@@ -1,6 +1,6 @@
 /**
- * The `landing` index page (myappshub.dev): one button per app. Public — it's
- * only links, and each app has its own sign-in gate.
+ * The `landing` index page (myappshub.dev): one button per app. Behind the
+ * sign-in gate, like every page except `/privacy`.
  *
  * The app list is hardcoded. In dev the links point at the local dev servers
  * so cross-app navigation — and the shared Clerk session across localhost
