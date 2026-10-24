@@ -28,10 +28,12 @@ export function Select({
       value={value}
       onChange={(key) => key !== null && onChange(String(key))}
       aria-label={ariaLabel}
-      className={className}
+      // `min-w-0`: in a flex row, shrink to its basis instead of the label width.
+      className={`min-w-0 ${className ?? ""}`}
     >
       <HeroSelect.Trigger>
-        <HeroSelect.Value />
+        {/* One line, ellipsis — a long label must not wrap the trigger. */}
+        <HeroSelect.Value className="min-w-0 truncate" />
         <HeroSelect.Indicator />
       </HeroSelect.Trigger>
       <HeroSelect.Popover>

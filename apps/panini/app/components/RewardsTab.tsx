@@ -5,6 +5,8 @@
  * (either direction, for everyone or one kid), with each kid's status —
  * complete, which cards they still need, and whether the reserve can finish
  * the page for them. Finished deadlines can be hidden, each prize collapsed.
+ * "Tout en commun" pools every card (kids + reserve) instead: one row per
+ * prize saying whether they could have finished the page together.
  */
 
 import { useState } from "react";
@@ -14,6 +16,8 @@ import {
   countOf,
   daysUntil,
   missingOnPage,
+  pooledCompletion,
+  pooledMissingOnPage,
   rewardCompletion,
   rewardExpired,
   sortRewardsBy,
@@ -59,6 +63,9 @@ export type RewardsTexts = {
   missing: (n: number) => string;
   owned: string;
   inReserve: string;
+  together: string;
+  togetherRow: string;
+  completeTogether: string;
 };
 
 export function RewardsTab({
@@ -79,6 +86,7 @@ export function RewardsTab({
   const [search, setSearch] = useState("");
   const [hideExpired, setHideExpired] = useState(false);
   const [person, setPerson] = useState("all");
+  const [together, setTogether] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 
   // Completion % (shown and sorted on) is for the picked kid, or everyone.
@@ -86,7 +94,13 @@ export function RewardsTab({
     sort === "completion" && person !== "all"
       ? kids.filter((k) => k.id === person)
       : kids;
-  const sorted = sortRewardsBy(album.rewards, sort, desc, album.cards, forKids);
+  // Pooled: kids + reserve, a card counts if anyone has it.
+  const pool = [...kids, ...(reserve ? [reserve] : [])].map((c) => c.id);
+  const completionOf = (page: number) =>
+    together
+      ? pooledCompletion(album.cards, page, pool)
+      : rewardCompletion(album.cards, page, forKids);
+  const sorted = sortRewardsBy(album.rewards, sort, desc, completionOf);
   // Search a page number ("8") or any prize text, tiers included.
   const query = search.trim().toLowerCase();
   const rewards = sorted.filter(
@@ -125,6 +139,13 @@ export function RewardsTab({
             >
               {t.hideExpired}
             </Checkbox>
+            <Checkbox
+              checked={together}
+              onChange={setTogether}
+              className="flex items-center gap-1.5 text-sm"
+            >
+              {t.together}
+            </Checkbox>
             <Select
               value={sort}
               onChange={(value) => setSort(value as RewardSort)}
@@ -136,7 +157,7 @@ export function RewardsTab({
               ]}
               className="ml-auto"
             />
-            {sort === "completion" && (
+            {sort === "completion" && !together && (
               <Select
                 value={person}
                 onChange={setPerson}
@@ -196,7 +217,7 @@ export function RewardsTab({
                   {r.kind === "tiers" ? t.tiersTitle : r.prize}
                 </h3>
                 <p className="text-xs font-semibold text-accent">
-                  {t.completion(rewardCompletion(album.cards, r.page, forKids))}
+                  {t.completion(completionOf(r.page))}
                 </p>
                 <p className="text-xs text-muted">
                   {r.kind === "deadline" && r.deadline ? (
@@ -240,77 +261,133 @@ export function RewardsTab({
               />
             </div>
             <div className={isCollapsed ? "hidden" : "mt-2.5"}>
-              {kids.map((k) => {
-                const missing = missingOnPage(album.cards, r.page, k.id);
-                // Every card still missing is sitting in the reserve.
-                const reserveCompletes =
-                  !!reserve &&
-                  missing.length > 0 &&
-                  !missingOnPage(album.cards, r.page, k.id, reserve.id).length;
-                return (
-                  <div
-                    key={k.id}
-                    className="border-t border-line py-2 text-[13.5px] first:border-t-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Avatar collector={k} small />
-                      <span className="font-medium">{k.name}</span>
-                      {missing.length ? (
-                        <>
-                          <span className="ml-auto text-muted">
-                            {t.missing(missing.length)}
-                          </span>
-                          {reserveCompletes && (
-                            <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">
-                              {t.reserveCompletes}
+              {together && (
+                <PooledRow album={album} page={r.page} pool={pool} t={t} />
+              )}
+              {!together &&
+                kids.map((k) => {
+                  const missing = missingOnPage(album.cards, r.page, k.id);
+                  // Every card still missing is sitting in the reserve.
+                  const reserveCompletes =
+                    !!reserve &&
+                    missing.length > 0 &&
+                    !missingOnPage(album.cards, r.page, k.id, reserve.id)
+                      .length;
+                  return (
+                    <div
+                      key={k.id}
+                      className="border-t border-line py-2 text-[13.5px] first:border-t-0"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar collector={k} small />
+                        <span className="font-medium">{k.name}</span>
+                        {missing.length ? (
+                          <>
+                            <span className="ml-auto text-muted">
+                              {t.missing(missing.length)}
                             </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="ml-auto flex items-center gap-1 font-semibold text-accent">
-                          <CheckIcon className="size-3.5" /> {t.complete}
-                        </span>
+                            {reserveCompletes && (
+                              <span className="shrink-0 rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">
+                                {t.reserveCompletes}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="ml-auto flex items-center gap-1 font-semibold text-accent">
+                            <CheckIcon className="size-3.5" /> {t.complete}
+                          </span>
+                        )}
+                      </div>
+                      {missing.length > 0 && (
+                        // Every card on the page: owned ones filled, ones the
+                        // reserve could give outlined, the rest muted.
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {cardsOnPage(album.cards, r.page).map((c) => {
+                            const owned = countOf(c, k.id) > 0;
+                            const fromReserve =
+                              !owned && !!reserve && countOf(c, reserve.id) > 0;
+                            return (
+                              <span
+                                key={c.id}
+                                title={
+                                  owned
+                                    ? t.owned
+                                    : fromReserve
+                                      ? t.inReserve
+                                      : undefined
+                                }
+                                className={`rounded-md px-1.5 py-0.5 font-mono text-[11.5px] ${
+                                  owned
+                                    ? "bg-accent font-semibold text-accent-ink"
+                                    : fromReserve
+                                      ? "border border-dashed border-accent text-accent"
+                                      : "bg-sunken text-muted"
+                                }`}
+                              >
+                                {c.code}
+                              </span>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
-                    {missing.length > 0 && (
-                      // Every card on the page: owned ones filled, ones the
-                      // reserve could give outlined, the rest muted.
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {cardsOnPage(album.cards, r.page).map((c) => {
-                          const owned = countOf(c, k.id) > 0;
-                          const fromReserve =
-                            !owned && !!reserve && countOf(c, reserve.id) > 0;
-                          return (
-                            <span
-                              key={c.id}
-                              title={
-                                owned
-                                  ? t.owned
-                                  : fromReserve
-                                    ? t.inReserve
-                                    : undefined
-                              }
-                              className={`rounded-md px-1.5 py-0.5 font-mono text-[11.5px] ${
-                                owned
-                                  ? "bg-accent font-semibold text-accent-ink"
-                                  : fromReserve
-                                    ? "border border-dashed border-accent text-accent"
-                                    : "bg-sunken text-muted"
-                              }`}
-                            >
-                              {c.code}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         );
       })}
     </>
+  );
+}
+
+/** "Tout en commun": the page as if every card (kids + reserve) were shared. */
+function PooledRow({
+  album,
+  page,
+  pool,
+  t,
+}: {
+  album: Album;
+  page: number;
+  pool: string[];
+  t: RewardsTexts;
+}) {
+  const missing = pooledMissingOnPage(album.cards, page, pool);
+  return (
+    <div className="py-2 text-[13.5px]">
+      <div className="flex items-center gap-2">
+        <span className="font-medium">{t.togetherRow}</span>
+        {missing.length ? (
+          <span className="ml-auto text-muted">
+            {t.missing(missing.length)}
+          </span>
+        ) : (
+          <span className="ml-auto flex items-center gap-1 font-semibold text-accent">
+            <CheckIcon className="size-3.5" /> {t.completeTogether}
+          </span>
+        )}
+      </div>
+      {missing.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {cardsOnPage(album.cards, page).map((c) => {
+            const owned = pool.some((id) => countOf(c, id) > 0);
+            return (
+              <span
+                key={c.id}
+                title={owned ? t.owned : undefined}
+                className={`rounded-md px-1.5 py-0.5 font-mono text-[11.5px] ${
+                  owned
+                    ? "bg-accent font-semibold text-accent-ink"
+                    : "bg-sunken text-muted"
+                }`}
+              >
+                {c.code}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

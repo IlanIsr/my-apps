@@ -213,20 +213,43 @@ export function rewardCompletion(
   return Math.round(((total - missing) / total) * 100);
 }
 
+/** Cards on `page` that none of `collectorIds` has — everyone's cards pooled. */
+export function pooledMissingOnPage(
+  cards: Card[],
+  page: number,
+  collectorIds: string[],
+): Card[] {
+  return cardsOnPage(cards, page).filter((c) =>
+    collectorIds.every((id) => countOf(c, id) === 0),
+  );
+}
+
+/** Share of a page's cards someone in `collectorIds` has (0–100). */
+export function pooledCompletion(
+  cards: Card[],
+  page: number,
+  collectorIds: string[],
+): number {
+  const total = cardsOnPage(cards, page).length;
+  if (!total) return 0;
+  const missing = pooledMissingOnPage(cards, page, collectorIds).length;
+  return Math.round(((total - missing) / total) * 100);
+}
+
 /**
- * Rewards sorted by deadline, page number or completion %. "First N" races
+ * Rewards sorted by deadline, page number or completion % (`completion` gives
+ * a page's %). "First N" races
  * have no date, so the date sort always puts them last whatever the direction.
  */
 export function sortRewardsBy(
   rewards: PageReward[],
   by: RewardSort,
   desc: boolean,
-  cards: Card[],
-  kids: Collector[],
+  completion: (page: number) => number,
 ): PageReward[] {
   const sign = desc ? -1 : 1;
   const key = (r: PageReward) =>
-    by === "completion" ? rewardCompletion(cards, r.page, kids) : r.page;
+    by === "completion" ? completion(r.page) : r.page;
   return [...rewards].sort((x, y) => {
     if (by === "date") {
       if (!x.deadline || !y.deadline)

@@ -246,7 +246,7 @@ export function CollectionTab({
             })),
             ...(reserve ? [{ key: "reserve", label: t.inReserve }] : []),
           ]}
-          className="flex-[0_1_170px]"
+          className="flex-[0_1_210px]"
         />
       </div>
 

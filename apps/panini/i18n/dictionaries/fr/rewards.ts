@@ -35,4 +35,7 @@ export const rewards = {
   missing: (n: number) => `Manque ${n}`,
   owned: "Possédée",
   inReserve: "Dans la réserve",
+  together: "Tout en commun",
+  togetherRow: "Ensemble (réserve comprise)",
+  completeTogether: "Complète ensemble",
 } as const satisfies RewardsTexts;
