@@ -20,6 +20,11 @@ const apps = [
     description: "Sticker-album tracker: collection, swaps, page prizes.",
     url: isDev ? "http://localhost:3001" : "https://panini.myappshub.dev/",
   },
+  {
+    name: "Training",
+    description: "Question bank, generated exams and manual corrections.",
+    url: isDev ? "http://localhost:3003" : "https://training.myappshub.dev/",
+  },
 ];
 
 export default function Page() {

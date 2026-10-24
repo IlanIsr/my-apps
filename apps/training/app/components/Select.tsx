@@ -1,0 +1,58 @@
+"use client";
+
+import { ListBox } from "@repo/ui/list-box";
+import { Select as HeroSelect } from "@repo/ui/select";
+
+/** One option: a stable `key` (the value) and its display `label`. */
+export type Option = { key: string; label: string };
+
+/**
+ * A compact dropdown — HeroUI's `Select` (via `@repo/ui/select`). Controlled:
+ * the parent holds `value` and updates it from `onChange`.
+ */
+export function Select({
+  options,
+  value,
+  onChange,
+  "aria-label": ariaLabel,
+  className,
+}: {
+  options: Option[];
+  value: string;
+  onChange: (value: string) => void;
+  "aria-label": string;
+  className?: string;
+}) {
+  return (
+    <HeroSelect
+      value={value}
+      onChange={(key) => key !== null && onChange(String(key))}
+      aria-label={ariaLabel}
+      // `min-w-0`: in a flex row, shrink to its basis instead of the label width.
+      className={`min-w-0 ${className ?? ""}`}
+    >
+      <HeroSelect.Trigger>
+        {/* One line, ellipsis — a long label must not wrap the trigger. */}
+        <HeroSelect.Value className="min-w-0 truncate" />
+        <HeroSelect.Indicator />
+      </HeroSelect.Trigger>
+      <HeroSelect.Popover>
+        <ListBox>
+          {options.map((option) => (
+            <ListBox.Item
+              key={option.key}
+              id={option.key}
+              textValue={option.label}
+              // HeroUI leaves only ~4px between the longest label and the
+              // checkmark (pe-7 with the mark at end-2) — give it room.
+              className="pe-10"
+            >
+              {option.label}
+              <ListBox.ItemIndicator />
+            </ListBox.Item>
+          ))}
+        </ListBox>
+      </HeroSelect.Popover>
+    </HeroSelect>
+  );
+}

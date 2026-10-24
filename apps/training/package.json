@@ -1,0 +1,43 @@
+{
+  "name": "training",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3003",
+    "build": "drizzle-kit migrate && next build",
+    "start": "next start",
+    "lint": "eslint --max-warnings 0",
+    "check-types": "next typegen && tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.9.0",
+    "@neondatabase/serverless": "^1.0.2",
+    "@repo/auth": "workspace:*",
+    "@repo/ui": "workspace:*",
+    "drizzle-orm": "^0.44.5",
+    "next": "16.3.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@heroui/styles": "^3.2.4",
+    "@repo/env": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/tailwind-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@types/node": "26.3.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.5",
+    "dotenv": "^16.4.7",
+    "drizzle-kit": "^0.31.5",
+    "eslint": "10.9.1",
+    "tailwindcss": "^4.1.14",
+    "typescript": "7.0.2"
+  }
+}
