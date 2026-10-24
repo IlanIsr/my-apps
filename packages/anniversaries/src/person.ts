@@ -1,6 +1,6 @@
 /** Domain types for anniversaries + person identity helpers. */
 
-import type { HebrewMonthKey } from "@repo/hebcal";
+import type { HebrewMonthKey, Minhag } from "@repo/hebcal";
 
 /** What an anniversary marks. Drives the calendar title, colour, and UI accent. */
 export type AnniversaryType = "birthday" | "yahrzeit";
@@ -39,6 +39,8 @@ export type Anniversary = {
    * needed to compute occurrences; only used to show an age / years-since count. */
   hebYear?: number;
   hebDate: { day: number; month: HebrewMonthKey };
+  /** Which Adar a single-Adar yahrzeit falls in during a leap year. */
+  minhag: Minhag;
   /** e.g. "24 Kislev" — derived from `hebDate`. */
   hebDateLabel: string;
   /** Family list for this person (lowercased emails). Empty unless the viewer
@@ -51,6 +53,11 @@ export type Anniversary = {
   /** Upcoming events, ascending by date. */
   events: AnniversaryEvent[];
 };
+
+/** Narrows an untyped value (e.g. a DB row) to a {@link Minhag}; Sephardi by default. */
+export function toMinhag(minhag: unknown): Minhag {
+  return minhag === "ashkenazi" ? "ashkenazi" : "sephardi";
+}
 
 export function normalizeName(name: string): string {
   return name.trim().toLowerCase().replace(/\s+/g, " ");

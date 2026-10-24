@@ -20,6 +20,7 @@ export {
   anniversaryKey,
   formatHebDateLabel,
   occurrencesSince,
+  toMinhag,
 } from "./person";
 
 export {

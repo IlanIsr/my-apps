@@ -1,6 +1,7 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 import { createShareLinkModal } from "./create-share-link-modal";
 import { hebrewMonths } from "./hebrew-months";
+import { minhagField } from "./minhag-field";
 
 /** Hebrew UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
@@ -46,6 +47,7 @@ export const anniversaryDetail = {
     rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
     error: (message: string) => `משהו השתבש: ${message}`,
     months: hebrewMonths,
+    minhag: minhagField,
   },
   shareModal: createShareLinkModal,
 } as const satisfies AnniversaryDetailTexts;

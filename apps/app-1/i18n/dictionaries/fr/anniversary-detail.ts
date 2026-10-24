@@ -1,6 +1,7 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 import { createShareLinkModal } from "./create-share-link-modal";
 import { hebrewMonths } from "./hebrew-months";
+import { minhagField } from "./minhag-field";
 
 /** French UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
@@ -49,6 +50,7 @@ export const anniversaryDetail = {
       "Google Agenda est occupé pour le moment — patientez puis réessayez.",
     error: (message: string) => `Une erreur est survenue : ${message}`,
     months: hebrewMonths,
+    minhag: minhagField,
   },
   shareModal: createShareLinkModal,
 } as const satisfies AnniversaryDetailTexts;

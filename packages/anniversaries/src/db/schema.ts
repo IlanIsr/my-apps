@@ -28,6 +28,9 @@ export const persons = pgTable(
     origin: text("origin"),
     /** Hebrew year of birth / passing. Optional. */
     hebYear: integer("heb_year"),
+    /** `"sephardi" | "ashkenazi"` — which Adar a single-Adar yahrzeit falls
+     * in during a leap year (II / I). */
+    minhag: text("minhag").notNull().default("sephardi"),
     hebDay: integer("heb_day").notNull(),
     hebMonth: text("heb_month").notNull(),
     /** normalized-name + Hebrew day/month + type — used to dedupe on add. */

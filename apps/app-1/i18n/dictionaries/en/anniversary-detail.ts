@@ -1,6 +1,7 @@
 import type { AnniversaryDetailTexts } from "@/app/components/anniversary/AnniversaryDetail";
 import { createShareLinkModal } from "./create-share-link-modal";
 import { hebrewMonths } from "./hebrew-months";
+import { minhagField } from "./minhag-field";
 import { ordinal } from "./ordinal";
 
 /** English UI strings — shape: {@link AnniversaryDetailTexts}. */
@@ -50,6 +51,7 @@ export const anniversaryDetail = {
       "Google Calendar is busy right now — wait a moment and try again.",
     error: (message: string) => `Something went wrong: ${message}`,
     months: hebrewMonths,
+    minhag: minhagField,
   },
   shareModal: createShareLinkModal,
 } as const satisfies AnniversaryDetailTexts;

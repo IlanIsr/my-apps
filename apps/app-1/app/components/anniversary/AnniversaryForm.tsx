@@ -17,8 +17,10 @@ import { useRouter } from "next/navigation";
 import {
   gregorianToHebrew,
   hebrewYearForGregorian,
+  monthKeyForYear,
   toHebrewMonthKey,
   type HebrewMonthKey,
+  type Minhag,
 } from "@repo/hebcal";
 import type { AnniversaryType } from "@repo/anniversaries/person";
 import { resolveErrorMessage } from "@repo/utils";
@@ -26,6 +28,7 @@ import { resolveErrorMessage } from "@repo/utils";
 import { useLanguage } from "@/i18n";
 import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
+import { MinhagField, type MinhagFieldTexts } from "./MinhagField";
 import { Segmented } from "../Segmented";
 import { Select } from "../Select";
 import { TextInput } from "../TextInput";
@@ -64,6 +67,7 @@ export type AnniversaryFormTexts = {
   rateLimited: string;
   error: (message: string) => string;
   months: Record<HebrewMonthKey, string>;
+  minhag: MinhagFieldTexts;
 };
 
 export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
@@ -83,6 +87,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const [day, setDay] = useState("1");
   const [month, setMonth] = useState("Tishrei");
   const [hebYear, setHebYear] = useState("");
+  const [minhag, setMinhag] = useState<Minhag>("sephardi");
   const [gDay, setGDay] = useState("1");
   const [gMonth, setGMonth] = useState("0");
   const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));
@@ -109,6 +114,23 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const yahrzeit = type === "yahrzeit";
   const tone = yahrzeit ? "yahrzeit" : "birthday";
 
+  const hebDay = converted ? converted.day : Number(day);
+  const hebMonth = converted ? toHebrewMonthKey(converted.month) : month;
+  // Hebrew year: derived from the Gregorian date, or the optional field.
+  const hebYearValue = fromGregorian
+    ? hebrewYearForGregorian(
+        Number(gYear),
+        Number(gMonth) + 1,
+        Number(gDay),
+        afterNightfall,
+      )
+    : hebYear.trim()
+      ? Number(hebYear.trim())
+      : undefined;
+  // The minhag only matters for a yahrzeit in a single (non-leap-year) Adar.
+  const showMinhag =
+    yahrzeit && monthKeyForYear(hebMonth, hebYearValue) === "Adar";
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
@@ -117,21 +139,6 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
       setError(t.nameRequired);
       return;
     }
-
-    const hebDay = converted ? converted.day : Number(day);
-    const hebMonth = converted ? toHebrewMonthKey(converted.month) : month;
-
-    // Hebrew year: derived from the Gregorian date, or the optional field.
-    const hebYearValue = fromGregorian
-      ? hebrewYearForGregorian(
-          Number(gYear),
-          Number(gMonth) + 1,
-          Number(gDay),
-          afterNightfall,
-        )
-      : hebYear.trim()
-        ? Number(hebYear.trim())
-        : undefined;
 
     setPending(true);
     const result = await addAnniversaryAction({
@@ -144,6 +151,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
         hebYearValue && Number.isFinite(hebYearValue)
           ? hebYearValue
           : undefined,
+      minhag: showMinhag ? minhag : undefined,
       years: Number(years),
       locale,
     });
@@ -300,6 +308,15 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
             </label>
           </div>
         </>
+      )}
+
+      {showMinhag && (
+        <MinhagField
+          t={t.minhag}
+          value={minhag}
+          onChange={setMinhag}
+          labelClassName={label}
+        />
       )}
 
       <Select

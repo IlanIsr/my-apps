@@ -1,6 +1,7 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
 import { hebrewMonths } from "./hebrew-months";
+import { minhagField } from "./minhag-field";
 
 const NOT_CONFIGURED = "The shared anniversaries calendar isn’t set up yet.";
 
@@ -36,4 +37,5 @@ export const anniversaryForm = {
     "Google Calendar is busy right now — wait a moment and try again.",
   error: (message: string) => `Something went wrong: ${message}`,
   months: hebrewMonths,
+  minhag: minhagField,
 } as const satisfies AnniversaryFormTexts;

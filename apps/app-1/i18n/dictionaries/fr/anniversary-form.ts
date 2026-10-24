@@ -1,6 +1,7 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
 import { hebrewMonths } from "./hebrew-months";
+import { minhagField } from "./minhag-field";
 
 const NOT_CONFIGURED =
   "Le calendrier d’anniversaires partagé n’est pas encore configuré.";
@@ -37,4 +38,5 @@ export const anniversaryForm = {
     "Google Agenda est occupé pour le moment — patientez puis réessayez.",
   error: (message: string) => `Une erreur est survenue : ${message}`,
   months: hebrewMonths,
+  minhag: minhagField,
 } as const satisfies AnniversaryFormTexts;

@@ -10,7 +10,14 @@
 
 import { createHash } from "node:crypto";
 
-import { calculateNextOccurrences, type HebrewMonthKey } from "@repo/hebcal";
+import {
+  anniversaryEveInYear,
+  calculateNextOccurrences,
+  monthKeyForYear,
+  type AnniversaryRule,
+  type HebrewMonthKey,
+  type Minhag,
+} from "@repo/hebcal";
 import { uniqueLowercased } from "@repo/utils";
 
 import {
@@ -113,6 +120,7 @@ function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
     origin: record.origin,
     hebYear: record.hebYear,
     hebDate: record.hebDate,
+    minhag: record.minhag,
     hebDateLabel: formatHebDateLabel(record.hebDate),
     // Never hand other members' addresses to a non-admin viewer.
     members: admin ? [...record.members].sort() : [],
@@ -120,6 +128,31 @@ function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
     admin,
     events,
   };
+}
+
+/** What decides a person's occurrence dates. */
+type OccurrenceRule = {
+  hebDay: number;
+  hebMonth: string;
+  type: AnniversaryType;
+  /** Hebrew year of birth / death, if known — refines a few yahrzeit rules. */
+  hebYear?: number | null;
+  minhag?: Minhag;
+};
+
+function ruleOf(record: PersonRecord): OccurrenceRule {
+  return {
+    hebDay: record.hebDate.day,
+    hebMonth: record.hebDate.month,
+    type: record.type,
+    hebYear: record.hebYear,
+    minhag: record.minhag,
+  };
+}
+
+/** `@repo/hebcal`'s view of an {@link OccurrenceRule}. */
+function hebcalRule(rule: OccurrenceRule): AnniversaryRule {
+  return { kind: rule.type, minhag: rule.minhag, originYear: rule.hebYear };
 }
 
 /**
@@ -131,8 +164,7 @@ function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
  */
 function desiredStored(
   record: PersonRecord | null,
-  hebDay: number,
-  hebMonth: string,
+  rule: OccurrenceRule,
   years: number,
   { keepPast = true }: { keepPast?: boolean } = {},
 ): StoredEvent[] {
@@ -141,19 +173,22 @@ function desiredStored(
   const seriesId = record?.events.find((e) => e.googleEventId)?.googleEventId;
   const seriesLink = record?.events.find((e) => e.htmlLink)?.htmlLink;
 
-  const upcoming = calculateNextOccurrences(hebDay, hebMonth, years).map(
-    (o): StoredEvent => {
-      const prev = priorByYear.get(o.hebrewYear);
-      if (prev?.manual) return prev;
-      return {
-        year: o.hebrewYear,
-        date: o.date,
-        time: "",
-        googleEventId: seriesId ?? "",
-        htmlLink: seriesLink ?? "",
-      };
-    },
-  );
+  const upcoming = calculateNextOccurrences(
+    rule.hebDay,
+    rule.hebMonth,
+    years,
+    hebcalRule(rule),
+  ).map((o): StoredEvent => {
+    const prev = priorByYear.get(o.hebrewYear);
+    if (prev?.manual) return prev;
+    return {
+      year: o.hebrewYear,
+      date: o.date,
+      time: "",
+      googleEventId: seriesId ?? "",
+      htmlLink: seriesLink ?? "",
+    };
+  });
   const upcomingYears = new Set(upcoming.map((e) => e.year));
   const today = todayISO();
   const past = keepPast
@@ -162,6 +197,16 @@ function desiredStored(
       )
     : [];
   return [...past, ...upcoming];
+}
+
+/** Whether two event lists hold the same (year, date) occurrences. */
+function sameOccurrences(a: StoredEvent[], b: StoredEvent[]): boolean {
+  const sig = (events: StoredEvent[]) =>
+    events
+      .map((e) => `${e.year}:${e.date}`)
+      .sort()
+      .join(",");
+  return sig(a) === sig(b);
 }
 
 function applySynced(
@@ -244,6 +289,8 @@ export type AddAnniversaryInput = {
   origin?: string;
   /** Hebrew year of birth / passing. Optional. */
   hebYear?: number;
+  /** Default `"sephardi"`. */
+  minhag?: Minhag;
   /** Pre-translated event title. */
   summary: string;
   /** Clerk id of the signed-in user. */
@@ -297,16 +344,12 @@ export async function addAnniversary(
     Math.max(1, Number.isFinite(input.years) ? Math.floor(input.years) : 1),
   );
   const colorId = colorIdFor(input.type);
-  const key = anniversaryKey(
-    input.name,
-    input.hebDay,
-    input.hebMonth,
-    input.type,
-  );
+  const hebMonth = monthKeyForYear(input.hebMonth, input.hebYear);
+  const key = anniversaryKey(input.name, input.hebDay, hebMonth, input.type);
   const existing = await findByKey(key);
 
   if (!existing) {
-    const base = desiredStored(null, input.hebDay, input.hebMonth, years);
+    const base = desiredStored(null, { ...input, hebMonth }, years);
     if (base.length === 0) throw new NoSuchHebrewDateError();
 
     const members = [email];
@@ -316,7 +359,8 @@ export async function addAnniversary(
       hebrewName: input.hebrewName?.trim() || undefined,
       origin: input.origin?.trim() || undefined,
       hebYear: input.hebYear,
-      hebDate: { day: input.hebDay, month: input.hebMonth as HebrewMonthKey },
+      hebDate: { day: input.hebDay, month: hebMonth as HebrewMonthKey },
+      minhag: input.minhag,
       members,
       createdBy: input.createdBy,
     });
@@ -352,8 +396,7 @@ export async function addAnniversary(
   const members = uniqueLowercased([...existing.members, email]);
   const base = desiredStored(
     existing,
-    input.hebDay,
-    input.hebMonth,
+    ruleOf(existing),
     Math.max(years, existing.events.filter((e) => e.date >= todayISO()).length),
   );
   const priorYears = new Set(existing.events.map((e) => e.year));
@@ -385,6 +428,95 @@ export async function addAnniversary(
   if (sync.rateLimited) throw new CalendarRateLimitError();
   const created = sync.events.filter((e) => !priorYears.has(e.year)).length;
   return { created, joined: finalMembers.includes(email) };
+}
+
+/** One person whose stored occurrences no longer match the date rules. */
+export type OccurrenceFix = {
+  id: string;
+  name: string;
+  /** Month key before → after (equal when only dates moved). */
+  month: [string, string];
+  /** `year: old → new` for every occurrence that moved, was added or dropped. */
+  changes: string[];
+};
+
+/**
+ * Re-apply the anniversary date rules (Adar in leap years, 30th of a short
+ * month — see `@repo/hebcal`'s `anniversaryInYear`) to every stored person:
+ * align the month key with a known `hebYear`, recompute each non-manual
+ * occurrence (past ones too), top up years that used to be skipped, then — with
+ * `commit` — write the store and re-sync the calendar silently (no invites).
+ * Returns the persons that needed a change.
+ */
+export async function recomputeAllOccurrences(
+  commit: boolean,
+): Promise<OccurrenceFix[]> {
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+  const fixes: OccurrenceFix[] = [];
+
+  for (const person of await listPersons()) {
+    const hebDay = person.hebDate.day;
+    const hebMonth = monthKeyForYear(person.hebDate.month, person.hebYear);
+    const rule = { ...ruleOf(person), hebMonth };
+
+    const recomputed = person.events.map((e): StoredEvent => {
+      if (e.manual) return e;
+      const date = anniversaryEveInYear(
+        hebDay,
+        hebMonth,
+        e.year,
+        hebcalRule(rule),
+      );
+      return date && date !== e.date ? { ...e, date, time: "" } : e;
+    });
+    const upcomingCount = recomputed.filter((e) => e.date >= todayISO()).length;
+    const top = desiredStored(
+      { ...person, events: recomputed },
+      rule,
+      Math.max(1, upcomingCount),
+    );
+    const base = top.sort((a, b) => a.year - b.year);
+
+    const before = new Map(person.events.map((e) => [e.year, e.date]));
+    const after = new Map(base.map((e) => [e.year, e.date]));
+    const changes: string[] = [];
+    for (const year of new Set([...before.keys(), ...after.keys()])) {
+      const was = before.get(year);
+      const now = after.get(year);
+      if (was !== now) changes.push(`${year}: ${was ?? "—"} → ${now ?? "—"}`);
+    }
+    const monthChanged = hebMonth !== person.hebDate.month;
+    if (changes.length === 0 && !monthChanged) continue;
+    fixes.push({
+      id: person.id,
+      name: person.name,
+      month: [person.hebDate.month, hebMonth],
+      changes,
+    });
+    if (!commit) continue;
+
+    await updatePerson(person.id, {
+      ...(monthChanged && {
+        hebMonth: hebMonth as HebrewMonthKey,
+        key: anniversaryKey(person.name, hebDay, hebMonth, person.type),
+      }),
+      events: base,
+    });
+    if (changes.length === 0) continue;
+    const sync = await syncPersonEvents({
+      personId: person.id,
+      summaryFallback: person.name,
+      colorId: colorIdFor(person.type),
+      members: person.members,
+      events: base.map(toDesired),
+    });
+    await updatePerson(person.id, {
+      members: person.members.filter((m) => !sync.declined.includes(m)),
+      events: applySynced(base, sync.events),
+    });
+    if (sync.rateLimited) throw new CalendarRateLimitError();
+  }
+  return fixes;
 }
 
 function toDesired(e: StoredEvent) {
@@ -630,6 +762,8 @@ export type UpdatePersonInput = {
   origin?: string;
   /** `0` / `NaN` clears it. Omit to leave unchanged. */
   hebYear?: number;
+  /** Omit to leave unchanged. */
+  minhag?: Minhag;
   /**
    * Pre-translated event title for the (possibly new) name + type — used only
    * if name, type, or the Hebrew date actually changed.
@@ -643,8 +777,10 @@ export type UpdatePersonInput = {
  * recomputes the key and regenerates every stored occurrence (preserving manual
  * per-event overrides and existing Google event ids, so those are PATCHed in
  * place rather than left stale on the calendar). Any of these trigger a
- * calendar re-sync. hebrewName / origin / hebYear are store-only. A member (or
- * admin) may edit; anyone else is a no-op.
+ * calendar re-sync. A type / hebYear / minhag change regenerates the upcoming
+ * occurrences and re-syncs only if a date actually moved (Adar, 30th-of-the-
+ * month rules). hebrewName / origin are store-only. A member (or admin) may
+ * edit; anyone else is a no-op.
  */
 export async function updateAnniversary(
   input: UpdatePersonInput,
@@ -662,25 +798,47 @@ export async function updateAnniversary(
 
   const name = input.name?.trim() || person.name;
   const type = input.type ?? person.type;
+  const priorYear = person.hebYear ?? null;
+  const hebYear =
+    input.hebYear === undefined
+      ? priorYear
+      : Number.isFinite(input.hebYear) && input.hebYear > 0
+        ? Math.floor(input.hebYear)
+        : null;
+  const minhag = input.minhag ?? person.minhag;
   const hebDay = input.hebDay ?? person.hebDate.day;
-  const hebMonth = input.hebMonth ?? person.hebDate.month;
+  const hebMonth = monthKeyForYear(
+    input.hebMonth ?? person.hebDate.month,
+    hebYear,
+  );
   const nameOrTypeChanged = name !== person.name || type !== person.type;
   const dateChanged =
     hebDay !== person.hebDate.day || hebMonth !== person.hebDate.month;
-  const needsResync = nameOrTypeChanged || dateChanged;
 
   // When the date changes, regenerate the upcoming occurrences (same count as
-  // today) at the new day/month and drop the past ones (old date). Reusing the
-  // record keeps the series id, so the sync PATCHes the series in place.
+  // today) at the new day/month and drop the past ones (old date). A type or
+  // year / minhag change can move some occurrences too (Adar, 30th-of-the-month rules),
+  // so those regenerate the upcoming ones and keep the past. Reusing the record
+  // keeps the series id, so the sync PATCHes the series in place.
   const upcomingCount = person.events.filter(
     (e) => e.date >= todayISO(),
   ).length;
-  const base = dateChanged
-    ? desiredStored(person, hebDay, hebMonth, Math.max(1, upcomingCount), {
-        keepPast: false,
-      })
+  const ruleChanged =
+    dateChanged ||
+    type !== person.type ||
+    hebYear !== priorYear ||
+    minhag !== person.minhag;
+  const base = ruleChanged
+    ? desiredStored(
+        person,
+        { hebDay, hebMonth, type, hebYear, minhag },
+        Math.max(1, upcomingCount),
+        { keepPast: !dateChanged },
+      )
     : person.events;
-  if (dateChanged && base.length === 0) throw new NoSuchHebrewDateError();
+  if (ruleChanged && base.length === 0) throw new NoSuchHebrewDateError();
+  const eventsChanged = ruleChanged && !sameOccurrences(base, person.events);
+  const needsResync = nameOrTypeChanged || dateChanged || eventsChanged;
 
   const patch: Parameters<typeof updatePerson>[1] = {};
   if (name !== person.name) patch.name = name;
@@ -696,12 +854,8 @@ export async function updateAnniversary(
     patch.hebrewName = input.hebrewName.trim() || null;
   }
   if (input.origin !== undefined) patch.origin = input.origin.trim() || null;
-  if (input.hebYear !== undefined) {
-    patch.hebYear =
-      Number.isFinite(input.hebYear) && input.hebYear > 0
-        ? Math.floor(input.hebYear)
-        : null;
-  }
+  if (hebYear !== priorYear) patch.hebYear = hebYear;
+  if (minhag !== person.minhag) patch.minhag = minhag;
 
   if (Object.keys(patch).length === 0) return { updated: false };
 

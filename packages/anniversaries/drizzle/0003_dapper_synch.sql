@@ -1,0 +1,1 @@
+ALTER TABLE "persons" ADD COLUMN "minhag" text DEFAULT 'sephardi' NOT NULL;

@@ -1,6 +1,7 @@
 import type { AnniversaryFormTexts } from "@/app/components/anniversary/AnniversaryForm";
 
 import { hebrewMonths } from "./hebrew-months";
+import { minhagField } from "./minhag-field";
 
 const NOT_CONFIGURED = "לוח ימי ההולדת המשותף עדיין לא מוגדר.";
 
@@ -34,4 +35,5 @@ export const anniversaryForm = {
   rateLimited: "יומן Google עסוק כרגע — המתינו רגע ונסו שוב.",
   error: (message: string) => `משהו השתבש: ${message}`,
   months: hebrewMonths,
+  minhag: minhagField,
 } as const satisfies AnniversaryFormTexts;

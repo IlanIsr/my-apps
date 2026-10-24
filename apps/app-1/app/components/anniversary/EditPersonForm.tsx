@@ -14,12 +14,15 @@ import { useMemo, useState } from "react";
 import {
   gregorianToHebrew,
   hebrewYearForGregorian,
+  monthKeyForYear,
   toHebrewMonthKey,
   type HebrewMonthKey,
+  type Minhag,
 } from "@repo/hebcal";
 import { useLanguage } from "@/i18n";
 import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
+import { MinhagField, type MinhagFieldTexts } from "./MinhagField";
 import { TextInput } from "../TextInput";
 import type { Anniversary } from "@repo/anniversaries/person";
 import { resolveErrorMessage } from "@repo/utils";
@@ -55,6 +58,7 @@ export type EditPersonFormTexts = {
   rateLimited: string;
   error: (message: string) => string;
   months: Record<HebrewMonthKey, string>;
+  minhag: MinhagFieldTexts;
 };
 
 export function EditPersonForm({
@@ -85,6 +89,7 @@ export function EditPersonForm({
   const [hebYear, setHebYear] = useState(
     anniversary.hebYear ? String(anniversary.hebYear) : "",
   );
+  const [minhag, setMinhag] = useState<Minhag>(anniversary.minhag);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,24 +103,28 @@ export function EditPersonForm({
     );
   }, [fromGregorian, gYear, gMonth, gDay, afterNightfall]);
 
+  const hebDay = converted ? converted.day : Number(day);
+  const hebMonth = converted ? toHebrewMonthKey(converted.month) : month;
+  const hebYearValue = fromGregorian
+    ? hebrewYearForGregorian(
+        Number(gYear),
+        Number(gMonth) + 1,
+        Number(gDay),
+        afterNightfall,
+      )
+    : hebYear.trim()
+      ? Number(hebYear.trim())
+      : 0;
+  // The minhag only matters for a yahrzeit in a single (non-leap-year) Adar.
+  const showMinhag =
+    anniversary.type === "yahrzeit" &&
+    monthKeyForYear(hebMonth, hebYearValue) === "Adar";
+
   const save = async () => {
     if (!name.trim()) {
       setError(t.nameRequired);
       return;
     }
-
-    const hebDay = converted ? converted.day : Number(day);
-    const hebMonth = converted ? toHebrewMonthKey(converted.month) : month;
-    const hebYearValue = fromGregorian
-      ? hebrewYearForGregorian(
-          Number(gYear),
-          Number(gMonth) + 1,
-          Number(gDay),
-          afterNightfall,
-        )
-      : hebYear.trim()
-        ? Number(hebYear.trim())
-        : 0;
 
     setPending(true);
     setError(null);
@@ -127,6 +136,7 @@ export function EditPersonForm({
       hebMonth,
       hebrewName: hebrewName.trim(),
       hebYear: hebYearValue,
+      minhag: showMinhag ? minhag : undefined,
       locale,
     });
     setPending(false);
@@ -241,6 +251,15 @@ export function EditPersonForm({
             />
           </label>
         </div>
+      )}
+
+      {showMinhag && (
+        <MinhagField
+          t={t.minhag}
+          value={minhag}
+          onChange={setMinhag}
+          labelClassName={labelCls}
+        />
       )}
 
       <label className="flex flex-col gap-1.5">

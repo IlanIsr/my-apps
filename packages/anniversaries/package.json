@@ -15,7 +15,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "clear-calendar": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/clear-calendar.ts",
-    "delete-person": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/delete-person.ts"
+    "delete-person": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/delete-person.ts",
+    "recompute-dates": "node --env-file-if-exists=../../.env --env-file-if-exists=../../apps/app-1/.env --env-file-if-exists=../../apps/app-1/.env.local --import tsx scripts/recompute-dates.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

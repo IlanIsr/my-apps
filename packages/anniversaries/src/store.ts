@@ -9,7 +9,7 @@
 
 import { eq, inArray } from "drizzle-orm";
 
-import type { HebrewMonthKey } from "@repo/hebcal";
+import type { HebrewMonthKey, Minhag } from "@repo/hebcal";
 import { uniqueLowercased } from "@repo/utils";
 
 import { db, dbFor, DatabaseNotConfiguredError, type Db } from "./db/client";
@@ -24,6 +24,7 @@ import {
 import {
   anniversaryKey,
   toAnniversaryType,
+  toMinhag,
   type AnniversaryType,
 } from "./person";
 
@@ -53,6 +54,7 @@ export type PersonRecord = {
   origin?: string;
   hebYear?: number;
   hebDate: { day: number; month: HebrewMonthKey };
+  minhag: Minhag;
   key: string;
   members: string[];
   events: StoredEvent[];
@@ -66,6 +68,8 @@ export type NewPerson = {
   origin?: string;
   hebYear?: number;
   hebDate: { day: number; month: HebrewMonthKey };
+  /** Default `"sephardi"`. */
+  minhag?: Minhag;
   members: string[];
   createdBy: string;
 };
@@ -81,6 +85,7 @@ export type PersonPatch = Partial<{
   origin: string | null;
   /** Pass `null` to clear. */
   hebYear: number | null;
+  minhag: Minhag;
   /** Recomputed by the service when name/type/date change. */
   key: string;
   members: string[];
@@ -150,6 +155,7 @@ function toRecord(
     origin: p.origin ?? undefined,
     hebYear: p.hebYear ?? undefined,
     hebDate: { day: p.hebDay, month: p.hebMonth as HebrewMonthKey },
+    minhag: toMinhag(p.minhag),
     key: p.key,
     members: [...new Set(memberEmails.map((e) => e.toLowerCase()))].sort(),
     events: [...byYear.values()].sort((a, b) => a.year - b.year),
@@ -165,6 +171,7 @@ function personValues(input: {
   origin?: string;
   hebYear?: number;
   hebDate: { day: number; month: string };
+  minhag?: Minhag;
   key: string;
   createdBy: string;
 }) {
@@ -177,6 +184,7 @@ function personValues(input: {
     hebYear: input.hebYear ?? null,
     hebDay: input.hebDate.day,
     hebMonth: input.hebDate.month,
+    minhag: input.minhag ?? "sephardi",
     key: input.key,
     createdBy: input.createdBy,
   };
@@ -303,6 +311,7 @@ export async function createPerson(input: NewPerson): Promise<PersonRecord> {
     origin: input.origin,
     hebYear: input.hebYear,
     hebDate: input.hebDate,
+    minhag: input.minhag ?? "sephardi",
     key,
     members,
     events: [],
@@ -323,6 +332,7 @@ export async function updatePerson(
   if (patch.hebrewName !== undefined) set.hebrewName = patch.hebrewName || null;
   if (patch.origin !== undefined) set.origin = patch.origin || null;
   if (patch.hebYear !== undefined) set.hebYear = patch.hebYear ?? null;
+  if (patch.minhag !== undefined) set.minhag = patch.minhag;
 
   const stmts: BatchStmt[] = [
     db().update(persons).set(set).where(eq(persons.id, id)),
@@ -381,6 +391,7 @@ export async function upsertPerson(record: PersonRecord): Promise<void> {
           hebYear: values.hebYear,
           hebDay: values.hebDay,
           hebMonth: values.hebMonth,
+          minhag: values.minhag,
           key: values.key,
           createdBy: values.createdBy,
           updatedAt: new Date(),

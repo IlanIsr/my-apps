@@ -11,6 +11,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
+import type { Minhag } from "@repo/hebcal";
 
 import { getDictionary, type Locale } from "@/i18n";
 import {
@@ -23,6 +24,7 @@ import {
   DatabaseNotConfiguredError,
   NoSuchHebrewDateError,
   updateAnniversary,
+  toMinhag,
   type AnniversaryType,
 } from "@repo/anniversaries";
 
@@ -78,6 +80,7 @@ export async function addAnniversaryAction(input: {
   hebrewName?: string;
   origin?: string;
   hebYear?: number;
+  minhag?: Minhag;
   locale: Locale;
 }): Promise<ActionResult<{ created: number; joined: boolean }>> {
   try {
@@ -89,7 +92,12 @@ export async function addAnniversaryAction(input: {
 
     const summary = eventSummaryFor(input.locale, input.type, input.name);
     const data = await addAnniversary(
-      { ...input, summary, createdBy: userId },
+      {
+        ...input,
+        minhag: input.minhag && toMinhag(input.minhag),
+        summary,
+        createdBy: userId,
+      },
       email,
     );
     refreshAnniversaries();
@@ -177,6 +185,7 @@ export async function updatePersonAction(input: {
   hebMonth: string;
   hebrewName?: string;
   hebYear?: number;
+  minhag?: Minhag;
   locale: Locale;
 }): Promise<ActionResult<{ updated: boolean }>> {
   try {
@@ -185,7 +194,10 @@ export async function updatePersonAction(input: {
     if (!input.name.trim()) return { ok: false, error: "name-required" };
 
     const summary = eventSummaryFor(input.locale, input.type, input.name);
-    const data = await updateAnniversary({ ...input, summary }, email);
+    const data = await updateAnniversary(
+      { ...input, minhag: input.minhag && toMinhag(input.minhag), summary },
+      email,
+    );
     refreshAnniversaries(input.id);
     return { ok: true, data };
   } catch (error) {

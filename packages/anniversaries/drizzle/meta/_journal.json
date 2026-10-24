@@ -22,6 +22,13 @@
       "when": 1792396269889,
       "tag": "0002_petite_cammi",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792875325765,
+      "tag": "0003_dapper_synch",
+      "breakpoints": true
     }
   ]
 }
