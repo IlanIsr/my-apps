@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * Public landing page shown at `/` to signed-out visitors. Marketing copy only
+ * Public landing page shown at `/` to signed-out visitors, and at `/about` to
+ * everyone (the navbar's "About" tab). Marketing copy only
  * — no authenticated data. Uses the app's own layout, fonts, palette, and
  * primitives (no separate design system) and the same component-owned i18n.
  */
@@ -24,7 +25,8 @@ export type LandingTexts = {
   privacyLink: string;
 };
 
-export function LandingView() {
+/** @param signedIn - Hides the "Sign in" button for a signed-in viewer. */
+export function LandingView({ signedIn = false }: { signedIn?: boolean }) {
   const t = useTranslations().landing;
 
   const sections = [t.whatItDoes, t.whyCalendar, t.whoFor, t.howToUse];
@@ -56,12 +58,14 @@ export function LandingView() {
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Link
-          href="/sign-in"
-          className="rounded-field bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-        >
-          {t.signIn}
-        </Link>
+        {!signedIn && (
+          <Link
+            href="/sign-in"
+            className="rounded-field bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+          >
+            {t.signIn}
+          </Link>
+        )}
         <Link
           href="/privacy"
           className="text-sm text-subtle-foreground underline underline-offset-4 hover:text-foreground"

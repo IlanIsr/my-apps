@@ -7,6 +7,7 @@ export const navbar = {
     anniversaries: "Anniversaries",
     agenda: "Agenda",
     converter: "Converter",
+    about: "About",
     admin: "Admin",
   },
   languageLabel: "Language",

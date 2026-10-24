@@ -22,6 +22,7 @@ export type NavbarTexts = {
     anniversaries: string;
     agenda: string;
     converter: string;
+    about: string;
     admin: string;
   };
   languageLabel: string;
@@ -48,6 +49,7 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
     { href: "/anniversaries", label: t.tabs.anniversaries },
     { href: "/calendar", label: t.tabs.agenda },
     { href: "/converter", label: t.tabs.converter },
+    { href: "/about", label: t.tabs.about },
     ...(isAdmin ? [{ href: "/admin", label: t.tabs.admin }] : []),
   ];
 
