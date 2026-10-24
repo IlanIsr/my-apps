@@ -44,11 +44,10 @@ export default function PrivacyPage() {
 
       <Section heading="Overview">
         <p>
-          myappshub.dev hosts a few small personal applications, each on its
-          own subdomain (for example panini.myappshub.dev, a sticker-album
-          tracker). They are operated by an individual. This policy explains
-          what information they collect and how it is used. Questions can be
-          sent to{" "}
+          myappshub.dev hosts a few small personal applications, each on its own
+          subdomain (for example panini.myappshub.dev, a sticker-album tracker).
+          They are operated by an individual. This policy explains what
+          information they collect and how it is used. Questions can be sent to{" "}
           <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>
             {CONTACT_EMAIL}
           </a>
@@ -67,26 +66,26 @@ export default function PrivacyPage() {
 
       <Section heading="Information you enter">
         <p>
-          Each app stores only what you enter into it — for example, in
-          Classeur Panini, the names of collectors you add and the sticker
-          counts you record. This data is linked to your account and is not
-          visible to other users.
+          Each app stores only what you enter into it — for example, in Classeur
+          Panini, the names of collectors you add and the sticker counts you
+          record. This data is linked to your account and is not visible to
+          other users.
         </p>
       </Section>
 
       <Section heading="How information is stored and shared">
         <p>
-          Data is stored in a Postgres database hosted by Neon, and the apps
-          run on Vercel; both act as service providers. Information is never
-          sold, shared with advertisers, or used for any purpose other than
-          running the apps. There are no advertising or analytics trackers.
+          Data is stored in a Postgres database hosted by Neon, and the apps run
+          on Vercel; both act as service providers. Information is never sold,
+          shared with advertisers, or used for any purpose other than running
+          the apps. There are no advertising or analytics trackers.
         </p>
       </Section>
 
       <Section heading="Data retention and deletion">
         <p>
-          Your data is kept as long as your account exists. To have your
-          account and all associated data deleted, email{" "}
+          Your data is kept as long as your account exists. To have your account
+          and all associated data deleted, email{" "}
           <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>
             {CONTACT_EMAIL}
           </a>
