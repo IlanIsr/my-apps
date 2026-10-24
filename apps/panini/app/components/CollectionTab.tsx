@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * The album, page by page: search / page / status filters, a +/− stepper per
- * collector on every card, completion badges and the page's prize (if any).
+ * The album, page by page: search / page / kid / status filters, a +/− stepper
+ * per collector on every card, completion badges and the page's prize (if any).
+ * Picking a kid narrows everything to them: only their stepper and badge, and
+ * the status filter (defaulting to "their cards") is about them.
  */
 
 import {
@@ -26,6 +28,8 @@ export type CollectionTexts = {
   allPages: string;
   page: (n: number) => string;
   all: string;
+  allKids: string;
+  ownedBy: (name: string) => string;
   missingFor: (name: string) => string;
   duplicatesOf: (name: string) => string;
   inReserve: string;
@@ -42,7 +46,9 @@ export type CollectionTexts = {
 export type CollectionFilters = {
   search: string;
   page: number | "all";
-  /** `all`, `reserve`, `missing:<collectorId>` or `dup:<collectorId>`. */
+  /** A kid's collector id, or `all`. */
+  kid: string;
+  /** `all`, `reserve`, `owned:<id>`, `missing:<id>` or `dup:<id>`. */
   status: string;
 };
 
@@ -56,7 +62,8 @@ function matches(card: Card, f: CollectionFilters, reserve?: Collector) {
   if (f.status === "reserve")
     return !!reserve && countOf(card, reserve.id) >= 1;
   const [kind, id = ""] = f.status.split(":");
-  return kind === "missing" ? countOf(card, id) === 0 : countOf(card, id) >= 2;
+  const n = countOf(card, id);
+  return kind === "owned" ? n >= 1 : kind === "missing" ? n === 0 : n >= 2;
 }
 
 function Stepper({
@@ -163,6 +170,9 @@ export function CollectionTab({
   t: CollectionTexts;
 }) {
   const pages = pagesList(album.cards);
+  // A kid deleted in Réglages while selected falls back to everyone.
+  const kid = kids.find((k) => k.id === filters.kid);
+  const shown = kid ? [kid] : kids;
 
   const panels = pages
     .map((p) => ({
@@ -199,17 +209,38 @@ export function CollectionTab({
           ]}
           className="flex-[0_1_170px]"
         />
+        {kids.length > 1 && (
+          <Select
+            value={kid?.id ?? "all"}
+            onChange={(value) =>
+              onFilters({
+                ...filters,
+                kid: value,
+                status: value === "all" ? "all" : `owned:${value}`,
+              })
+            }
+            aria-label={t.allKids}
+            options={[
+              { key: "all", label: t.allKids },
+              ...kids.map((k) => ({ key: k.id, label: k.name })),
+            ]}
+            className="flex-[0_1_170px]"
+          />
+        )}
         <Select
           value={filters.status}
           onChange={(status) => onFilters({ ...filters, status })}
           aria-label={t.all}
           options={[
             { key: "all", label: t.all },
-            ...kids.map((k) => ({
+            ...(kid
+              ? [{ key: `owned:${kid.id}`, label: t.ownedBy(kid.name) }]
+              : []),
+            ...shown.map((k) => ({
               key: `missing:${k.id}`,
               label: t.missingFor(k.name),
             })),
-            ...kids.map((k) => ({
+            ...shown.map((k) => ({
               key: `dup:${k.id}`,
               label: t.duplicatesOf(k.name),
             })),
@@ -248,7 +279,7 @@ export function CollectionTab({
               <div className="flex items-center gap-2.5">
                 <h3 className="text-[15px]">{t.page(page)}</h3>
                 <div className="flex gap-1.25">
-                  {kids.map((k) => {
+                  {shown.map((k) => {
                     const done = pageComplete(album.cards, page, k.id);
                     return (
                       <PageBadge
@@ -290,7 +321,7 @@ export function CollectionTab({
                     {card.label || "—"}
                   </span>
                   <div className="flex flex-wrap items-center justify-end gap-1.5">
-                    {kids.map((k) => (
+                    {shown.map((k) => (
                       <Stepper
                         key={k.id}
                         card={card}

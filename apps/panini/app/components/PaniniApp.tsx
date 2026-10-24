@@ -87,6 +87,7 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
   const [filters, setFilters] = useState<CollectionFilters>({
     search: "",
     page: "all",
+    kid: "all",
     status: "all",
   });
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
@@ -216,7 +217,7 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
           album={album}
           kids={kids}
           onOpenPage={(page) => {
-            setFilters({ search: "", page, status: "all" });
+            setFilters({ ...filters, search: "", page, status: "all" });
             setTab("collection");
             window.scrollTo({ top: 0 });
           }}

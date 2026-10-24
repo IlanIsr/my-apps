@@ -14,6 +14,8 @@ export const collection = {
   allPages: "Toutes les pages",
   page: (n: number) => `Page ${n}`,
   all: "Tout",
+  allKids: "Tous les enfants",
+  ownedBy: (name: string) => `Cartes de ${name}`,
   missingFor: (name: string) => `Manque à ${name}`,
   duplicatesOf: (name: string) => `Doublons de ${name}`,
   inReserve: "En réserve",
