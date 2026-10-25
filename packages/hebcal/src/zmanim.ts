@@ -1,6 +1,6 @@
 /**
  * Tzeit hakochavim (nightfall — 42 minutes after sunset, the common halachic
- * practice) for a given date, from hebcal.com's zmanim API.
+ * practice) and shkia (sunset) for a given date, from hebcal.com's zmanim API.
  */
 
 export type ZmanimLocation = {
@@ -19,12 +19,14 @@ export const JERUSALEM: ZmanimLocation = {
 const ZMANIM_URL = "https://www.hebcal.com/zmanim";
 
 /**
+ * One zman from hebcal.com (`tzeit42min`, `sunset`, …) on `dateStr`.
  * @param dateStr ISO `YYYY-MM-DD`
  * @returns `"HH:MM"` in the location's timezone, or `null` on failure.
  */
-export async function getTsetHakohavim(
+async function getZman(
+  key: string,
   dateStr: string,
-  location: ZmanimLocation = JERUSALEM,
+  location: ZmanimLocation,
 ): Promise<string | null> {
   try {
     const params = new URLSearchParams({
@@ -44,7 +46,7 @@ export async function getTsetHakohavim(
     const data = (await response.json()) as {
       times?: Record<string, string>;
     };
-    const iso = data.times?.tzeit42min;
+    const iso = data.times?.[key];
     if (!iso) return null;
 
     // "2026-12-03T17:17:00+02:00" → "17:17"
@@ -52,6 +54,26 @@ export async function getTsetHakohavim(
   } catch {
     return null;
   }
+}
+
+/**
+ * @param dateStr ISO `YYYY-MM-DD`
+ * @returns `"HH:MM"` in the location's timezone, or `null` on failure.
+ */
+export function getTsetHakohavim(
+  dateStr: string,
+  location: ZmanimLocation = JERUSALEM,
+): Promise<string | null> {
+  return getZman("tzeit42min", dateStr, location);
+}
+
+/** Shkia (sunset) on `dateStr` — `"HH:MM"`, or `fallback` on failure. */
+export async function getShkiaWithFallback(
+  dateStr: string,
+  fallback = "17:00",
+  location: ZmanimLocation = JERUSALEM,
+): Promise<string> {
+  return (await getZman("sunset", dateStr, location)) ?? fallback;
 }
 
 /** Like {@link getTsetHakohavim} but returns `fallback` instead of `null`. */

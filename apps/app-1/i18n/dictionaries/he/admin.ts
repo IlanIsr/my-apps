@@ -17,4 +17,18 @@ export const admin = {
       `הושלם — ${written} הועתקו, ${deleted} הוסרו.`,
     error: (message: string) => `הסנכרון נכשל: ${message}`,
   },
+  resync: {
+    title: "עדכון כל האירועים",
+    body: "כותב מחדש את אירוע ה-Google של כל תאריך בפורמט הנוכחי: מצאת הכוכבים בערב ועד השקיעה למחרת. בלי מיילים לחברים, הכותרות לא משתנות.",
+    button: "עדכון כל האירועים",
+    resume: "המשך",
+    confirm: "לכתוב מחדש את האירוע של כל תאריך ביומן Google? לא יישלח מייל.",
+    running: (done: number, total: number) => `מעדכן… ${done}/${total}`,
+    rateLimited: (done: number, total: number) =>
+      `יומן Google מגביל כתיבות — נעצר ב-${done}/${total}. המתינו דקה ולחצו „המשך”.`,
+    done: (total: number, failed: number) =>
+      `הסתיים — ${total - failed}/${total} עודכנו` +
+      (failed ? `, ${failed} נכשלו (ראו לוגים).` : "."),
+    error: (message: string) => `נכשל: ${message}`,
+  },
 } as const satisfies AdminTexts;

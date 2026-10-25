@@ -15,11 +15,13 @@
 
 import { OAuth2Client } from "google-auth-library";
 
-import { getTsetHakohavimWithFallback } from "@repo/hebcal";
+import {
+  getShkiaWithFallback,
+  getTsetHakohavimWithFallback,
+} from "@repo/hebcal";
 import { sleep } from "@repo/utils";
 
 const TIMEZONE = "Asia/Jerusalem";
-const EVENT_DURATION_MIN = 15;
 const EVENT_COLOR_ID = "5";
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID ?? "primary";
 
@@ -177,22 +179,21 @@ function buildEventBody(fields: {
   description?: string;
   date: string;
   time: string;
+  /** End of the first occurrence (the next day's shkia). */
+  endDate: string;
+  endTime: string;
   attendees: AttendeeInput[];
   personId?: string;
   colorId?: string;
   /** `RRULE`/`RDATE` lines; omit to leave the recurrence untouched. */
   recurrence?: string[];
 }): Record<string, unknown> {
-  const [hour = 0, minute = 0] = fields.time.split(":").map(Number);
-  const endTotal = minute + EVENT_DURATION_MIN;
-  const endTime = `${String(hour + Math.floor(endTotal / 60)).padStart(
-    2,
-    "0",
-  )}:${String(endTotal % 60).padStart(2, "0")}`;
-
   const body: Record<string, unknown> = {
     start: { dateTime: `${fields.date}T${fields.time}:00`, timeZone: TIMEZONE },
-    end: { dateTime: `${fields.date}T${endTime}:00`, timeZone: TIMEZONE },
+    end: {
+      dateTime: `${fields.endDate}T${fields.endTime}:00`,
+      timeZone: TIMEZONE,
+    },
     attendees: mapAttendees(fields.attendees),
     guestsCanModify: false,
     guestsCanInviteOthers: false,
@@ -261,6 +262,13 @@ export type SyncResult = {
 /** Gap between Calendar writes — the API throttles bursts to a single calendar. */
 const WRITE_GAP_MS = 150;
 
+/** `2027-10-03` → `2027-10-04`. */
+function nextDay(date: string): string {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 /** `2027-10-03` + `18:31` → `20271003T183100` (an iCalendar local date-time). */
 function icalDateTime(date: string, time: string): string {
   return `${date.replaceAll("-", "")}T${time.replace(":", "")}00`;
@@ -270,6 +278,11 @@ function icalDateTime(date: string, time: string): string {
  * Reconcile a person's recurring Google Calendar event to match `input`: one
  * series whose start is the earliest occurrence and whose `RDATE` lists the
  * others. Creates it if no occurrence carries a series id yet.
+ *
+ * Each occurrence spans the whole Hebrew day: from tzeit hakochavim on the eve
+ * to shkia the next day. Google gives every occurrence of a series the first
+ * one's duration, so other years may end a minute or two off their own shkia
+ * (tzeit is a fixed 42 minutes after sunset, and sunset moves ≤ ~2 min a day).
  */
 export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
   const wanted = [...input.events].sort((a, b) => a.date.localeCompare(b.date));
@@ -312,6 +325,8 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
     );
   });
   const timeOf = (e: DesiredEvent) => times.get(e.year) ?? "18:00";
+  const endDate = nextDay(first.date);
+  const endTime = await getShkiaWithFallback(endDate);
   const rest = wanted.slice(1);
   const recurrence = rest.length
     ? [
@@ -354,6 +369,8 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
       description: found ? input.description : (input.description ?? ""),
       date: first.date,
       time: timeOf(first),
+      endDate,
+      endTime,
       attendees: attendeesFor(firstPassEmails),
       personId: found ? undefined : input.personId,
       colorId: input.colorId,

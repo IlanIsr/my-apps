@@ -17,4 +17,19 @@ export const admin = {
       `Done — ${written} copied, ${deleted} removed.`,
     error: (message: string) => `Sync failed: ${message}`,
   },
+  resync: {
+    title: "Update every event",
+    body: "Rewrites each anniversary's Google event in the current format: from nightfall on the eve to the next day's sunset (shkia). No emails to members, titles unchanged.",
+    button: "Update every event",
+    resume: "Resume",
+    confirm:
+      "Rewrite every anniversary's event in Google Calendar? No email is sent.",
+    running: (done: number, total: number) => `Updating… ${done}/${total}`,
+    rateLimited: (done: number, total: number) =>
+      `Google Calendar is throttling writes — stopped at ${done}/${total}. Wait a minute, then “Resume”.`,
+    done: (total: number, failed: number) =>
+      `Done — ${total - failed}/${total} updated` +
+      (failed ? `, ${failed} failed (see the logs).` : "."),
+    error: (message: string) => `Failed: ${message}`,
+  },
 } as const satisfies AdminTexts;

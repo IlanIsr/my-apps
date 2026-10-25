@@ -519,6 +519,34 @@ export async function recomputeAllOccurrences(
   return fixes;
 }
 
+/** Every person's id — what the admin "update every event" button walks. */
+export async function listPersonIds(): Promise<string[]> {
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+  return (await listPersons()).map((p) => p.id);
+}
+
+/**
+ * Rewrite one person's calendar series from the store as it stands — times,
+ * span (tzeit → next day's shkia), colour, attendees — silently (no emails,
+ * title untouched). Admin maintenance after a change to how events are built.
+ */
+export async function resyncPerson(id: string): Promise<void> {
+  const person = await getPerson(id);
+  if (!person) return;
+  const sync = await syncPersonEvents({
+    personId: person.id,
+    summaryFallback: person.name,
+    colorId: colorIdFor(person.type),
+    members: person.members,
+    events: person.events.map(toDesired),
+  });
+  if (sync.rateLimited) throw new CalendarRateLimitError();
+  await updatePerson(person.id, {
+    members: person.members.filter((m) => !sync.declined.includes(m)),
+    events: applySynced(person.events, sync.events),
+  });
+}
+
 function toDesired(e: StoredEvent) {
   return {
     year: e.year,

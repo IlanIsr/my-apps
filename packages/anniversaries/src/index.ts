@@ -36,6 +36,8 @@ export {
   joinShareLink,
   canSyncFromProd,
   syncFromProd,
+  listPersonIds,
+  resyncPerson,
   NoSuchHebrewDateError,
   CalendarNotConfiguredError,
   CalendarRateLimitError,

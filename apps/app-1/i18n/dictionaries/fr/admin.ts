@@ -17,4 +17,19 @@ export const admin = {
       `Terminé — ${written} copiés, ${deleted} supprimés.`,
     error: (message: string) => `Échec de la synchro : ${message}`,
   },
+  resync: {
+    title: "Mettre à jour tous les événements",
+    body: "Réécrit l'événement Google de chaque anniversaire selon le format actuel : de la sortie des étoiles la veille jusqu'à la shkia du lendemain. Sans email aux membres, titres inchangés.",
+    button: "Mettre à jour tous les événements",
+    resume: "Reprendre",
+    confirm:
+      "Réécrire l'événement de chaque anniversaire dans Google Agenda ? Aucun email n'est envoyé.",
+    running: (done: number, total: number) => `Mise à jour… ${done}/${total}`,
+    rateLimited: (done: number, total: number) =>
+      `Google Agenda limite les écritures — arrêté à ${done}/${total}. Patientez une minute, puis « Reprendre ».`,
+    done: (total: number, failed: number) =>
+      `Terminé — ${total - failed}/${total} mis à jour` +
+      (failed ? `, ${failed} en échec (voir les logs).` : "."),
+    error: (message: string) => `Échec : ${message}`,
+  },
 } as const satisfies AdminTexts;
