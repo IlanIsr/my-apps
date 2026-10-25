@@ -12,7 +12,7 @@ export const anniversaryForm = {
   namePlaceholder: "Ilan Israel Bellaiche",
   hebrewName: "Nom hébraïque",
   type: "De quoi s’agit-il ?",
-  types: { birthday: "Anniversaire", yahrzeit: "Yahrzeit" },
+  types: { birthday: "Anniversaire", yahrzeit: "Azkara" },
   hebDate: "Date hébraïque",
   calendar: "Calendrier",
   day: "Jour",

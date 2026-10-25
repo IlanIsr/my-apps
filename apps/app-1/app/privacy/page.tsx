@@ -69,8 +69,8 @@ export default function PrivacyPage() {
         <Section heading="Overview">
           <p>
             Anniversaries is a small application that tracks Hebrew-calendar
-            birthdays and yahrzeits (memorial anniversaries) and places them on
-            a shared Google Calendar. This policy explains what information the
+            birthdays and azkarot (memorial anniversaries) and places them on a
+            shared Google Calendar. This policy explains what information the
             app collects, how it uses Google account and Google Calendar data,
             how that data is stored and shared, and how you can remove it. The
             app is operated by an individual; questions can be sent to{" "}
@@ -99,8 +99,8 @@ export default function PrivacyPage() {
                 <strong className="font-semibold text-foreground">
                   Anniversary information you enter.
                 </strong>{" "}
-                The name of each person, whether the date is a birthday or a
-                yahrzeit, the Hebrew and Gregorian dates, and optionally the
+                The name of each person, whether the date is a birthday or an
+                azkara, the Hebrew and Gregorian dates, and optionally the
                 Hebrew year, a Hebrew name, and a place of origin. You may also
                 add the email addresses of family members you want to share an
                 anniversary with.

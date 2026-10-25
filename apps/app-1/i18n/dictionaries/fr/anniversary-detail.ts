@@ -6,7 +6,7 @@ import { minhagField } from "./minhag-field";
 /** French UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
   back: "Tous les anniversaires",
-  eyebrow: { birthday: "Anniversaire", yahrzeit: "Yahrzeit" },
+  eyebrow: { birthday: "Anniversaire", yahrzeit: "Azkara" },
   hebDate: "Date hébraïque",
   family: "Famille à cette date",
   upcoming: "À venir",
@@ -22,7 +22,7 @@ export const anniversaryDetail = {
   rateLimited:
     "Google Agenda est occupé pour le moment — patientez puis réessayez.",
   age: (n: number) => `${n} ans`,
-  since: (n: number) => `${n}ᵉ yahrzeit`,
+  since: (n: number) => `${n}ᵉ azkara`,
   error: (message: string) => `Une erreur est survenue : ${message}`,
   editPersonForm: {
     name: "Nom",

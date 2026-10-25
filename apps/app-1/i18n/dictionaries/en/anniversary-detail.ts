@@ -7,7 +7,7 @@ import { ordinal } from "./ordinal";
 /** English UI strings — shape: {@link AnniversaryDetailTexts}. */
 export const anniversaryDetail = {
   back: "All anniversaries",
-  eyebrow: { birthday: "Birthday", yahrzeit: "Yahrzeit" },
+  eyebrow: { birthday: "Birthday", yahrzeit: "Azkara" },
   hebDate: "Hebrew date",
   family: "Family on this date",
   upcoming: "Upcoming",
@@ -23,7 +23,7 @@ export const anniversaryDetail = {
   rateLimited:
     "Google Calendar is busy right now — wait a moment and try again.",
   age: (n: number) => `turns ${n}`,
-  since: (n: number) => `${ordinal(n)} yahrzeit`,
+  since: (n: number) => `${ordinal(n)} azkara`,
   error: (message: string) => `Something went wrong: ${message}`,
   editPersonForm: {
     name: "Name",

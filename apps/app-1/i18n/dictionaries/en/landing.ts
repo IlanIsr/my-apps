@@ -3,9 +3,9 @@ import type { LandingTexts } from "@/app/LandingView";
 /** English UI strings — shape: {@link LandingTexts}. */
 export const landing = {
   eyebrow: "Anniversaries",
-  title: "Hebrew birthdays and yahrzeits, on your calendar",
+  title: "Hebrew birthdays and azkarot, on your calendar",
   tagline:
-    "Anniversaries turns a Hebrew-calendar date into the next years of Gregorian dates and keeps them on a shared Google Calendar, so family birthdays and yahrzeits never slip by.",
+    "Anniversaries turns a Hebrew-calendar date into the next years of Gregorian dates and keeps them on a shared Google Calendar, so family birthdays and azkarot never slip by.",
   whatItDoes: {
     heading: "What it does",
     body: "Add a person and their Hebrew date once. Anniversaries works out when that date falls each year, then creates and maintains calendar events for it — on the eve and at nightfall — on a shared family calendar.",
@@ -16,7 +16,7 @@ export const landing = {
   },
   whoFor: {
     heading: "Who it is for",
-    body: "Families who mark Hebrew-calendar dates — Jewish birthdays and yahrzeits (memorial anniversaries) — and want them handled once instead of recalculated every year.",
+    body: "Families who mark Hebrew-calendar dates — Jewish birthdays and azkarot (memorial anniversaries) — and want them handled once instead of recalculated every year.",
   },
   howToUse: {
     heading: "How to use it",

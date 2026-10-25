@@ -16,10 +16,10 @@ export const anniversaries = {
   shareModal: createShareLinkModal,
   search: "Search by name or Hebrew date",
   joined: "On my list",
-  eyebrow: { birthday: "Birthday", yahrzeit: "Yahrzeit" },
+  eyebrow: { birthday: "Birthday", yahrzeit: "Azkara" },
   empty: {
     title: "No anniversaries yet",
-    body: "Add a birthday or a yahrzeit and it will appear here with its Hebrew date and the next years of occurrences.",
+    body: "Add a birthday or an azkara and it will appear here with its Hebrew date and the next years of occurrences.",
     cta: "Add the first one",
     noResults: "Nothing matches your search.",
   },

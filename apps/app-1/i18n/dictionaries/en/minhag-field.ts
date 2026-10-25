@@ -5,5 +5,5 @@ export const minhagField = {
   label: "Custom",
   sephardi: "Sephardi",
   ashkenazi: "Ashkenazi",
-  hint: "In a year with two Adars, the yahrzeit falls in Adar II (Sephardi) or Adar I (Ashkenazi).",
+  hint: "In a year with two Adars, the azkara falls in Adar II (Sephardi) or Adar I (Ashkenazi).",
 } as const satisfies MinhagFieldTexts;

@@ -9,5 +9,5 @@ export const agenda = {
   nightfall: "nightfall",
   calendar: "Calendar",
   age: (n: number) => `turns ${n}`,
-  since: (n: number) => `${ordinal(n)} yahrzeit`,
+  since: (n: number) => `${ordinal(n)} azkara`,
 } as const satisfies AgendaTexts;

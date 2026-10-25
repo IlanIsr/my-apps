@@ -3,9 +3,9 @@ import type { LandingTexts } from "@/app/LandingView";
 /** French UI strings — shape: {@link LandingTexts}. */
 export const landing = {
   eyebrow: "Anniversaries",
-  title: "Anniversaires et yahrzeits hébraïques, sur votre agenda",
+  title: "Anniversaires et azkarot hébraïques, sur votre agenda",
   tagline:
-    "Anniversaries transforme une date du calendrier hébraïque en ses prochaines dates grégoriennes et les garde sur un agenda Google partagé, pour que les anniversaires et les yahrzeits de la famille ne passent jamais inaperçus.",
+    "Anniversaries transforme une date du calendrier hébraïque en ses prochaines dates grégoriennes et les garde sur un agenda Google partagé, pour que les anniversaires et les azkarot de la famille ne passent jamais inaperçus.",
   whatItDoes: {
     heading: "Ce que ça fait",
     body: "Ajoutez une personne et sa date hébraïque une seule fois. Anniversaries calcule quand cette date tombe chaque année, puis crée et met à jour les événements correspondants — la veille et à la tombée de la nuit — sur un agenda familial partagé.",
@@ -16,7 +16,7 @@ export const landing = {
   },
   whoFor: {
     heading: "Pour qui",
-    body: "Les familles qui marquent des dates du calendrier hébraïque — anniversaires juifs et yahrzeits (anniversaires commémoratifs) — et veulent qu’elles soient gérées une fois plutôt que recalculées chaque année.",
+    body: "Les familles qui marquent des dates du calendrier hébraïque — anniversaires juifs et azkarot (anniversaires de décès) — et veulent qu’elles soient gérées une fois plutôt que recalculées chaque année.",
   },
   howToUse: {
     heading: "Comment l’utiliser",
