@@ -8,6 +8,7 @@ export const navbar = {
     agenda: "סדר יום",
     converter: "המרת תאריכים",
     about: "אודות",
+    profile: "פרופיל",
     admin: "ניהול",
   },
   languageLabel: "שפה",

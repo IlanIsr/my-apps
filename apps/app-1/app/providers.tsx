@@ -2,6 +2,8 @@
 
 import { ThemeProvider } from "next-themes";
 
+import type { Minhag } from "@repo/hebcal";
+
 import { I18nProvider as AriaI18nProvider } from "@repo/ui/i18n-provider";
 
 import { I18nProvider, LOCALE_TAG, useLanguage } from "@/i18n";
@@ -21,9 +23,15 @@ function AriaLocale({ children }: { children: React.ReactNode }) {
  * follow the language and its direction — and `next-themes` for class-based
  * light/dark.
  */
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  minhag,
+  children,
+}: {
+  minhag: Minhag | null;
+  children: React.ReactNode;
+}) {
   return (
-    <I18nProvider>
+    <I18nProvider minhag={minhag}>
       <AriaLocale>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}

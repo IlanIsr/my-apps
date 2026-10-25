@@ -8,6 +8,7 @@ export const navbar = {
     agenda: "Agenda",
     converter: "Converter",
     about: "About",
+    profile: "Profile",
     admin: "Admin",
   },
   languageLabel: "Language",

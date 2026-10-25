@@ -462,6 +462,31 @@ export async function upsertUser(input: {
     .onConflictDoUpdate({ target: users.email, set });
 }
 
+/** The user's profile minhag, or `null` if they never chose one. */
+export async function getUserMinhag(email: string): Promise<Minhag | null> {
+  const [row] = await db()
+    .select({ minhag: users.minhag })
+    .from(users)
+    .where(eq(users.email, email.trim().toLowerCase()));
+  return row?.minhag ? toMinhag(row.minhag) : null;
+}
+
+/** Saves the user's profile minhag (creating their `users` row if needed). */
+export async function setUserMinhag(input: {
+  email: string;
+  clerkId: string;
+  minhag: Minhag;
+}): Promise<void> {
+  const email = input.email.trim().toLowerCase();
+  await db()
+    .insert(users)
+    .values({ email, clerkId: input.clerkId, minhag: input.minhag })
+    .onConflictDoUpdate({
+      target: users.email,
+      set: { minhag: input.minhag, updatedAt: new Date() },
+    });
+}
+
 /** `email → hasSentEmail` for the given addresses. Missing addresses map to `false`. */
 export async function getEmailSentState(
   emails: string[],

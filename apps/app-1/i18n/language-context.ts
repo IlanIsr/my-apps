@@ -8,6 +8,8 @@
 
 import { createContext, useContext } from "react";
 
+import type { Minhag } from "@repo/hebcal";
+
 import type { Locale } from "./config";
 import type { Messages } from "./messages";
 
@@ -15,6 +17,8 @@ export type LanguageContextValue = {
   locale: Locale;
   dir: "ltr" | "rtl";
   messages: Messages;
+  /** The signed-in user's profile minhag (`null` = never chosen). */
+  minhag: Minhag | null;
   setLocale: (locale: Locale) => void;
 };
 

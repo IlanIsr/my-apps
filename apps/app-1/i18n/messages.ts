@@ -15,6 +15,7 @@ import type { ShareLinkViewTexts } from "@/app/anniversaries/share/[id]/ShareLin
 import type { FooterTexts } from "@/app/components/Footer";
 import type { NavbarTexts } from "@/app/components/Navbar";
 import type { ContactFormTexts } from "@/app/contact/ContactForm";
+import type { ProfileTexts } from "@/app/profile/ProfileView";
 import type { ConverterTexts } from "@/app/home/HomePage";
 import type { LandingTexts } from "@/app/LandingView";
 import type { EventSummaryTexts } from "@/lib/event-summary";
@@ -39,4 +40,5 @@ export type Messages = {
   eventSummary: EventSummaryTexts;
   shareLinkView: ShareLinkViewTexts;
   contact: ContactFormTexts;
+  profile: ProfileTexts;
 };

@@ -71,7 +71,7 @@ export type AnniversaryFormTexts = {
 };
 
 export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
-  const { locale } = useLanguage();
+  const { locale, minhag: profileMinhag } = useLanguage();
   const router = useRouter();
 
   const months = useMemo(() => hebrewMonthOptions(t.months), [t.months]);
@@ -87,7 +87,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
   const [day, setDay] = useState("1");
   const [month, setMonth] = useState("Tishrei");
   const [hebYear, setHebYear] = useState("");
-  const [minhag, setMinhag] = useState<Minhag>("sephardi");
+  const [minhag, setMinhag] = useState<Minhag>(profileMinhag ?? "sephardi");
   const [gDay, setGDay] = useState("1");
   const [gMonth, setGMonth] = useState("0");
   const [gYear, setGYear] = useState(() => String(new Date().getFullYear()));

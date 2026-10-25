@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
+import type { Minhag } from "@repo/hebcal";
+
 import { DEFAULT_LOCALE, isLocale, LOCALE_DIR, type Locale } from "./config";
 import { getDictionary } from "./dictionaries";
 import { LanguageContext, type LanguageContextValue } from "./language-context";
@@ -31,7 +33,17 @@ function subscribe(onChange: () => void) {
   };
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
+/**
+ * `minhag` is the signed-in user's profile minhag, read server-side by the root
+ * layout: Ashkenazi switches the wording to "Yortzeit".
+ */
+export function I18nProvider({
+  minhag,
+  children,
+}: {
+  minhag: Minhag | null;
+  children: React.ReactNode;
+}) {
   const locale = useSyncExternalStore(
     subscribe,
     readLocale,
@@ -54,10 +66,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     () => ({
       locale,
       setLocale,
-      messages: getDictionary(locale),
+      messages: getDictionary(locale, minhag),
+      minhag,
       dir: LOCALE_DIR[locale],
     }),
-    [locale, setLocale],
+    [locale, setLocale, minhag],
   );
 
   return (

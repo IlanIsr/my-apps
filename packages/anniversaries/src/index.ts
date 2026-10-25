@@ -45,3 +45,5 @@ export {
   type UpdatePersonInput,
   type ShareLinkPreviewItem,
 } from "./service";
+
+export { getUserMinhag, setUserMinhag } from "./store";

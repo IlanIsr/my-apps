@@ -90,6 +90,11 @@ export const users = pgTable("users", {
   /** Clerk user id — set once this address signs in; null for invite-only addresses. */
   clerkId: text("clerk_id"),
   hasSentEmail: boolean("has_sent_email").notNull().default(false),
+  /**
+   * Profile: `"sephardi" | "ashkenazi"`, null until chosen. Sets the wording
+   * (Azkara / Yortzeit) and the default Adar minhag of new anniversaries.
+   */
+  minhag: text("minhag"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .notNull()
     .defaultNow(),

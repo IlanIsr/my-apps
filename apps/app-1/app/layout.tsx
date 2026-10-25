@@ -17,7 +17,7 @@ import {
 
 import { AuthProvider } from "@repo/auth/provider";
 import { getCurrentUserEmail } from "@repo/auth/user";
-import { isAnniversariesAdmin } from "@repo/anniversaries";
+import { getUserMinhag, isAnniversariesAdmin } from "@repo/anniversaries";
 
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
@@ -79,13 +79,20 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const email = await getCurrentUserEmail();
   const isAdmin = email ? isAnniversariesAdmin(email) : false;
+  // Profile minhag → wording + defaults. A DB hiccup must not break every page.
+  const minhag = email
+    ? await getUserMinhag(email).catch((error: unknown) => {
+        console.error("[profile] reading minhag failed:", error);
+        return null;
+      })
+    : null;
 
   return (
     <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className="antialiased">
         <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
         <AuthProvider>
-          <Providers>
+          <Providers minhag={minhag}>
             <Navbar isAdmin={isAdmin} />
             <main className="mx-auto max-w-2xl px-6 py-12">{children}</main>
             <Footer />

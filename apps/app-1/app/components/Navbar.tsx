@@ -23,6 +23,7 @@ export type NavbarTexts = {
     agenda: string;
     converter: string;
     about: string;
+    profile: string;
     admin: string;
   };
   languageLabel: string;
@@ -50,6 +51,7 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
     { href: "/calendar", label: t.tabs.agenda },
     { href: "/converter", label: t.tabs.converter },
     { href: "/about", label: t.tabs.about },
+    { href: "/profile", label: t.tabs.profile },
     ...(isAdmin ? [{ href: "/admin", label: t.tabs.admin }] : []),
   ];
 

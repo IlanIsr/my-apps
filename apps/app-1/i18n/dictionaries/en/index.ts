@@ -6,6 +6,7 @@ import { anniversaryDetail } from "./anniversary-detail";
 import { anniversaryForm } from "./anniversary-form";
 import { calendarUnavailable } from "./calendar-unavailable";
 import { contact } from "./contact";
+import { profile } from "./profile";
 import { converter } from "./converter";
 import { eventSummary } from "./event-summary";
 import { footer } from "./footer";
@@ -33,4 +34,5 @@ export const en = {
   eventSummary,
   shareLinkView,
   contact,
+  profile,
 } as const satisfies Messages;
