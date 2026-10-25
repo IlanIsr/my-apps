@@ -1,4 +1,5 @@
 import type { ProfileTexts } from "@/app/profile/ProfileView";
+import { hebrewMonths } from "./hebrew-months";
 
 export const profile = {
   title: "Profil",
@@ -11,4 +12,30 @@ export const profile = {
   },
   saved: "Enregistré.",
   error: "Impossible d'enregistrer. Réessayez.",
+  csvImport: {
+    title: "Importer un CSV",
+    intro:
+      "Un export Hebcal (Yahrzeit + Anniversary, format CSV). Dates jj/mm/aaaa ou mm/jj/aaaa. Chaque personne est ajoutée à votre liste ; si elle existe déjà, vous la rejoignez.",
+    choose: "Choisir un fichier…",
+    nothingFound: "Aucun anniversaire reconnu dans ce fichier.",
+    found: (people: number, skipped: number) =>
+      `${people} personne${people === 1 ? "" : "s"} trouvée${people === 1 ? "" : "s"}` +
+      (skipped
+        ? ` · ${skipped} ligne${skipped === 1 ? "" : "s"} ignorée${skipped === 1 ? "" : "s"}`
+        : ""),
+    type: "Type",
+    types: { birthday: "Anniversaire", yahrzeit: "Azkara" },
+    dates: (n: number) => `${n} date${n === 1 ? "" : "s"} dans le fichier`,
+    year: (y: number) => `année ${y}`,
+    import: (n: number) => `Importer (${n})`,
+    importing: (done: number, total: number) => `Import… ${done}/${total}`,
+    status: { created: "Ajouté", joined: "Déjà là — rejoint", failed: "Échec" },
+    rateLimited:
+      "Google Agenda est occupé — patientez une minute, puis relancez pour importer le reste.",
+    done: (created: number, joined: number, failed: number) =>
+      `Terminé : ${created} ajouté${created === 1 ? "" : "s"}, ${joined} rejoint${joined === 1 ? "" : "s"}` +
+      (failed ? `, ${failed} en échec` : "") +
+      ".",
+    months: hebrewMonths,
+  },
 } as const satisfies ProfileTexts;

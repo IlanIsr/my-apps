@@ -27,6 +27,13 @@ export function yortzeit(m: Messages): Messages {
       since: (n: number) => `${ordinal(n)} yortzeit`,
       editPersonForm: { ...m.anniversaryDetail.editPersonForm, minhag },
     },
+    profile: {
+      ...m.profile,
+      csvImport: {
+        ...m.profile.csvImport,
+        types: { ...m.profile.csvImport.types, yahrzeit: "Yortzeit" },
+      },
+    },
     anniversaryForm: {
       ...m.anniversaryForm,
       minhag,
