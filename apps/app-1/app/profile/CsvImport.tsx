@@ -24,9 +24,10 @@ import { Select } from "../components/Select";
 export type CsvImportTexts = {
   title: string;
   intro: string;
-  /** "Another format? …" — followed by the {@link contact} link. */
+  /** "Another format?" — then the {@link contact} link, then {@link contactAfter}. */
   otherFormat: string;
   contact: string;
+  contactAfter: string;
   choose: string;
   nothingFound: string;
   found: (people: number, skipped: number) => string;
@@ -122,6 +123,7 @@ export function CsvImport({ t }: { t: CsvImportTexts }) {
         <Link href="/contact" className="underline hover:text-foreground">
           {t.contact}
         </Link>
+        {t.contactAfter}
       </p>
 
       {/* No HeroUI file picker — a hidden native input behind our Button. */}

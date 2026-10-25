@@ -17,7 +17,8 @@ export const profile = {
     intro:
       "פורמט נתמך: קובץ ה-CSV של Hebcal ‏(hebcal.com ← Yahrzeit + Anniversary ← CSV). תאריכים dd/mm/yyyy או mm/dd/yyyy. כל אדם נוסף לרשימה שלך; אם הוא כבר קיים, מצטרפים אליו.",
     otherFormat: "הקובץ שלך מגיע ממקום אחר?",
-    contact: "צרו קשר ונטפל בזה.",
+    contact: "צרו קשר",
+    contactAfter: " ונטפל בזה.",
     choose: "בחירת קובץ…",
     nothingFound: "לא זוהו תאריכים בקובץ.",
     found: (people: number, skipped: number) =>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -58,6 +58,15 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
+  // The mobile menu closes on Escape, on a tap outside it (the backdrop
+  // below), and when a link in it is followed.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const tabLinks = (vertical: boolean) =>
     tabs.map((tab) => {
       const active = pathname.startsWith(tab.href);
@@ -87,56 +96,70 @@ export function Navbar({ isAdmin = false }: { isAdmin?: boolean }) {
   );
 
   return (
-    <header className="border-b border-border bg-card">
-      <nav className="mx-auto flex max-w-5xl items-center gap-x-4 px-6 py-3 text-sm">
-        <Link
-          href="/anniversaries"
-          onClick={close}
-          className="min-w-0 truncate font-display text-base font-semibold whitespace-nowrap"
-        >
-          {t.appName}
-        </Link>
-        <div className="hidden min-w-0 gap-0.5 md:flex">{tabLinks(false)}</div>
-        <div className="ms-auto flex shrink-0 items-center gap-2">
-          <div className="hidden items-center gap-2 md:flex">{switchers}</div>
-          <AuthControl
-            signedOut={
-              <Link
-                href="/sign-in"
-                className="rounded-pill bg-primary px-3 py-1.5 font-semibold whitespace-nowrap text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                {t.signIn}
-              </Link>
-            }
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            isIconOnly
-            aria-label={t.menu}
-            aria-expanded={open}
-            aria-controls="mobile-menu"
-            className="md:hidden"
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? (
-              <CloseIcon className="h-5 w-5" />
-            ) : (
-              <MenuIcon className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-      </nav>
+    <>
       {open && (
+        // Not a modal (no `@repo/ui/modal`): just catches taps outside the
+        // menu. It sits under the header (z-20), and HeroUI's popovers (language
+        // picker) portal above both, so using them doesn't close the menu.
         <div
-          id="mobile-menu"
-          className="mx-auto flex max-w-5xl flex-col gap-3 border-t border-hairline px-6 py-3 text-sm md:hidden"
-        >
-          <div className="flex flex-col gap-0.5">{tabLinks(true)}</div>
-          <div className="flex items-center gap-2">{switchers}</div>
-        </div>
+          aria-hidden
+          onClick={close}
+          className="fixed inset-0 z-10 bg-black/20 md:hidden"
+        />
       )}
-    </header>
+      <header className="relative z-20 border-b border-border bg-card">
+        <nav className="mx-auto flex max-w-5xl items-center gap-x-4 px-6 py-3 text-sm">
+          <Link
+            href="/anniversaries"
+            onClick={close}
+            className="min-w-0 truncate font-display text-base font-semibold whitespace-nowrap"
+          >
+            {t.appName}
+          </Link>
+          <div className="hidden min-w-0 gap-0.5 md:flex">
+            {tabLinks(false)}
+          </div>
+          <div className="ms-auto flex shrink-0 items-center gap-2">
+            <div className="hidden items-center gap-2 md:flex">{switchers}</div>
+            <AuthControl
+              signedOut={
+                <Link
+                  href="/sign-in"
+                  className="rounded-pill bg-primary px-3 py-1.5 font-semibold whitespace-nowrap text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  {t.signIn}
+                </Link>
+              }
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              isIconOnly
+              aria-label={t.menu}
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              className="md:hidden"
+              onClick={() => setOpen((o) => !o)}
+            >
+              {open ? (
+                <CloseIcon className="h-5 w-5" />
+              ) : (
+                <MenuIcon className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
+        </nav>
+        {open && (
+          <div
+            id="mobile-menu"
+            className="mx-auto flex max-w-5xl flex-col gap-3 border-t border-hairline px-6 py-3 text-sm md:hidden"
+          >
+            <div className="flex flex-col gap-0.5">{tabLinks(true)}</div>
+            <div className="flex items-center gap-2">{switchers}</div>
+          </div>
+        )}
+      </header>
+    </>
   );
 }
 

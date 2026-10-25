@@ -17,7 +17,8 @@ export const profile = {
     intro:
       "Accepted format: Hebcal's CSV export (hebcal.com → Yahrzeit + Anniversary → CSV). Dates dd/mm/yyyy or mm/dd/yyyy. Each person is added to your list; if they already exist, you join them.",
     otherFormat: "Your file comes from somewhere else?",
-    contact: "Contact us and we'll handle it.",
+    contact: "Contact us",
+    contactAfter: " and we'll handle it.",
     choose: "Choose a file…",
     nothingFound: "No anniversary recognised in this file.",
     found: (people: number, skipped: number) =>
