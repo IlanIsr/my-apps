@@ -7,6 +7,8 @@
  * transaction, so a person and its members / events never land half-written.
  */
 
+import { randomBytes } from "node:crypto";
+
 import { eq, inArray } from "drizzle-orm";
 
 import type { HebrewMonthKey, Minhag } from "@repo/hebcal";
@@ -485,6 +487,47 @@ export async function setUserMinhag(input: {
       target: users.email,
       set: { minhag: input.minhag, updatedAt: new Date() },
     });
+}
+
+/** The user's calendar-feed token, or `null` if they never asked for one. */
+export async function getUserFeedToken(email: string): Promise<string | null> {
+  const [row] = await db()
+    .select({ feedToken: users.feedToken })
+    .from(users)
+    .where(eq(users.email, email.trim().toLowerCase()));
+  return row?.feedToken ?? null;
+}
+
+/**
+ * Gives the user a new calendar-feed token (creating their `users` row if
+ * needed) — the previous feed URL stops working.
+ */
+export async function rotateUserFeedToken(input: {
+  email: string;
+  clerkId: string;
+}): Promise<string> {
+  const email = input.email.trim().toLowerCase();
+  const feedToken = randomBytes(24).toString("base64url");
+  await db()
+    .insert(users)
+    .values({ email, clerkId: input.clerkId, feedToken })
+    .onConflictDoUpdate({
+      target: users.email,
+      set: { feedToken, updatedAt: new Date() },
+    });
+  return feedToken;
+}
+
+/** Whose feed `token` is (email + profile minhag), or `null`. */
+export async function findUserByFeedToken(
+  token: string,
+): Promise<{ email: string; minhag: Minhag | null } | null> {
+  const [row] = await db()
+    .select({ email: users.email, minhag: users.minhag })
+    .from(users)
+    .where(eq(users.feedToken, token));
+  if (!row) return null;
+  return { email: row.email, minhag: row.minhag ? toMinhag(row.minhag) : null };
 }
 
 /** `email → hasSentEmail` for the given addresses. Missing addresses map to `false`. */

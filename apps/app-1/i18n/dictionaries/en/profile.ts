@@ -43,4 +43,21 @@ export const profile = {
       ".",
     months: hebrewMonths,
   },
+  calendarFeed: {
+    title: "Apple Calendar / Outlook",
+    intro:
+      "Subscribe to your anniversaries from Calendar (iPhone, Mac), Outlook or any other calendar app. Read-only; your app updates it by itself, sometimes a few hours late. This link is personal — don't share it.",
+    show: "Get my link",
+    loading: "Loading…",
+    subscribe: "Subscribe in Calendar",
+    otherApps:
+      "Another calendar (Outlook, Google “From URL”…): copy this link.",
+    copy: "Copy",
+    copied: "Copied",
+    renew: "New link",
+    renewHint:
+      "The old link stops working — you'll need to subscribe again with the new one.",
+    error: "Couldn't get the link. Try again.",
+    calendarName: "Anniversaries",
+  },
 } as const satisfies ProfileTexts;

@@ -4,7 +4,8 @@
  * The `/profile` page: one card per preference. Today only the minhag —
  * Ashkenazi switches the wording to "Yortzeit" and makes Adar I the default
  * for a new single-Adar anniversary (Sephardi: "Azkara", Adar II) — and the
- * Hebcal CSV import ({@link CsvImport}).
+ * calendar-feed link ({@link CalendarFeed}) and the Hebcal CSV import
+ * ({@link CsvImport}).
  */
 
 import { useRouter } from "next/navigation";
@@ -14,6 +15,7 @@ import type { Minhag } from "@repo/hebcal";
 import { useLanguage } from "@/i18n";
 import { Segmented } from "../components/Segmented";
 import { saveMinhagAction } from "./actions";
+import { CalendarFeed, type CalendarFeedTexts } from "./CalendarFeed";
 import { CsvImport, type CsvImportTexts } from "./CsvImport";
 
 /** Text for {@link ProfileView}. */
@@ -30,6 +32,7 @@ export type ProfileTexts = {
   saved: string;
   error: string;
   csvImport: CsvImportTexts;
+  calendarFeed: CalendarFeedTexts;
 };
 
 export function ProfileView({ t }: { t: ProfileTexts }) {
@@ -84,6 +87,8 @@ export function ProfileView({ t }: { t: ProfileTexts }) {
           <p className="text-xs text-destructive">{t.error}</p>
         )}
       </section>
+
+      <CalendarFeed t={t.calendarFeed} />
 
       <CsvImport t={t.csvImport} />
     </div>
