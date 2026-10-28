@@ -12,6 +12,7 @@ import { eventSummary } from "./event-summary";
 import { footer } from "./footer";
 import { landing } from "./landing";
 import { navbar } from "./navbar";
+import { onboarding } from "./onboarding";
 import { newAnniversaryHeader } from "./new-anniversary-header";
 import { shareLinkView } from "./share-link-view";
 
@@ -35,4 +36,5 @@ export const en = {
   shareLinkView,
   contact,
   profile,
+  onboarding,
 } as const satisfies Messages;

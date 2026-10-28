@@ -7,7 +7,9 @@
  *
  * Each person is **one recurring event**: its first occurrence is the start,
  * every other one an `RDATE` date-time (each with its own tzeit hakochavim
- * time). So joining sends a single invite for all the years at once.
+ * time). So joining sends a single invite for all the years at once. A person
+ * has one such series per reference city its members use (`location`) — the
+ * caller picks the members and the series of each city.
  *
  * Authenticates AS the bot account via `google-auth-library` + a stored refresh
  * token; talks to the Calendar REST API with `fetch`.
@@ -18,10 +20,11 @@ import { OAuth2Client } from "google-auth-library";
 import {
   getShkiaWithFallback,
   getTsetHakohavimWithFallback,
+  JERUSALEM,
+  type ZmanimLocation,
 } from "@repo/hebcal";
 import { sleep } from "@repo/utils";
 
-const TIMEZONE = "Asia/Jerusalem";
 const EVENT_COLOR_ID = "5";
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID ?? "primary";
 
@@ -182,17 +185,22 @@ function buildEventBody(fields: {
   /** End of the first occurrence (the next day's shkia). */
   endDate: string;
   endTime: string;
+  timezone: string;
   attendees: AttendeeInput[];
-  personId?: string;
+  /** Private tags for a new series (`personId`, `location`). */
+  tags?: Record<string, string>;
   colorId?: string;
   /** `RRULE`/`RDATE` lines; omit to leave the recurrence untouched. */
   recurrence?: string[];
 }): Record<string, unknown> {
   const body: Record<string, unknown> = {
-    start: { dateTime: `${fields.date}T${fields.time}:00`, timeZone: TIMEZONE },
+    start: {
+      dateTime: `${fields.date}T${fields.time}:00`,
+      timeZone: fields.timezone,
+    },
     end: {
       dateTime: `${fields.endDate}T${fields.endTime}:00`,
-      timeZone: TIMEZONE,
+      timeZone: fields.timezone,
     },
     attendees: mapAttendees(fields.attendees),
     guestsCanModify: false,
@@ -203,9 +211,7 @@ function buildEventBody(fields: {
   if (fields.recurrence) body.recurrence = fields.recurrence;
   if (fields.summary !== undefined) body.summary = fields.summary;
   if (fields.description !== undefined) body.description = fields.description;
-  if (fields.personId) {
-    body.extendedProperties = { private: { personId: fields.personId } };
-  }
+  if (fields.tags) body.extendedProperties = { private: fields.tags };
   return body;
 }
 
@@ -213,7 +219,7 @@ export type DesiredEvent = {
   year: number;
   /** Gregorian eve date, ISO `YYYY-MM-DD`. */
   date: string;
-  /** `HH:MM`, or `""` to compute tzeit hakochavim. */
+  /** `HH:MM` (in the series' timezone), or `""` to compute tzeit hakochavim. */
   time: string;
   /** The person's series id (same for every year), or `""` if not created. */
   googleEventId: string;
@@ -230,6 +236,12 @@ export type SyncedEvent = {
 
 export type SyncInput = {
   personId: string;
+  /**
+   * Reference city of this series: its timezone, and where tzeit / shkia are
+   * computed. Default Jerusalem. `locationId` tags a new series with it.
+   */
+  location?: ZmanimLocation;
+  locationId?: string;
   /** Pre-translated event title. Omit to leave the existing title untouched. */
   summary?: string;
   /** Title for a brand-new series when `summary` is omitted. */
@@ -257,6 +269,8 @@ export type SyncResult = {
   declined: string[];
   /** True if the Calendar API rate-limited us before the series was synced. */
   rateLimited: boolean;
+  /** The series' title as it now stands on the calendar. */
+  summary?: string;
 };
 
 /** Gap between Calendar writes — the API throttles bursts to a single calendar. */
@@ -285,6 +299,7 @@ function icalDateTime(date: string, time: string): string {
  * (tzeit is a fixed 42 minutes after sunset, and sunset moves ≤ ~2 min a day).
  */
 export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
+  const location = input.location ?? JERUSALEM;
   const wanted = [...input.events].sort((a, b) => a.date.localeCompare(b.date));
   const first = wanted[0];
   if (!first) return { events: [], declined: [], rateLimited: false };
@@ -321,16 +336,17 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
   await pool(4, wanted, async (want) => {
     times.set(
       want.year,
-      want.time || (await getTsetHakohavimWithFallback(want.date)),
+      want.time ||
+        (await getTsetHakohavimWithFallback(want.date, undefined, location)),
     );
   });
   const timeOf = (e: DesiredEvent) => times.get(e.year) ?? "18:00";
   const endDate = nextDay(first.date);
-  const endTime = await getShkiaWithFallback(endDate);
+  const endTime = await getShkiaWithFallback(endDate, undefined, location);
   const rest = wanted.slice(1);
   const recurrence = rest.length
     ? [
-        `RDATE;TZID=${TIMEZONE}:${rest
+        `RDATE;TZID=${location.timezone}:${rest
           .map((e) => icalDateTime(e.date, timeOf(e)))
           .join(",")}`,
       ]
@@ -340,8 +356,16 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
   //    When it's a genuine mix, adding the to-notify members as a separate
   //    follow-up change is what makes Google email only them — an unaffected
   //    existing attendee isn't renotified just because sendUpdates=all.
+  //    Someone already on the series is never re-invited.
+  const alreadyInvited = new Set(
+    (found?.attendees ?? []).flatMap((a) =>
+      a.email ? [a.email.toLowerCase()] : [],
+    ),
+  );
   const notifySet = new Set(
-    (input.notifyEmails ?? []).map((e) => e.toLowerCase()),
+    (input.notifyEmails ?? [])
+      .map((e) => e.toLowerCase())
+      .filter((e) => !alreadyInvited.has(e)),
   );
   const toNotify = memberEmails.filter((m) => notifySet.has(m));
   const toKeepSilent = memberEmails.filter((m) => !notifySet.has(m));
@@ -371,8 +395,14 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
       time: timeOf(first),
       endDate,
       endTime,
+      timezone: location.timezone,
       attendees: attendeesFor(firstPassEmails),
-      personId: found ? undefined : input.personId,
+      tags: found
+        ? undefined
+        : {
+            personId: input.personId,
+            ...(input.locationId && { location: input.locationId }),
+          },
       colorId: input.colorId,
       recurrence,
     });
@@ -407,6 +437,7 @@ export async function syncPersonEvents(input: SyncInput): Promise<SyncResult> {
 
   const htmlLink = result.htmlLink ?? found?.htmlLink ?? "";
   return {
+    summary: result.summary,
     events: wanted.map((want) => ({
       year: want.year,
       date: want.date,

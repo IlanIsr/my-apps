@@ -11,7 +11,12 @@ import { randomBytes } from "node:crypto";
 
 import { eq, inArray } from "drizzle-orm";
 
-import type { HebrewMonthKey, Minhag } from "@repo/hebcal";
+import {
+  toLocationId,
+  type HebrewMonthKey,
+  type LocationId,
+  type Minhag,
+} from "@repo/hebcal";
 import { uniqueLowercased } from "@repo/utils";
 
 import { db, dbFor, DatabaseNotConfiguredError, type Db } from "./db/client";
@@ -19,6 +24,7 @@ import {
   personEvents,
   personMembers,
   persons,
+  personSeries,
   users,
   type PersonEventRow,
   type PersonRow,
@@ -518,16 +524,126 @@ export async function rotateUserFeedToken(input: {
   return feedToken;
 }
 
-/** Whose feed `token` is (email + profile minhag), or `null`. */
-export async function findUserByFeedToken(
-  token: string,
-): Promise<{ email: string; minhag: Minhag | null } | null> {
+/** Whose feed `token` is (email + profile minhag + city), or `null`. */
+export async function findUserByFeedToken(token: string): Promise<{
+  email: string;
+  minhag: Minhag | null;
+  location: LocationId;
+} | null> {
   const [row] = await db()
-    .select({ email: users.email, minhag: users.minhag })
+    .select({
+      email: users.email,
+      minhag: users.minhag,
+      location: users.location,
+    })
     .from(users)
     .where(eq(users.feedToken, token));
   if (!row) return null;
-  return { email: row.email, minhag: row.minhag ? toMinhag(row.minhag) : null };
+  return {
+    email: row.email,
+    minhag: row.minhag ? toMinhag(row.minhag) : null,
+    location: toLocationId(row.location),
+  };
+}
+
+/**
+ * The user's profile city (`null` = never chosen, i.e. Jerusalem) and whether
+ * they've seen the first-visit modal. A user with no row yet has neither.
+ */
+export async function getUserProfile(email: string): Promise<{
+  location: LocationId | null;
+  onboardingShown: boolean;
+}> {
+  const [row] = await db()
+    .select({
+      location: users.location,
+      onboardingShown: users.onboardingShown,
+    })
+    .from(users)
+    .where(eq(users.email, email.trim().toLowerCase()));
+  return {
+    location: row?.location ? toLocationId(row.location) : null,
+    onboardingShown: row?.onboardingShown ?? false,
+  };
+}
+
+/** `email → city` for the given addresses; unknown / unset → Jerusalem. */
+export async function getUserLocations(
+  emails: string[],
+): Promise<Map<string, LocationId>> {
+  const wanted = uniqueLowercased(emails);
+  const result = new Map<string, LocationId>(
+    wanted.map((e) => [e, toLocationId(null)]),
+  );
+  if (wanted.length === 0) return result;
+  const rows = await db()
+    .select({ email: users.email, location: users.location })
+    .from(users)
+    .where(inArray(users.email, wanted));
+  for (const r of rows) result.set(r.email, toLocationId(r.location));
+  return result;
+}
+
+/** Saves the user's profile city (creating their `users` row if needed). */
+export async function setUserLocation(input: {
+  email: string;
+  clerkId: string;
+  location: LocationId;
+}): Promise<void> {
+  const email = input.email.trim().toLowerCase();
+  await db()
+    .insert(users)
+    .values({ email, clerkId: input.clerkId, location: input.location })
+    .onConflictDoUpdate({
+      target: users.email,
+      set: { location: input.location, updatedAt: new Date() },
+    });
+}
+
+/** Records that the first-visit modal was shown (creating the row if needed). */
+export async function markOnboardingShown(input: {
+  email: string;
+  clerkId: string;
+}): Promise<void> {
+  const email = input.email.trim().toLowerCase();
+  await db()
+    .insert(users)
+    .values({ email, clerkId: input.clerkId, onboardingShown: true })
+    .onConflictDoUpdate({
+      target: users.email,
+      set: { onboardingShown: true, updatedAt: new Date() },
+    });
+}
+
+// --- per-city series ---
+
+export type PersonSeries = {
+  personId: string;
+  location: LocationId;
+  googleEventId: string;
+  htmlLink: string;
+};
+
+/** The extra (non-Jerusalem) series of `personId`, or of every person. */
+export async function listPersonSeries(
+  personId?: string,
+): Promise<PersonSeries[]> {
+  const query = db().select().from(personSeries);
+  const rows = await (personId
+    ? query.where(eq(personSeries.personId, personId))
+    : query);
+  return rows.map((r) => ({ ...r, location: toLocationId(r.location) }));
+}
+
+export async function savePersonSeries(series: PersonSeries): Promise<void> {
+  const { personId, location, googleEventId, htmlLink } = series;
+  await db()
+    .insert(personSeries)
+    .values({ personId, location, googleEventId, htmlLink })
+    .onConflictDoUpdate({
+      target: [personSeries.personId, personSeries.location],
+      set: { googleEventId, htmlLink },
+    });
 }
 
 /** `email → hasSentEmail` for the given addresses. Missing addresses map to `false`. */

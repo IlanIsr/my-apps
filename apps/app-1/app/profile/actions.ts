@@ -8,13 +8,17 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  CalendarRateLimitError,
   getUserFeedToken,
+  markOnboardingShown,
+  moveMemberSeries,
   rotateUserFeedToken,
+  setUserLocation,
   setUserMinhag,
   toMinhag,
 } from "@repo/anniversaries";
 import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
-import type { Minhag } from "@repo/hebcal";
+import { isLocationId, type LocationId, type Minhag } from "@repo/hebcal";
 
 export type ProfileResult =
   { ok: true } | { ok: false; error: "not-signed-in" | "failed" };
@@ -60,5 +64,72 @@ export async function feedTokenAction(
   } catch (error) {
     console.error("[profile] calendar feed token failed:", error);
     return { ok: false, error: "failed" };
+  }
+}
+
+export type LocationResult =
+  | { ok: true; personIds: string[] }
+  | { ok: false; error: "not-signed-in" | "failed" };
+
+/**
+ * Saves the signed-in user's city. Returns the anniversaries they're on, each
+ * to be moved to that city's calendar series with {@link moveSeriesAction}.
+ */
+export async function saveLocationAction(
+  location: LocationId,
+): Promise<LocationResult> {
+  const [email, userId] = await Promise.all([
+    getCurrentUserEmail(),
+    getCurrentUserId(),
+  ]);
+  if (!email || !userId) return { ok: false, error: "not-signed-in" };
+  if (!isLocationId(location)) return { ok: false, error: "failed" };
+  try {
+    const personIds = await setUserLocation({
+      email,
+      clerkId: userId,
+      location,
+    });
+    revalidatePath("/", "layout");
+    return { ok: true, personIds };
+  } catch (error) {
+    console.error("[profile] saving location failed:", error);
+    return { ok: false, error: "failed" };
+  }
+}
+
+export type MoveSeriesResult =
+  | { ok: true }
+  | { ok: false; error: "not-signed-in" | "rate-limited" | "failed" };
+
+/** Moves the signed-in user to their city's series of one anniversary. */
+export async function moveSeriesAction(
+  personId: string,
+): Promise<MoveSeriesResult> {
+  const email = await getCurrentUserEmail();
+  if (!email) return { ok: false, error: "not-signed-in" };
+  try {
+    await moveMemberSeries(personId, email);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof CalendarRateLimitError) {
+      return { ok: false, error: "rate-limited" };
+    }
+    console.error("[profile] moving calendar series failed:", error);
+    return { ok: false, error: "failed" };
+  }
+}
+
+/** The first-visit modal was seen — never show it again. */
+export async function onboardingShownAction(): Promise<void> {
+  const [email, userId] = await Promise.all([
+    getCurrentUserEmail(),
+    getCurrentUserId(),
+  ]);
+  if (!email || !userId) return;
+  try {
+    await markOnboardingShown({ email, clerkId: userId });
+  } catch (error) {
+    console.error("[profile] saving onboarding state failed:", error);
   }
 }

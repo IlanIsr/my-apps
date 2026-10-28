@@ -81,6 +81,26 @@ export const personEvents = pgTable(
 );
 
 /**
+ * A person's extra Google Calendar series, one per reference city its members
+ * use other than Jerusalem (whose series id stays in `person_events`). Each
+ * member is an attendee of their own city's series only. Rows are never
+ * deleted: a series nobody uses any more just has no attendees.
+ */
+export const personSeries = pgTable(
+  "person_series",
+  {
+    personId: text("person_id")
+      .notNull()
+      .references(() => persons.id, { onDelete: "cascade" }),
+    /** `LocationId`, never `"jerusalem"`. */
+    location: text("location").notNull(),
+    googleEventId: text("google_event_id").notNull(),
+    htmlLink: text("html_link").notNull().default(""),
+  },
+  (t) => [primaryKey({ columns: [t.personId, t.location] })],
+);
+
+/**
  * Everyone who has touched the app or been added to an anniversary, keyed by
  * lowercased email. `hasSentEmail` = a Google Calendar invite has been sent to
  * this address at least once (so we don't re-notify them on every add).
@@ -100,6 +120,13 @@ export const users = pgTable("users", {
    * Apple / Outlook subscription). Null until they ask for the link.
    */
   feedToken: text("feed_token").unique(),
+  /**
+   * Profile: reference city (`@repo/hebcal`'s `LocationId`) — the timezone and
+   * place of nightfall of their calendar events. Null = Jerusalem.
+   */
+  location: text("location"),
+  /** The first-visit modal explaining the profile settings was shown. */
+  onboardingShown: boolean("onboarding_shown").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .notNull()
     .defaultNow(),
@@ -143,5 +170,6 @@ export const shareLinkPersons = pgTable(
 export type PersonRow = typeof persons.$inferSelect;
 export type PersonInsert = typeof persons.$inferInsert;
 export type PersonEventRow = typeof personEvents.$inferSelect;
+export type PersonSeriesRow = typeof personSeries.$inferSelect;
 export type UserRow = typeof users.$inferSelect;
 export type ShareLinkRow = typeof shareLinks.$inferSelect;

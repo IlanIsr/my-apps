@@ -2,7 +2,7 @@
 
 import { ThemeProvider } from "next-themes";
 
-import type { Minhag } from "@repo/hebcal";
+import type { LocationId, Minhag } from "@repo/hebcal";
 
 import { I18nProvider as AriaI18nProvider } from "@repo/ui/i18n-provider";
 
@@ -25,13 +25,15 @@ function AriaLocale({ children }: { children: React.ReactNode }) {
  */
 export function Providers({
   minhag,
+  location,
   children,
 }: {
   minhag: Minhag | null;
+  location: LocationId | null;
   children: React.ReactNode;
 }) {
   return (
-    <I18nProvider minhag={minhag}>
+    <I18nProvider minhag={minhag} location={location}>
       <AriaLocale>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}

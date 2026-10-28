@@ -10,9 +10,11 @@
  *   day/month), `calculateNextDates`, `gregorianToHebrew`, `hebrewToGregorian`.
  * - `parse` — Gregorian/Hebrew date-string parsing.
  * - `zmanim` — `getTsetHakohavim*` (nightfall) from hebcal.com.
+ * - `locations` — the profile's reference cities (`LOCATIONS`), `localTzeit`.
  */
 
 export * from "./convert";
 export * from "./anniversary";
 export * from "./parse";
 export * from "./zmanim";
+export * from "./locations";

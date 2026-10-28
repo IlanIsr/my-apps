@@ -11,7 +11,6 @@
 
 import type { AnniversaryType } from "./person";
 
-const TIMEZONE = "Asia/Jerusalem";
 /** Tzeit (sunset + 42 min) → the next day's sunset. */
 const HEBREW_DAY_MS = (24 * 60 - 42) * 60_000;
 
@@ -24,6 +23,8 @@ export type FeedPerson = {
 };
 
 export type FeedInput = {
+  /** IANA timezone the event times are in (the owner's profile city). */
+  timezone: string;
   /** Calendar name shown by the subscriber's app. */
   calendarName: string;
   persons: FeedPerson[];
@@ -33,10 +34,10 @@ export type FeedInput = {
   personUrl: (id: string) => string;
 };
 
-/** Offset (ms) of {@link TIMEZONE} from UTC at instant `utcMs`. */
-function zoneOffset(utcMs: number): number {
+/** Offset (ms) of `timezone` from UTC at instant `utcMs`. */
+function zoneOffset(utcMs: number, timezone: string): number {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TIMEZONE,
+    timeZone: timezone,
     hourCycle: "h23",
     year: "numeric",
     month: "2-digit",
@@ -59,14 +60,14 @@ function zoneOffset(utcMs: number): number {
   );
 }
 
-/** `2027-10-03` + `18:31` in Jerusalem → the UTC instant (ms). */
-function jerusalemToUtc(date: string, time: string): number {
+/** `2027-10-03` + `18:31` in `timezone` → the UTC instant (ms). */
+function zonedToUtc(date: string, time: string, timezone: string): number {
   const [y, m, d] = date.split("-").map(Number);
   const [hh, mm] = time.split(":").map(Number);
   const wall = Date.UTC(y ?? 0, (m ?? 1) - 1, d ?? 1, hh ?? 0, mm ?? 0);
   // Two passes settle the offset across a DST change.
-  const first = wall - zoneOffset(wall);
-  return wall - zoneOffset(first);
+  const first = wall - zoneOffset(wall, timezone);
+  return wall - zoneOffset(first, timezone);
 }
 
 /** `20271003T163100Z`. */
@@ -111,7 +112,7 @@ export function buildCalendarFeed(input: FeedInput): string {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeText(input.calendarName)}`,
-    `X-WR-TIMEZONE:${TIMEZONE}`,
+    `X-WR-TIMEZONE:${input.timezone}`,
     "REFRESH-INTERVAL;VALUE=DURATION:PT6H",
     "X-PUBLISHED-TTL:PT6H",
   ];
@@ -119,7 +120,11 @@ export function buildCalendarFeed(input: FeedInput): string {
     const summary = escapeText(input.summary(person.type, person.name));
     const url = input.personUrl(person.id);
     for (const event of person.events) {
-      const start = jerusalemToUtc(event.date, event.time || "18:00");
+      const start = zonedToUtc(
+        event.date,
+        event.time || "18:00",
+        input.timezone,
+      );
       lines.push(
         "BEGIN:VEVENT",
         `UID:${person.id}-${event.year}@anniversaries.dev`,

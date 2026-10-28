@@ -43,6 +43,13 @@
       "when": 1793178821588,
       "tag": "0005_fantastic_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793209171689,
+      "tag": "0006_cooing_demogoblin",
+      "breakpoints": true
     }
   ]
 }

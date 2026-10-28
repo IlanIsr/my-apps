@@ -17,10 +17,15 @@ import {
 
 import { AuthProvider } from "@repo/auth/provider";
 import { getCurrentUserEmail } from "@repo/auth/user";
-import { getUserMinhag, isAnniversariesAdmin } from "@repo/anniversaries";
+import {
+  getUserMinhag,
+  getUserProfile,
+  isAnniversariesAdmin,
+} from "@repo/anniversaries";
 
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
+import { OnboardingModal } from "./components/OnboardingModal";
 import { Providers } from "./providers";
 
 // Spectral (Latin serif) for names/dates/titles; Frank Ruhl Libre is its Hebrew
@@ -79,21 +84,25 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const email = await getCurrentUserEmail();
   const isAdmin = email ? isAnniversariesAdmin(email) : false;
-  // Profile minhag → wording + defaults. A DB hiccup must not break every page.
-  const minhag = email
-    ? await getUserMinhag(email).catch((error: unknown) => {
-        console.error("[profile] reading minhag failed:", error);
-        return null;
-      })
-    : null;
+  // Profile minhag → wording + defaults; city → event times; first visit →
+  // the settings modal. A DB hiccup must not break every page.
+  const [minhag, profile] = email
+    ? await Promise.all([getUserMinhag(email), getUserProfile(email)]).catch(
+        (error: unknown) => {
+          console.error("[profile] reading the profile failed:", error);
+          return [null, null] as const;
+        },
+      )
+    : [null, null];
 
   return (
     <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className="antialiased">
         <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
         <AuthProvider>
-          <Providers minhag={minhag}>
+          <Providers minhag={minhag} location={profile?.location ?? null}>
             <Navbar isAdmin={isAdmin} />
+            {profile && !profile.onboardingShown && <OnboardingModal />}
             <main className="mx-auto max-w-2xl px-6 py-12">{children}</main>
             <Footer />
           </Providers>

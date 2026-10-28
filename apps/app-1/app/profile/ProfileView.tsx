@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * The `/profile` page: one card per preference. Today only the minhag —
- * Ashkenazi switches the wording to "Yortzeit" and makes Adar I the default
- * for a new single-Adar anniversary (Sephardi: "Azkara", Adar II) — and the
- * calendar-feed link ({@link CalendarFeed}) and the Hebcal CSV import
- * ({@link CsvImport}).
+ * The `/profile` page: one card per preference. The minhag — Ashkenazi
+ * switches the wording to "Yortzeit" and makes Adar I the default for a new
+ * single-Adar anniversary (Sephardi: "Azkara", Adar II) — the city of the
+ * calendar events ({@link LocationSetting}), the calendar-feed link
+ * ({@link CalendarFeed}) and the Hebcal CSV import ({@link CsvImport}).
  */
 
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import { Segmented } from "../components/Segmented";
 import { saveMinhagAction } from "./actions";
 import { CalendarFeed, type CalendarFeedTexts } from "./CalendarFeed";
 import { CsvImport, type CsvImportTexts } from "./CsvImport";
+import { LocationSetting, type LocationSettingTexts } from "./LocationSetting";
 
 /** Text for {@link ProfileView}. */
 export type ProfileTexts = {
@@ -29,6 +30,7 @@ export type ProfileTexts = {
     /** What the choice changes. */
     hint: string;
   };
+  location: LocationSettingTexts;
   saved: string;
   error: string;
   csvImport: CsvImportTexts;
@@ -87,6 +89,8 @@ export function ProfileView({ t }: { t: ProfileTexts }) {
           <p className="text-xs text-destructive">{t.error}</p>
         )}
       </section>
+
+      <LocationSetting t={t.location} />
 
       <CalendarFeed t={t.calendarFeed} />
 

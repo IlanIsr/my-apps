@@ -32,6 +32,7 @@ export async function GET(
     calendarName: t.profile.calendarFeed.calendarName,
     persons: feed.persons,
     summary: (type, name) => t.eventSummary[type](name),
+    timezone: feed.timezone,
     personUrl: (id) => `${url.origin}/anniversaries/${encodeURIComponent(id)}`,
   });
 

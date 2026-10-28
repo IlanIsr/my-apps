@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
-import type { Minhag } from "@repo/hebcal";
+import type { LocationId, Minhag } from "@repo/hebcal";
 
 import { DEFAULT_LOCALE, isLocale, LOCALE_DIR, type Locale } from "./config";
 import { getDictionary } from "./dictionaries";
@@ -35,13 +35,16 @@ function subscribe(onChange: () => void) {
 
 /**
  * `minhag` is the signed-in user's profile minhag, read server-side by the root
- * layout: Ashkenazi switches the wording to "Yortzeit".
+ * layout: Ashkenazi switches the wording to "Yortzeit". `location` is their
+ * profile city, read there too.
  */
 export function I18nProvider({
   minhag,
+  location,
   children,
 }: {
   minhag: Minhag | null;
+  location: LocationId | null;
   children: React.ReactNode;
 }) {
   const locale = useSyncExternalStore(
@@ -68,9 +71,10 @@ export function I18nProvider({
       setLocale,
       messages: getDictionary(locale, minhag),
       minhag,
+      location,
       dir: LOCALE_DIR[locale],
     }),
-    [locale, setLocale, minhag],
+    [locale, setLocale, minhag, location],
   );
 
   return (

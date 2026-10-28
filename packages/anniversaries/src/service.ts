@@ -13,9 +13,13 @@ import { createHash } from "node:crypto";
 import {
   anniversaryEveInYear,
   calculateNextOccurrences,
+  DEFAULT_LOCATION,
+  localTzeit,
+  LOCATIONS,
   monthKeyForYear,
   type AnniversaryRule,
   type HebrewMonthKey,
+  type LocationId,
   type Minhag,
 } from "@repo/hebcal";
 import { uniqueLowercased } from "@repo/utils";
@@ -24,6 +28,8 @@ import {
   CalendarRateLimitError,
   isCalendarReachable,
   syncPersonEvents,
+  type SyncInput,
+  type SyncResult,
 } from "./calendar";
 import {
   formatHebDateLabel,
@@ -39,17 +45,22 @@ import {
   findUserByFeedToken,
   getEmailSentState,
   getPerson,
+  getUserLocations,
   isStoreConfigured,
   listPersons,
+  listPersonSeries,
   listPersonsFrom,
   markEmailSent,
   prodDatabaseUrl,
   replaceAllPersons,
+  savePersonSeries,
+  setUserLocation as storeUserLocation,
   storeConfigIssues,
   updatePerson,
   upsertUser,
   DatabaseNotConfiguredError,
   type PersonRecord,
+  type PersonSeries,
   type StoredEvent,
 } from "./store";
 import type { FeedPerson } from "./feed";
@@ -99,10 +110,25 @@ function todayISO(): string {
   ).padStart(2, "0")}`;
 }
 
-function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
+/** Where the viewer is, and the series of their city (outside Jerusalem). */
+type ViewerCity = { location: LocationId; series: PersonSeries[] };
+
+/**
+ * The person as `viewerEmail` sees it. Outside Jerusalem the times are their
+ * city's nightfall and the links point at their city's series.
+ */
+function toAnniversary(
+  record: PersonRecord,
+  viewerEmail: string,
+  city: ViewerCity = { location: DEFAULT_LOCATION, series: [] },
+): Anniversary {
   const email = viewerEmail.toLowerCase();
   const admin = isAnniversariesAdmin(viewerEmail);
   const today = todayISO();
+  const home = city.location === DEFAULT_LOCATION;
+  const series = city.series.find(
+    (s) => s.personId === record.id && s.location === city.location,
+  );
   const events: AnniversaryEvent[] = record.events
     .filter((e) => e.googleEventId && e.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -111,8 +137,8 @@ function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
       id: `${e.googleEventId}:${e.year}`,
       year: e.year,
       date: e.date,
-      time: e.time || undefined,
-      htmlLink: e.htmlLink || undefined,
+      time: home ? e.time || undefined : localTzeit(e.date, city.location),
+      htmlLink: (home ? e.htmlLink : series?.htmlLink) || undefined,
     }));
   return {
     id: record.id,
@@ -130,6 +156,87 @@ function toAnniversary(record: PersonRecord, viewerEmail: string): Anniversary {
     admin,
     events,
   };
+}
+
+/** The viewer's city and, outside Jerusalem, every person's series there. */
+async function viewerCity(viewerEmail: string): Promise<ViewerCity> {
+  const email = viewerEmail.toLowerCase();
+  const location =
+    (await getUserLocations([email])).get(email) ?? DEFAULT_LOCATION;
+  if (location === DEFAULT_LOCATION) return { location, series: [] };
+  return { location, series: await listPersonSeries() };
+}
+
+/**
+ * Sync every calendar series of a person (what `syncPersonEvents` does for
+ * one): the Jerusalem series — its ids live in `person_events`, so its result
+ * is returned for the caller to store — with the members in Jerusalem, then
+ * one series per other city its members picked (`person_series`, saved here),
+ * each with that city's members only, times computed there. A city nobody
+ * uses any more keeps its series, emptied of attendees. A new city series
+ * takes the Jerusalem series' title when `summary` is omitted.
+ */
+async function syncPerson(input: SyncInput): Promise<SyncResult> {
+  const members = uniqueLowercased(input.members);
+  const [cities, existing] = await Promise.all([
+    getUserLocations(members),
+    listPersonSeries(input.personId),
+  ]);
+  const membersIn = (location: LocationId) =>
+    members.filter((m) => cities.get(m) === location);
+  const notifyAmong = (emails: string[]) =>
+    (input.notifyEmails ?? []).filter((e) => emails.includes(e.toLowerCase()));
+
+  const local = membersIn(DEFAULT_LOCATION);
+  const primary = await syncPersonEvents({
+    ...input,
+    members: local,
+    notifyEmails: notifyAmong(local),
+  });
+  if (primary.rateLimited) return primary;
+
+  const declined = new Set(primary.declined);
+  const others = new Set<LocationId>([
+    ...cities.values(),
+    ...existing.map((s) => s.location),
+  ]);
+  others.delete(DEFAULT_LOCATION);
+  for (const location of others) {
+    const series = existing.find((s) => s.location === location);
+    const cityMembers = membersIn(location);
+    const sync = await syncPersonEvents({
+      ...input,
+      summary: input.summary ?? (series ? undefined : primary.summary),
+      location: LOCATIONS[location],
+      locationId: location,
+      members: cityMembers,
+      notifyEmails: notifyAmong(cityMembers),
+      // Manual times are Jerusalem times — every city computes its own.
+      events: input.events.map((e) => ({
+        ...e,
+        time: "",
+        googleEventId: series?.googleEventId ?? "",
+      })),
+    });
+    for (const email of sync.declined) declined.add(email);
+    if (sync.rateLimited) {
+      return { ...primary, declined: [...declined], rateLimited: true };
+    }
+    const synced = sync.events[0];
+    if (
+      synced &&
+      (synced.googleEventId !== series?.googleEventId ||
+        synced.htmlLink !== series?.htmlLink)
+    ) {
+      await savePersonSeries({
+        personId: input.personId,
+        location,
+        googleEventId: synced.googleEventId,
+        htmlLink: synced.htmlLink,
+      });
+    }
+  }
+  return { ...primary, declined: [...declined] };
 }
 
 /** What decides a person's occurrence dates. */
@@ -264,10 +371,13 @@ export async function listAnniversaries(
 ): Promise<Anniversary[]> {
   const email = viewerEmail.toLowerCase();
   const admin = isAnniversariesAdmin(viewerEmail);
-  const records = await listPersons();
+  const [records, city] = await Promise.all([
+    listPersons(),
+    viewerCity(viewerEmail),
+  ]);
   return records
     .filter((r) => admin || r.members.includes(email))
-    .map((r) => toAnniversary(r, viewerEmail))
+    .map((r) => toAnniversary(r, viewerEmail, city))
     .sort((a, b) =>
       (a.events[0]?.date ?? "").localeCompare(b.events[0]?.date ?? ""),
     );
@@ -279,14 +389,19 @@ export async function listAnniversaries(
  * years. `null` if no user has this token. The token is the credential, like a
  * share link's id.
  */
-export async function getCalendarFeed(
-  token: string,
-): Promise<{ minhag: Minhag | null; persons: FeedPerson[] } | null> {
+export async function getCalendarFeed(token: string): Promise<{
+  minhag: Minhag | null;
+  /** IANA timezone of the event times. */
+  timezone: string;
+  persons: FeedPerson[];
+} | null> {
   const owner = await findUserByFeedToken(token);
   if (!owner) return null;
   const records = await listPersons();
+  const home = owner.location === DEFAULT_LOCATION;
   return {
     minhag: owner.minhag,
+    timezone: LOCATIONS[owner.location].timezone,
     persons: records
       .filter((r) => r.members.includes(owner.email))
       .map((r) => ({
@@ -294,7 +409,11 @@ export async function getCalendarFeed(
         name: r.name,
         type: r.type,
         hebDateLabel: formatHebDateLabel(r.hebDate),
-        events: r.events.map(({ year, date, time }) => ({ year, date, time })),
+        events: r.events.map(({ year, date, time }) => ({
+          year,
+          date,
+          time: home ? time : localTzeit(date, owner.location),
+        })),
       })),
   };
 }
@@ -303,8 +422,11 @@ export async function getAnniversary(
   id: string,
   viewerEmail: string,
 ): Promise<Anniversary | null> {
-  const record = await getPerson(id);
-  return record ? toAnniversary(record, viewerEmail) : null;
+  const [record, city] = await Promise.all([
+    getPerson(id),
+    viewerCity(viewerEmail),
+  ]);
+  return record ? toAnniversary(record, viewerEmail, city) : null;
 }
 
 export type AddAnniversaryInput = {
@@ -393,7 +515,7 @@ export async function addAnniversary(
       createdBy: input.createdBy,
     });
 
-    const sync = await syncPersonEvents({
+    const sync = await syncPerson({
       personId: record.id,
       summary: input.summary,
       summaryFallback: record.name,
@@ -429,7 +551,7 @@ export async function addAnniversary(
   );
   const priorYears = new Set(existing.events.map((e) => e.year));
 
-  const sync = await syncPersonEvents({
+  const sync = await syncPerson({
     personId: existing.id,
     summary: input.summary,
     summaryFallback: existing.name,
@@ -531,7 +653,7 @@ export async function recomputeAllOccurrences(
       events: base,
     });
     if (changes.length === 0) continue;
-    const sync = await syncPersonEvents({
+    const sync = await syncPerson({
       personId: person.id,
       summaryFallback: person.name,
       colorId: colorIdFor(person.type),
@@ -561,12 +683,57 @@ export async function listPersonIds(): Promise<string[]> {
 export async function resyncPerson(id: string): Promise<void> {
   const person = await getPerson(id);
   if (!person) return;
-  const sync = await syncPersonEvents({
+  const sync = await syncPerson({
     personId: person.id,
     summaryFallback: person.name,
     colorId: colorIdFor(person.type),
     members: person.members,
     events: person.events.map(toDesired),
+  });
+  if (sync.rateLimited) throw new CalendarRateLimitError();
+  await updatePerson(person.id, {
+    members: person.members.filter((m) => !sync.declined.includes(m)),
+    events: applySynced(person.events, sync.events),
+  });
+}
+
+/**
+ * Save the user's profile city. Returns the persons they're a member of: each
+ * then needs {@link moveMemberSeries} (one call per person, so a long list
+ * never runs into a function timeout).
+ */
+export async function setUserLocation(input: {
+  email: string;
+  clerkId: string;
+  location: LocationId;
+}): Promise<string[]> {
+  if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
+  await storeUserLocation(input);
+  const email = input.email.toLowerCase();
+  return (await listPersons())
+    .filter((p) => p.members.includes(email))
+    .map((p) => p.id);
+}
+
+/**
+ * Re-sync one person after a member changed city: they're dropped from their
+ * old city's series and invited (one email) to their new city's — never
+ * re-invited to a series they're already on, so a retry is harmless.
+ */
+export async function moveMemberSeries(
+  personId: string,
+  viewerEmail: string,
+): Promise<void> {
+  const email = viewerEmail.toLowerCase();
+  const person = await getPerson(personId);
+  if (!person || !person.members.includes(email)) return;
+  const sync = await syncPerson({
+    personId: person.id,
+    summaryFallback: person.name,
+    colorId: colorIdFor(person.type),
+    members: person.members,
+    events: person.events.map(toDesired),
+    notifyEmails: [email],
   });
   if (sync.rateLimited) throw new CalendarRateLimitError();
   await updatePerson(person.id, {
@@ -601,7 +768,7 @@ export async function leaveAnniversary(
 
   const members = person.members.filter((m) => m !== email);
 
-  const sync = await syncPersonEvents({
+  const sync = await syncPerson({
     personId: id,
     summaryFallback: person.name,
     colorId: colorIdFor(person.type),
@@ -633,7 +800,7 @@ async function addMemberToCalendar(
 ): Promise<{ added: boolean; rateLimited: boolean }> {
   const members = uniqueLowercased([...person.members, target.email]);
   const notifyEmails = [target.email];
-  const sync = await syncPersonEvents({
+  const sync = await syncPerson({
     personId: person.id,
     summary,
     summaryFallback: person.name,
@@ -918,7 +1085,7 @@ export async function updateAnniversary(
   await updatePerson(input.id, patch);
 
   if (needsResync) {
-    const sync = await syncPersonEvents({
+    const sync = await syncPerson({
       personId: person.id,
       summary: input.summary,
       summaryFallback: name,
@@ -1019,7 +1186,7 @@ export async function syncFromProd(): Promise<{
 
     for (const record of masked) {
       try {
-        const sync = await syncPersonEvents({
+        const sync = await syncPerson({
           personId: record.id,
           summaryFallback: record.name,
           description: "",

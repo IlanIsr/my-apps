@@ -39,6 +39,8 @@ export {
   syncFromProd,
   listPersonIds,
   resyncPerson,
+  setUserLocation,
+  moveMemberSeries,
   NoSuchHebrewDateError,
   CalendarNotConfiguredError,
   CalendarRateLimitError,
@@ -52,6 +54,8 @@ export {
 export {
   getUserMinhag,
   setUserMinhag,
+  getUserProfile,
+  markOnboardingShown,
   getUserFeedToken,
   rotateUserFeedToken,
 } from "./store";
