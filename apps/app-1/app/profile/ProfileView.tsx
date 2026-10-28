@@ -35,7 +35,14 @@ export type ProfileTexts = {
   calendarFeed: CalendarFeedTexts;
 };
 
-export function ProfileView({ t }: { t: ProfileTexts }) {
+export function ProfileView({
+  t,
+  showCalendarFeed,
+}: {
+  t: ProfileTexts;
+  /** Whether this user may use the calendar feed (see `lib/calendar-feed.ts`). */
+  showCalendarFeed: boolean;
+}) {
   const { minhag: saved } = useLanguage();
   const router = useRouter();
   const [minhag, setMinhag] = useState<Minhag>(saved ?? "sephardi");
@@ -88,7 +95,7 @@ export function ProfileView({ t }: { t: ProfileTexts }) {
         )}
       </section>
 
-      <CalendarFeed t={t.calendarFeed} />
+      {showCalendarFeed && <CalendarFeed t={t.calendarFeed} />}
 
       <CsvImport t={t.csvImport} />
     </div>
