@@ -7,29 +7,39 @@
 
 import "server-only";
 
-import { and, asc, eq, gt, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import {
+  albumShares,
   albums,
   cardCounts,
   cards,
   collectors,
   pageRewards,
+  shareViewers,
 } from "@/db/schema";
 
 import {
   COLLECTOR_COLORS,
   LIMITS,
   RESERVE_COLOR,
+  shareSummary,
   sortCards,
   type Album,
+  type MyShare,
   type RewardKind,
+  type SharedAlbum,
+  type SharePreview,
 } from "./album-logic";
 import { ALBUM_CARDS } from "./album-cards";
 
 export type AlbumErrorCode =
-  "no-album" | "album-exists" | "not-found" | "too-many-collectors";
+  | "no-album"
+  | "album-exists"
+  | "not-found"
+  | "too-many-collectors"
+  | "own-share";
 
 /** An expected, user-facing failure. Mapped to an error code by the actions. */
 export class AlbumError extends Error {
@@ -53,8 +63,11 @@ export async function getAlbum(ownerId: string): Promise<Album | null> {
     .select()
     .from(albums)
     .where(eq(albums.ownerId, ownerId));
-  if (!album) return null;
+  return album ? loadAlbum(album) : null;
+}
 
+/** Everything in one album. Only call with an album the caller may read. */
+async function loadAlbum(album: { id: string; name: string }): Promise<Album> {
   const [collectorRows, cardRows, countRows, rewardRows] = await db().batch([
     db()
       .select()
@@ -259,3 +272,225 @@ export async function deleteCollector(
 }
 
 // ---------------- page rewards ----------------
+
+// ---------------- sharing with friends ----------------
+//
+// A friend never reads another album through these functions except as the
+// `shareSummary` aggregate, and only for albums whose `share_viewers` lists
+// them. The link token is the only way in, besides "share back" (see
+// `joinShare`).
+
+export async function getMyShare(ownerId: string): Promise<MyShare | null> {
+  const albumId = await albumIdOf(ownerId);
+  const [[share], viewers] = await db().batch([
+    db().select().from(albumShares).where(eq(albumShares.albumId, albumId)),
+    db()
+      .select({
+        viewerId: shareViewers.viewerId,
+        name: shareViewers.viewerName,
+      })
+      .from(shareViewers)
+      .where(eq(shareViewers.albumId, albumId))
+      .orderBy(asc(shareViewers.joinedAt)),
+  ]);
+  if (!share) return null;
+  return { token: share.token, displayName: share.displayName, viewers };
+}
+
+/** Starts sharing my album, or renames it if it already is. */
+export async function saveShare(
+  ownerId: string,
+  displayName: string,
+): Promise<void> {
+  const albumId = await albumIdOf(ownerId);
+  await db()
+    .insert(albumShares)
+    .values({ albumId, displayName })
+    .onConflictDoUpdate({ target: albumShares.albumId, set: { displayName } });
+}
+
+/** A new link: the old one stops working, friends who joined stay. */
+export async function renewShareToken(ownerId: string): Promise<void> {
+  const albumId = await albumIdOf(ownerId);
+  await db()
+    .update(albumShares)
+    .set({ token: sql`gen_random_uuid()` })
+    .where(eq(albumShares.albumId, albumId));
+}
+
+/** Stops sharing: the link dies and every friend loses access. */
+export async function deleteShare(ownerId: string): Promise<void> {
+  const albumId = await albumIdOf(ownerId);
+  await db().delete(albumShares).where(eq(albumShares.albumId, albumId));
+}
+
+export async function removeViewer(
+  ownerId: string,
+  viewerId: string,
+): Promise<void> {
+  const albumId = await albumIdOf(ownerId);
+  await db()
+    .delete(shareViewers)
+    .where(
+      and(
+        eq(shareViewers.albumId, albumId),
+        eq(shareViewers.viewerId, viewerId),
+      ),
+    );
+}
+
+/** What the share link's page shows before joining. */
+export async function getSharePreview(
+  token: string,
+  viewerId: string,
+): Promise<SharePreview | null> {
+  const [share] = await db()
+    .select({
+      albumId: albumShares.albumId,
+      displayName: albumShares.displayName,
+      ownerId: albums.ownerId,
+    })
+    .from(albumShares)
+    .innerJoin(albums, eq(albums.id, albumShares.albumId))
+    .where(eq(albumShares.token, token));
+  if (!share) return null;
+
+  const [[joined], [mine], [back]] = await db().batch([
+    db()
+      .select({ id: shareViewers.viewerId })
+      .from(shareViewers)
+      .where(
+        and(
+          eq(shareViewers.albumId, share.albumId),
+          eq(shareViewers.viewerId, viewerId),
+        ),
+      ),
+    db()
+      .select({ id: albums.id, shareName: albumShares.displayName })
+      .from(albums)
+      .leftJoin(albumShares, eq(albumShares.albumId, albums.id))
+      .where(eq(albums.ownerId, viewerId)),
+    db()
+      .select({ id: shareViewers.viewerId })
+      .from(shareViewers)
+      .innerJoin(albums, eq(albums.id, shareViewers.albumId))
+      .where(
+        and(
+          eq(albums.ownerId, viewerId),
+          eq(shareViewers.viewerId, share.ownerId),
+        ),
+      ),
+  ]);
+  return {
+    displayName: share.displayName,
+    isOwn: share.ownerId === viewerId,
+    joined: Boolean(joined),
+    sharedBack: Boolean(back),
+    viewerHasAlbum: Boolean(mine),
+    viewerShareName: mine?.shareName ?? null,
+  };
+}
+
+/**
+ * Adds the viewer to the album behind `token`. With `shareBack`, also shares
+ * the viewer's own album with that album's owner (starting the viewer's share
+ * under `backName` if there's none yet) — the one case where someone gets
+ * access without opening a link: the person who sent the link.
+ */
+export async function joinShare(
+  viewerId: string,
+  viewerName: string,
+  token: string,
+  shareBack: { name: string } | null,
+): Promise<void> {
+  const [share] = await db()
+    .select({
+      albumId: albumShares.albumId,
+      displayName: albumShares.displayName,
+      ownerId: albums.ownerId,
+    })
+    .from(albumShares)
+    .innerJoin(albums, eq(albums.id, albumShares.albumId))
+    .where(eq(albumShares.token, token));
+  if (!share) throw new AlbumError("not-found");
+  if (share.ownerId === viewerId) throw new AlbumError("own-share");
+
+  const join = db()
+    .insert(shareViewers)
+    .values({ albumId: share.albumId, viewerId, viewerName })
+    .onConflictDoNothing();
+  if (!shareBack) {
+    await join;
+    return;
+  }
+
+  const myAlbumId = await albumIdOf(viewerId);
+  await db().batch([
+    join,
+    db()
+      .insert(albumShares)
+      .values({ albumId: myAlbumId, displayName: shareBack.name })
+      .onConflictDoNothing(),
+    db()
+      .insert(shareViewers)
+      .values({
+        albumId: myAlbumId,
+        viewerId: share.ownerId,
+        viewerName: share.displayName,
+      })
+      .onConflictDoNothing(),
+  ]);
+}
+
+/** Drops a shared album from my "Partagés avec moi" list. */
+export async function leaveShare(
+  viewerId: string,
+  albumId: string,
+): Promise<void> {
+  await db()
+    .delete(shareViewers)
+    .where(
+      and(
+        eq(shareViewers.albumId, albumId),
+        eq(shareViewers.viewerId, viewerId),
+      ),
+    );
+}
+
+/** Every album shared with me, as aggregates. */
+export async function getSharedWithMe(
+  viewerId: string,
+): Promise<SharedAlbum[]> {
+  const shares = await db()
+    .select({
+      albumId: albumShares.albumId,
+      name: albumShares.displayName,
+    })
+    .from(shareViewers)
+    .innerJoin(albumShares, eq(albumShares.albumId, shareViewers.albumId))
+    .innerJoin(albums, eq(albums.id, albumShares.albumId))
+    .where(
+      and(eq(shareViewers.viewerId, viewerId), ne(albums.ownerId, viewerId)),
+    )
+    .orderBy(asc(albumShares.displayName));
+  if (!shares.length) return [];
+
+  const albumRows = await db()
+    .select({ id: albums.id, name: albums.name })
+    .from(albums)
+    .where(
+      inArray(
+        albums.id,
+        shares.map((s) => s.albumId),
+      ),
+    );
+  const loaded = await Promise.all(albumRows.map(loadAlbum));
+  const byId = new Map(albumRows.map((a, i) => [a.id, loaded[i]!]));
+
+  return shares.flatMap((s) => {
+    const album = byId.get(s.albumId);
+    return album
+      ? [{ albumId: s.albumId, name: s.name, ...shareSummary(album) }]
+      : [];
+  });
+}

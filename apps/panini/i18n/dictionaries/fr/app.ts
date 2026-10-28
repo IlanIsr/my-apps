@@ -11,6 +11,7 @@ export const app = {
     reserve: "Réserve",
     pages: "Pages",
     rewards: "Prix",
+    friends: "Amis",
   },
   errors: {
     "not-signed-in": "Ta session a expiré — reconnecte-toi.",
@@ -18,6 +19,7 @@ export const app = {
     "album-exists": "Tu as déjà un classeur. Recharge la page.",
     "not-found": "Élément introuvable — recharge la page.",
     "too-many-collectors": "Nombre maximum d'enfants atteint.",
+    "own-share": "C'est ton propre lien de partage.",
     invalid: "Valeur invalide — vérifie les champs.",
     "db-not-configured": "La base de données n'est pas configurée.",
     unknown: "Une erreur est survenue. Réessaie.",

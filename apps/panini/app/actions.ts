@@ -7,10 +7,15 @@
  * Mutations return the fresh album so the client can replace its state.
  */
 
-import { getCurrentUserId } from "@repo/auth/user";
+import { getCurrentUserId, getCurrentUserName } from "@repo/auth/user";
 
 import { DatabaseNotConfiguredError } from "@/db/client";
-import { LIMITS, type Album } from "@/lib/album-logic";
+import {
+  LIMITS,
+  type Album,
+  type MyShare,
+  type SharedAlbum,
+} from "@/lib/album-logic";
 import * as store from "@/lib/store";
 import * as v from "@/lib/validate";
 
@@ -127,4 +132,72 @@ export async function updateCollectorAction(
 
 export async function deleteCollectorAction(collectorId: string) {
   return mutate((ownerId) => store.deleteCollector(ownerId, v.id(collectorId)));
+}
+
+// ---------------- sharing with friends ----------------
+
+export type FriendsData = { myShare: MyShare | null; shared: SharedAlbum[] };
+
+async function friendsData(userId: string): Promise<FriendsData> {
+  const [myShare, shared] = await Promise.all([
+    store.getMyShare(userId),
+    store.getSharedWithMe(userId),
+  ]);
+  return { myShare, shared };
+}
+
+/** Runs a sharing mutation, then returns the fresh "Amis" tab data. */
+function mutateFriends(
+  fn: (userId: string) => Promise<unknown>,
+): Promise<ActionResult<FriendsData>> {
+  return run(async (userId) => {
+    await fn(userId);
+    return friendsData(userId);
+  });
+}
+
+export async function getFriendsAction() {
+  return run(friendsData);
+}
+
+/** Starts sharing my album under `displayName`, or renames the share. */
+export async function saveShareAction(displayName: string) {
+  return mutateFriends((userId) =>
+    store.saveShare(userId, v.text(displayName, "displayName", LIMITS.name)),
+  );
+}
+
+export async function renewShareTokenAction() {
+  return mutateFriends((userId) => store.renewShareToken(userId));
+}
+
+export async function deleteShareAction() {
+  return mutateFriends((userId) => store.deleteShare(userId));
+}
+
+export async function removeViewerAction(viewerId: string) {
+  return mutateFriends((userId) =>
+    store.removeViewer(userId, v.text(viewerId, "viewerId", 100)),
+  );
+}
+
+export async function leaveShareAction(albumId: string) {
+  return mutateFriends((userId) => store.leaveShare(userId, v.id(albumId)));
+}
+
+/** Joins the album behind a share link; optionally shares mine back. */
+export async function joinShareAction(
+  token: string,
+  shareBack: { name: string } | null,
+) {
+  return run(async (userId) => {
+    const name = (await getCurrentUserName()) ?? "?";
+    await store.joinShare(
+      userId,
+      name.slice(0, LIMITS.name),
+      v.id(token, "token"),
+      shareBack && { name: v.text(shareBack.name, "name", LIMITS.name) },
+    );
+    return null;
+  });
 }

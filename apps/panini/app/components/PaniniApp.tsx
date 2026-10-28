@@ -13,12 +13,19 @@ import {
   addCollectorAction,
   createAlbumAction,
   deleteCollectorAction,
+  deleteShareAction,
+  getFriendsAction,
+  leaveShareAction,
+  removeViewerAction,
+  renewShareTokenAction,
   resetAlbumAction,
+  saveShareAction,
   stepCountAction,
   updateCollectorAction,
   updateSettingsAction,
   type ActionErrorCode,
   type ActionResult,
+  type FriendsData,
 } from "@/app/actions";
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 import {
@@ -36,6 +43,7 @@ import { ToggleButtonGroup } from "@repo/ui/toggle-button-group";
 import { Button } from "./Button";
 import { ReserveTab, TradesTab } from "./CardLists";
 import { CollectionTab, type CollectionFilters } from "./CollectionTab";
+import { FriendsTab, type FriendsHandlers } from "./FriendsTab";
 import { GearIcon } from "./icons";
 import { PagesTab } from "./PagesTab";
 import { RewardsTab } from "./RewardsTab";
@@ -43,8 +51,15 @@ import { SettingsModal, type SettingsHandlers } from "./SettingsModal";
 import { SetupView } from "./SetupView";
 import { StatsStrip } from "./StatsStrip";
 
-const TABS = ["collection", "trades", "reserve", "pages", "rewards"] as const;
-type Tab = (typeof TABS)[number];
+const TABS = [
+  "collection",
+  "trades",
+  "reserve",
+  "pages",
+  "rewards",
+  "friends",
+] as const;
+export type Tab = (typeof TABS)[number];
 
 export type AppTexts = {
   eyebrow: string;
@@ -78,12 +93,24 @@ function withCount(
   };
 }
 
-export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
+export function PaniniApp({
+  initialAlbum,
+  initialFriends,
+  origin,
+  initialTab = "collection",
+}: {
+  initialAlbum: Album | null;
+  initialFriends: FriendsData;
+  /** This deployment's origin, to build share links. */
+  origin: string;
+  initialTab?: Tab;
+}) {
   const t = useTranslations();
   const { locale } = useLanguage();
   const [album, setAlbum] = useState(initialAlbum);
+  const [friends, setFriends] = useState(initialFriends);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("collection");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [filters, setFilters] = useState<CollectionFilters>({
     search: "",
     page: "all",
@@ -103,6 +130,21 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
       }
       setError(null);
       setAlbum(result.data);
+      return true;
+    },
+    [t],
+  );
+
+  /** Same as `apply`, for the "Amis" tab's data. */
+  const applyFriends = useCallback(
+    async (pending: Promise<ActionResult<FriendsData>>) => {
+      const result = await pending;
+      if (!result.ok) {
+        setError(t.app.errors[result.error]);
+        return false;
+      }
+      setError(null);
+      setFriends(result.data);
       return true;
     },
     [t],
@@ -148,6 +190,14 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
     reset: () => apply(resetAlbumAction()),
   };
 
+  const friendsHandlers: FriendsHandlers = {
+    saveShare: (name) => applyFriends(saveShareAction(name)),
+    renewToken: () => applyFriends(renewShareTokenAction()),
+    deleteShare: () => applyFriends(deleteShareAction()),
+    removeViewer: (id) => applyFriends(removeViewerAction(id)),
+    leave: (albumId) => applyFriends(leaveShareAction(albumId)),
+  };
+
   const closeModal = () => setModal(null);
   return (
     <div className="mx-auto max-w-220 px-[clamp(16px,4vw,32px)] pt-2 pb-16">
@@ -177,7 +227,10 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
         selectedKeys={[tab]}
         onSelectionChange={(keys) => {
           const [key] = keys;
-          if (key !== undefined) setTab(key as Tab);
+          if (key === undefined) return;
+          setTab(key as Tab);
+          // Friends' albums change on their side — refresh on every visit.
+          if (key === "friends") void applyFriends(getFriendsAction());
         }}
         fullWidth
         className="mb-4.5 overflow-x-auto"
@@ -231,6 +284,16 @@ export function PaniniApp({ initialAlbum }: { initialAlbum: Album | null }) {
           reserve={reserve}
           formatDate={formatDate}
           t={t.rewards}
+        />
+      )}
+      {tab === "friends" && (
+        <FriendsTab
+          album={album}
+          data={friends}
+          origin={origin}
+          handlers={friendsHandlers}
+          t={t.friends}
+          modalT={t.modal}
         />
       )}
 

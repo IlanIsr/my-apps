@@ -32,3 +32,25 @@ export const getCurrentUserEmail = cache(async (): Promise<string | null> => {
     return null;
   }
 });
+
+/**
+ * The signed-in user's display name (full name, else username, else email),
+ * or `null` if not signed in. Server-only.
+ */
+export async function getCurrentUserName(): Promise<string | null> {
+  const { userId } = await auth();
+  if (!userId) return null;
+
+  try {
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    return (
+      user.fullName ||
+      user.username ||
+      user.primaryEmailAddress?.emailAddress ||
+      null
+    );
+  } catch {
+    return null;
+  }
+}

@@ -107,3 +107,42 @@ export const pageRewards = pgTable(
   },
   (t) => [primaryKey({ columns: [t.albumId, t.page] })],
 );
+
+/**
+ * An album shared with friends ("Amis" tab). `token` is the link's secret —
+ * a new one kills the old link but keeps everyone who already joined. Friends
+ * only ever see an aggregate (which cards the family has / is looking for),
+ * never who owns what.
+ */
+export const albumShares = pgTable("album_shares", {
+  albumId: uuid("album_id")
+    .primaryKey()
+    .references(() => albums.id, { onDelete: "cascade" }),
+  token: uuid("token").notNull().unique().defaultRandom(),
+  /** Name friends see ("Famille Cohen"). */
+  displayName: text("display_name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+/** Who can see a shared album. Removing the share removes them all. */
+export const shareViewers = pgTable(
+  "share_viewers",
+  {
+    albumId: uuid("album_id")
+      .notNull()
+      .references(() => albumShares.albumId, { onDelete: "cascade" }),
+    /** Clerk user id of the friend. */
+    viewerId: text("viewer_id").notNull(),
+    /** The friend's name when they joined, shown to the album's owner. */
+    viewerName: text("viewer_name").notNull(),
+    joinedAt: timestamp("joined_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.albumId, t.viewerId] }),
+    index("share_viewers_viewer_idx").on(t.viewerId),
+  ],
+);

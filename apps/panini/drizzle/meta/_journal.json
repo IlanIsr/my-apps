@@ -15,6 +15,13 @@
       "when": 1792479210763,
       "tag": "0001_living_jocasta",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792952204804,
+      "tag": "0002_solid_amphibian",
+      "breakpoints": true
     }
   ]
 }

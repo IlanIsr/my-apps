@@ -259,3 +259,66 @@ export function sortRewardsBy(
     return sign * (key(x) - key(y)) || x.page - y.page;
   });
 }
+
+// ---------------- sharing with friends ----------------
+
+/**
+ * What a friend sees of a shared album: card codes only, no counts, no kids.
+ * `has` = someone in the family (a kid or the reserve) owns it — even a single
+ * copy can be traded. `wants` = a kid lacks it and the reserve can't cover it.
+ */
+export type SharedAlbum = {
+  albumId: string;
+  name: string;
+  has: string[];
+  wants: string[];
+};
+
+/** My own share, as its owner sees it. */
+export type MyShare = {
+  token: string;
+  displayName: string;
+  viewers: { viewerId: string; name: string }[];
+};
+
+/** What a share link's page knows before the viewer joins. */
+export type SharePreview = {
+  displayName: string;
+  isOwn: boolean;
+  joined: boolean;
+  /** Whether the viewer's own album is already shared with that family. */
+  sharedBack: boolean;
+  viewerHasAlbum: boolean;
+  /** The viewer's own share name, if their album is already shared. */
+  viewerShareName: string | null;
+};
+
+export function shareSummary(album: Album): { has: string[]; wants: string[] } {
+  const kids = kidsOf(album);
+  const reserve = reserveOf(album);
+  const has: string[] = [];
+  const wants: string[] = [];
+  for (const card of album.cards) {
+    if (album.collectors.some((c) => countOf(card, c.id) > 0)) {
+      has.push(card.code);
+    }
+    const inReserve = reserve ? countOf(card, reserve.id) > 0 : false;
+    if (!inReserve && kids.some((k) => countOf(card, k.id) === 0)) {
+      wants.push(card.code);
+    }
+  }
+  return { has, wants };
+}
+
+/** Cards I'm looking for that `friend` has, and cards they want that I have. */
+export function tradeMatch(
+  mine: { has: string[]; wants: string[] },
+  friend: SharedAlbum,
+) {
+  const friendHas = new Set(friend.has);
+  const iHave = new Set(mine.has);
+  return {
+    theyGive: mine.wants.filter((code) => friendHas.has(code)),
+    iGive: friend.wants.filter((code) => iHave.has(code)),
+  };
+}

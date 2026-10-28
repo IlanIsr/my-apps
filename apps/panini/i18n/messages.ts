@@ -6,6 +6,7 @@
 
 import type { CardListsTexts } from "@/app/components/CardLists";
 import type { CollectionTexts } from "@/app/components/CollectionTab";
+import type { FriendsTexts } from "@/app/components/FriendsTab";
 import type { ModalTexts } from "@/app/components/Modal";
 import type { PagesTexts } from "@/app/components/PagesTab";
 import type { AppTexts } from "@/app/components/PaniniApp";
@@ -13,6 +14,7 @@ import type { RewardsTexts } from "@/app/components/RewardsTab";
 import type { SettingsTexts } from "@/app/components/SettingsModal";
 import type { SetupTexts } from "@/app/components/SetupView";
 import type { StatsTexts } from "@/app/components/StatsStrip";
+import type { ShareJoinTexts } from "@/app/share/[token]/ShareJoinView";
 
 /**
  * The message tree, shaped by the components that consume it. Every
@@ -28,4 +30,6 @@ export type Messages = {
   pages: PagesTexts;
   rewards: RewardsTexts;
   settings: SettingsTexts;
+  friends: FriendsTexts;
+  shareJoin: ShareJoinTexts;
 };
