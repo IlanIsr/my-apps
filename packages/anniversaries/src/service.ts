@@ -36,6 +36,7 @@ import {
   createPerson,
   currentDatabaseUrl,
   findByKey,
+  findUserByFeedToken,
   getEmailSentState,
   getPerson,
   isStoreConfigured,
@@ -51,6 +52,7 @@ import {
   type PersonRecord,
   type StoredEvent,
 } from "./store";
+import type { FeedPerson } from "./feed";
 import {
   createShareLink as insertShareLink,
   getShareLink as fetchShareLink,
@@ -269,6 +271,32 @@ export async function listAnniversaries(
     .sort((a, b) =>
       (a.events[0]?.date ?? "").localeCompare(b.events[0]?.date ?? ""),
     );
+}
+
+/**
+ * What the calendar feed with this token shows: every anniversary its owner is
+ * a member of (admins included — the feed is a personal calendar), all stored
+ * years. `null` if no user has this token. The token is the credential, like a
+ * share link's id.
+ */
+export async function getCalendarFeed(
+  token: string,
+): Promise<{ minhag: Minhag | null; persons: FeedPerson[] } | null> {
+  const owner = await findUserByFeedToken(token);
+  if (!owner) return null;
+  const records = await listPersons();
+  return {
+    minhag: owner.minhag,
+    persons: records
+      .filter((r) => r.members.includes(owner.email))
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        type: r.type,
+        hebDateLabel: formatHebDateLabel(r.hebDate),
+        events: r.events.map(({ year, date, time }) => ({ year, date, time })),
+      })),
+  };
 }
 
 export async function getAnniversary(

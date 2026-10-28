@@ -95,6 +95,11 @@ export const users = pgTable("users", {
    * (Azkara / Yortzeit) and the default Adar minhag of new anniversaries.
    */
   minhag: text("minhag"),
+  /**
+   * Secret of the user's private iCalendar feed (`/feed/<token>.ics`, the
+   * Apple / Outlook subscription). Null until they ask for the link.
+   */
+  feedToken: text("feed_token").unique(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .notNull()
     .defaultNow(),

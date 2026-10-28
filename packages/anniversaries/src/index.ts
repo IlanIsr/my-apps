@@ -28,6 +28,7 @@ export {
   isAnniversariesAdmin,
   listAnniversaries,
   getAnniversary,
+  getCalendarFeed,
   addAnniversary,
   leaveAnniversary,
   updateAnniversary,
@@ -48,4 +49,11 @@ export {
   type ShareLinkPreviewItem,
 } from "./service";
 
-export { getUserMinhag, setUserMinhag } from "./store";
+export {
+  getUserMinhag,
+  setUserMinhag,
+  getUserFeedToken,
+  rotateUserFeedToken,
+} from "./store";
+
+export { buildCalendarFeed, type FeedPerson } from "./feed";

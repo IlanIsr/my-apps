@@ -41,4 +41,21 @@ export const profile = {
       ".",
     months: hebrewMonths,
   },
+  calendarFeed: {
+    title: "Calendrier Apple / Outlook",
+    intro:
+      "Abonnez-vous à vos anniversaires depuis Calendrier (iPhone, Mac), Outlook ou tout autre agenda. Lecture seule ; votre agenda le met à jour tout seul, avec parfois quelques heures de délai. Ce lien est personnel : ne le partagez pas.",
+    show: "Obtenir mon lien",
+    loading: "Chargement…",
+    subscribe: "S'abonner dans Calendrier",
+    otherApps:
+      "Autre agenda (Outlook, Google « À partir de l'URL »…) : copiez ce lien.",
+    copy: "Copier",
+    copied: "Copié",
+    renew: "Nouveau lien",
+    renewHint:
+      "L'ancien lien cesse de fonctionner : il faudra vous réabonner avec le nouveau.",
+    error: "Impossible d'obtenir le lien. Réessayez.",
+    calendarName: "Anniversaires",
+  },
 } as const satisfies ProfileTexts;

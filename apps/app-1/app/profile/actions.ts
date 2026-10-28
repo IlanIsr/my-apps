@@ -7,7 +7,12 @@
 
 import { revalidatePath } from "next/cache";
 
-import { setUserMinhag, toMinhag } from "@repo/anniversaries";
+import {
+  getUserFeedToken,
+  rotateUserFeedToken,
+  setUserMinhag,
+  toMinhag,
+} from "@repo/anniversaries";
 import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
 import type { Minhag } from "@repo/hebcal";
 
@@ -29,4 +34,31 @@ export async function saveMinhagAction(minhag: Minhag): Promise<ProfileResult> {
   // The root layout reads the minhag — re-render every page with it.
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+export type FeedTokenResult =
+  | { ok: true; token: string }
+  | { ok: false; error: "not-signed-in" | "failed" };
+
+/**
+ * The signed-in user's calendar-feed token (`/feed/<token>.ics`) — created on
+ * first use, or replaced when `renew` (the old feed URL then stops working).
+ */
+export async function feedTokenAction(
+  renew: boolean,
+): Promise<FeedTokenResult> {
+  const [email, userId] = await Promise.all([
+    getCurrentUserEmail(),
+    getCurrentUserId(),
+  ]);
+  if (!email || !userId) return { ok: false, error: "not-signed-in" };
+  try {
+    const existing = renew ? null : await getUserFeedToken(email);
+    const token =
+      existing ?? (await rotateUserFeedToken({ email, clerkId: userId }));
+    return { ok: true, token };
+  } catch (error) {
+    console.error("[profile] calendar feed token failed:", error);
+    return { ok: false, error: "failed" };
+  }
 }

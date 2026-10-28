@@ -37,4 +37,19 @@ export const profile = {
       ".",
     months: hebrewMonths,
   },
+  calendarFeed: {
+    title: "יומן אפל / Outlook",
+    intro:
+      "הירשמו לימי השנה שלכם מתוך לוח השנה (iPhone, Mac), Outlook או כל יומן אחר. קריאה בלבד; היומן מתעדכן מעצמו, לפעמים באיחור של כמה שעות. הקישור אישי — אל תשתפו אותו.",
+    show: "קבלת הקישור שלי",
+    loading: "טוען…",
+    subscribe: "הרשמה בלוח השנה",
+    otherApps: "יומן אחר (Outlook, Google „מכתובת URL”…): העתיקו את הקישור.",
+    copy: "העתקה",
+    copied: "הועתק",
+    renew: "קישור חדש",
+    renewHint: "הקישור הישן יפסיק לעבוד — יהיה צורך להירשם מחדש עם החדש.",
+    error: "לא ניתן לקבל את הקישור. נסו שוב.",
+    calendarName: "ימי שנה",
+  },
 } as const satisfies ProfileTexts;
