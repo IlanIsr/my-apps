@@ -5,6 +5,7 @@
  */
 const CALENDAR_FEED_USER_IDS: readonly string[] = [
   "user_3LKidNB4nrxEF0bI37zrKrgMP9G",
+  "user_3LTSyEJzzLWDe4XliAr2L6cDI1v",
 ];
 
 export function canUseCalendarFeed(userId: string | null): boolean {
