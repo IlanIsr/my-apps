@@ -1,129 +1,95 @@
 /**
- * The reference cities a user can pick in their profile. A city fixes both the
- * timezone the events are shown in and where nightfall / sunset are computed
- * (a timezone alone spans thousands of kilometres — Miami and New York share
- * one but not their sunset). Client-safe data.
+ * The timezones a user can pick in their profile — every IANA timezone. It
+ * fixes the timezone the events are shown in, and nightfall / sunset are
+ * computed at that timezone's principal city (`TIMEZONE_COORDINATES`). Client-
+ * safe data.
  */
 
 import { GeoLocation, Zmanim } from "@hebcal/core";
 
-import type { ZmanimLocation } from "./zmanim";
+import { TIMEZONE_COORDINATES } from "./timezones";
+import { JERUSALEM, type ZmanimLocation } from "./zmanim";
 
-export const LOCATIONS = {
-  jerusalem: {
-    latitude: "31.7683",
-    longitude: "35.2137",
-    timezone: "Asia/Jerusalem",
-  },
-  paris: { latitude: "48.8566", longitude: "2.3522", timezone: "Europe/Paris" },
-  marseille: {
-    latitude: "43.2965",
-    longitude: "5.3698",
-    timezone: "Europe/Paris",
-  },
-  london: {
-    latitude: "51.5074",
-    longitude: "-0.1278",
-    timezone: "Europe/London",
-  },
-  brussels: {
-    latitude: "50.8503",
-    longitude: "4.3517",
-    timezone: "Europe/Brussels",
-  },
-  geneva: {
-    latitude: "46.2044",
-    longitude: "6.1432",
-    timezone: "Europe/Zurich",
-  },
-  rome: { latitude: "41.9028", longitude: "12.4964", timezone: "Europe/Rome" },
-  madrid: {
-    latitude: "40.4168",
-    longitude: "-3.7038",
-    timezone: "Europe/Madrid",
-  },
-  berlin: { latitude: "52.52", longitude: "13.405", timezone: "Europe/Berlin" },
-  moscow: {
-    latitude: "55.7558",
-    longitude: "37.6173",
-    timezone: "Europe/Moscow",
-  },
-  casablanca: {
-    latitude: "33.5731",
-    longitude: "-7.5898",
-    timezone: "Africa/Casablanca",
-  },
-  johannesburg: {
-    latitude: "-26.2041",
-    longitude: "28.0473",
-    timezone: "Africa/Johannesburg",
-  },
-  newYork: {
-    latitude: "40.7128",
-    longitude: "-74.006",
-    timezone: "America/New_York",
-  },
-  miami: {
-    latitude: "25.7617",
-    longitude: "-80.1918",
-    timezone: "America/New_York",
-  },
-  montreal: {
-    latitude: "45.5019",
-    longitude: "-73.5674",
-    timezone: "America/Toronto",
-  },
-  chicago: {
-    latitude: "41.8781",
-    longitude: "-87.6298",
-    timezone: "America/Chicago",
-  },
-  losAngeles: {
-    latitude: "34.0522",
-    longitude: "-118.2437",
-    timezone: "America/Los_Angeles",
-  },
-  mexico: {
-    latitude: "19.4326",
-    longitude: "-99.1332",
-    timezone: "America/Mexico_City",
-  },
-  saoPaulo: {
-    latitude: "-23.5505",
-    longitude: "-46.6333",
-    timezone: "America/Sao_Paulo",
-  },
-  buenosAires: {
-    latitude: "-34.6037",
-    longitude: "-58.3816",
-    timezone: "America/Argentina/Buenos_Aires",
-  },
-  sydney: {
-    latitude: "-33.8688",
-    longitude: "151.2093",
-    timezone: "Australia/Sydney",
-  },
-} as const satisfies Record<string, ZmanimLocation>;
+/** An IANA timezone from {@link TIMEZONE_COORDINATES}, e.g. `"Europe/Paris"`. */
+export type LocationId = string;
 
-export type LocationId = keyof typeof LOCATIONS;
+export const LOCATION_IDS: readonly LocationId[] =
+  Object.keys(TIMEZONE_COORDINATES);
 
-export const LOCATION_IDS = Object.keys(LOCATIONS) as LocationId[];
-
-/** Where everyone is until they pick a city — what the app always used. */
-export const DEFAULT_LOCATION: LocationId = "jerusalem";
+/** Where everyone is until they pick a timezone — what the app always used. */
+export const DEFAULT_LOCATION: LocationId = "Asia/Jerusalem";
 
 export function isLocationId(value: unknown): value is LocationId {
-  return typeof value === "string" && Object.hasOwn(LOCATIONS, value);
+  return (
+    typeof value === "string" && Object.hasOwn(TIMEZONE_COORDINATES, value)
+  );
 }
 
-/** A stored / submitted value as a city, falling back to {@link DEFAULT_LOCATION}. */
+/** A stored / submitted value as a timezone, falling back to {@link DEFAULT_LOCATION}. */
 export function toLocationId(value: unknown): LocationId {
   return isLocationId(value) ? value : DEFAULT_LOCATION;
 }
 
-/** The first city in a browser's timezone (`Intl…resolvedOptions().timeZone`), if any. */
+/** Coordinates + timezone of `id` (Jerusalem keeps the app's historic point). */
+export function locationOf(id: LocationId): ZmanimLocation {
+  const coordinates = TIMEZONE_COORDINATES[id];
+  if (id === DEFAULT_LOCATION || !coordinates) return JERUSALEM;
+  return {
+    latitude: String(coordinates[0]),
+    longitude: String(coordinates[1]),
+    timezone: id,
+  };
+}
+
+function canonical(timezone: string): string | null {
+  try {
+    return new Intl.DateTimeFormat("en", {
+      timeZone: timezone,
+    }).resolvedOptions().timeZone;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The timezone a browser reports (`Intl…resolvedOptions().timeZone`) as one of
+ * ours — browsers may still use an old alias (`Asia/Calcutta` for
+ * `Asia/Kolkata`), so both sides are canonicalised.
+ */
 export function locationForTimezone(timezone: string): LocationId | null {
-  return LOCATION_IDS.find((id) => LOCATIONS[id].timezone === timezone) ?? null;
+  if (isLocationId(timezone)) return timezone;
+  const wanted = canonical(timezone);
+  if (!wanted) return null;
+  return LOCATION_IDS.find((id) => canonical(id) === wanted) ?? null;
+}
+
+/** `"UTC+02:00"` — `id`'s current offset from UTC. */
+export function utcOffsetLabel(id: LocationId, at = new Date()): string {
+  try {
+    const name =
+      new Intl.DateTimeFormat("en-US", {
+        timeZone: id,
+        timeZoneName: "longOffset",
+      })
+        .formatToParts(at)
+        .find((p) => p.type === "timeZoneName")?.value ?? "GMT";
+    return name === "GMT" ? "UTC+00:00" : name.replace("GMT", "UTC");
+  } catch {
+    return "UTC";
+  }
+}
+
+/** Minutes east of UTC right now — for sorting a timezone list. */
+export function utcOffsetMinutes(id: LocationId, at = new Date()): number {
+  const match = utcOffsetLabel(id, at).match(/([+-])(\d{2}):(\d{2})/);
+  if (!match) return 0;
+  const minutes = Number(match[2]) * 60 + Number(match[3]);
+  return match[1] === "-" ? -minutes : minutes;
+}
+
+/** `"Buenos Aires"` for `"America/Argentina/Buenos_Aires"`. */
+export function timezoneCity(id: LocationId): string {
+  return (id.split("/").pop() ?? id).replaceAll("_", " ");
 }
 
 function hhmm(date: Date, timezone: string): string {
@@ -141,7 +107,7 @@ function hhmm(date: Date, timezone: string): string {
  * page. Within a minute of hebcal.com's value (what the calendar events use).
  */
 export function localTzeit(date: string, id: LocationId): string {
-  const loc = LOCATIONS[id];
+  const loc = locationOf(id);
   const [y, m, d] = date.split("-").map(Number);
   const geo = new GeoLocation(
     null,

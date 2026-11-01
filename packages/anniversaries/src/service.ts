@@ -15,7 +15,7 @@ import {
   calculateNextOccurrences,
   DEFAULT_LOCATION,
   localTzeit,
-  LOCATIONS,
+  locationOf,
   monthKeyForYear,
   type AnniversaryRule,
   type HebrewMonthKey,
@@ -207,7 +207,7 @@ async function syncPerson(input: SyncInput): Promise<SyncResult> {
     const sync = await syncPersonEvents({
       ...input,
       summary: input.summary ?? (series ? undefined : primary.summary),
-      location: LOCATIONS[location],
+      location: locationOf(location),
       locationId: location,
       members: cityMembers,
       notifyEmails: notifyAmong(cityMembers),
@@ -401,7 +401,7 @@ export async function getCalendarFeed(token: string): Promise<{
   const home = owner.location === DEFAULT_LOCATION;
   return {
     minhag: owner.minhag,
-    timezone: LOCATIONS[owner.location].timezone,
+    timezone: locationOf(owner.location).timezone,
     persons: records
       .filter((r) => r.members.includes(owner.email))
       .map((r) => ({

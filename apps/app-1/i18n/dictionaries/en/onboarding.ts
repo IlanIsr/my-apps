@@ -6,8 +6,8 @@ export const onboarding = {
   intro: "A few settings are waiting in your profile:",
   items: [
     {
-      title: "City",
-      text: "your events start at nightfall where you live (Jerusalem by default).",
+      title: "Time zone",
+      text: "your events follow your time zone and start at nightfall there (Jerusalem by default).",
     },
     {
       title: "Minhag",

@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Profile card: the user's reference city — the timezone of their calendar
- * events and where nightfall / sunset are computed. Saving it
+ * Profile card: the user's timezone — the timezone of their calendar events;
+ * nightfall / sunset are computed at its principal city. Saving it
  * ({@link saveLocationAction}) then moves them, one anniversary at a time
  * ({@link moveSeriesAction}), to that city's calendar series: a new Google
- * invite per anniversary. Never chosen → preselects the browser's timezone
- * when a city matches it, else Jerusalem.
+ * invite per anniversary. Never chosen → preselects the browser's timezone,
+ * else Jerusalem. Listed as `(UTC+02:00) Jerusalem`, sorted by offset.
  */
 
 import { useRouter } from "next/navigation";
@@ -16,6 +16,9 @@ import {
   DEFAULT_LOCATION,
   LOCATION_IDS,
   locationForTimezone,
+  timezoneCity,
+  utcOffsetLabel,
+  utcOffsetMinutes,
   type LocationId,
 } from "@repo/hebcal";
 import { useLanguage } from "@/i18n";
@@ -28,7 +31,6 @@ export type LocationSettingTexts = {
   title: string;
   hint: string;
   label: string;
-  cities: Record<LocationId, string>;
   /** Shown while the city was never saved (the preselection is a guess). */
   notSaved: string;
   save: string;
@@ -50,7 +52,7 @@ function browserLocation(): LocationId {
 }
 
 export function LocationSetting({ t }: { t: LocationSettingTexts }) {
-  const { location: saved, locale } = useLanguage();
+  const { location: saved } = useLanguage();
   const router = useRouter();
   // The browser's timezone only exists client-side (server render: default).
   const detected = useSyncExternalStore(
@@ -67,10 +69,17 @@ export function LocationSetting({ t }: { t: LocationSettingTexts }) {
 
   const options = useMemo(
     () =>
-      LOCATION_IDS.map((id) => ({ key: id, label: t.cities[id] })).sort(
-        (a, b) => a.label.localeCompare(b.label, locale),
-      ),
-    [t.cities, locale],
+      LOCATION_IDS.map((id) => ({
+        key: id,
+        offset: utcOffsetMinutes(id),
+        city: timezoneCity(id),
+      }))
+        .sort((a, b) => a.offset - b.offset || a.city.localeCompare(b.city))
+        .map(({ key, city }) => ({
+          key,
+          label: `(${utcOffsetLabel(key)}) ${city}`,
+        })),
+    [],
   );
 
   const pending = progress !== null;

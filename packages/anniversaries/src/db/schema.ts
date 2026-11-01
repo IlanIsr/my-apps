@@ -92,7 +92,7 @@ export const personSeries = pgTable(
     personId: text("person_id")
       .notNull()
       .references(() => persons.id, { onDelete: "cascade" }),
-    /** `LocationId`, never `"jerusalem"`. */
+    /** `LocationId` (IANA timezone), never `DEFAULT_LOCATION`. */
     location: text("location").notNull(),
     googleEventId: text("google_event_id").notNull(),
     htmlLink: text("html_link").notNull().default(""),
@@ -121,7 +121,7 @@ export const users = pgTable("users", {
    */
   feedToken: text("feed_token").unique(),
   /**
-   * Profile: reference city (`@repo/hebcal`'s `LocationId`) — the timezone and
+   * Profile: timezone (`@repo/hebcal`'s `LocationId`) — the timezone and
    * place of nightfall of their calendar events. Null = Jerusalem.
    */
   location: text("location"),

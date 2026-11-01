@@ -6,8 +6,8 @@ export const onboarding = {
   intro: "Quelques réglages vous attendent dans votre profil :",
   items: [
     {
-      title: "Ville",
-      text: "vos événements commencent à la tombée de la nuit là où vous habitez (Jérusalem par défaut).",
+      title: "Fuseau horaire",
+      text: "vos événements suivent votre fuseau et commencent à la tombée de la nuit (Jérusalem par défaut).",
     },
     {
       title: "Minhag",
