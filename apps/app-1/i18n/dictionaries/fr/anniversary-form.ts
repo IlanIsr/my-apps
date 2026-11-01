@@ -9,7 +9,8 @@ const NOT_CONFIGURED =
 /** French UI strings — shape: {@link AnniversaryFormTexts}. */
 export const anniversaryForm = {
   name: "Nom",
-  namePlaceholder: "Ilan Israel Bellaiche",
+  namePlaceholder: "David Cohen",
+  hebrewNamePlaceholder: "דוד בן אברהם",
   hebrewName: "Nom hébraïque",
   type: "De quoi s’agit-il ?",
   types: { birthday: "Anniversaire", yahrzeit: "Azkara" },
