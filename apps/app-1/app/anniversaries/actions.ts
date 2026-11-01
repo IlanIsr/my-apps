@@ -187,18 +187,27 @@ export async function updatePersonAction(input: {
   hebYear?: number;
   minhag?: Minhag;
   locale: Locale;
-}): Promise<ActionResult<{ updated: boolean }>> {
+}): Promise<ActionResult<{ updated: boolean; id: string }>> {
   try {
-    const email = await getCurrentUserEmail();
-    if (!email) return { ok: false, error: "not-signed-in" };
+    const [email, userId] = await Promise.all([
+      getCurrentUserEmail(),
+      getCurrentUserId(),
+    ]);
+    if (!email || !userId) return { ok: false, error: "not-signed-in" };
     if (!input.name.trim()) return { ok: false, error: "name-required" };
 
     const summary = eventSummaryFor(input.locale, input.type, input.name);
     const data = await updateAnniversary(
-      { ...input, minhag: input.minhag && toMinhag(input.minhag), summary },
+      {
+        ...input,
+        minhag: input.minhag && toMinhag(input.minhag),
+        summary,
+        createdBy: userId,
+      },
       email,
     );
     refreshAnniversaries(input.id);
+    if (data.id !== input.id) refreshAnniversaries(data.id);
     return { ok: true, data };
   } catch (error) {
     return fail(error);
