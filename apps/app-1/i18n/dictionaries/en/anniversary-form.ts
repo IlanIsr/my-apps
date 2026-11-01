@@ -8,7 +8,8 @@ const NOT_CONFIGURED = "The shared anniversaries calendar isn’t set up yet.";
 /** English UI strings — shape: {@link AnniversaryFormTexts}. */
 export const anniversaryForm = {
   name: "Name",
-  namePlaceholder: "Ilan Israel Bellaiche",
+  namePlaceholder: "David Cohen",
+  hebrewNamePlaceholder: "דוד בן אברהם",
   hebrewName: "Hebrew name",
   type: "What is it?",
   types: { birthday: "Birthday", yahrzeit: "Azkara" },

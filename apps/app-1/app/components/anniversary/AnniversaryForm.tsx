@@ -45,6 +45,7 @@ import { addAnniversaryAction } from "../../anniversaries/actions";
 export type AnniversaryFormTexts = {
   name: string;
   namePlaceholder: string;
+  hebrewNamePlaceholder: string;
   hebrewName: string;
   type: string;
   types: { birthday: string; yahrzeit: string };
@@ -200,6 +201,7 @@ export function AnniversaryForm({ t }: { t: AnniversaryFormTexts }) {
         <TextInput
           value={hebrewName}
           onChange={(e) => setHebrewName(e.target.value)}
+          placeholder={t.hebrewNamePlaceholder}
           className="font-display text-base"
           dir="rtl"
         />
