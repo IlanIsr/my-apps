@@ -20,6 +20,8 @@ import {
 import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
 import { isLocationId, type LocationId, type Minhag } from "@repo/hebcal";
 
+import { canUseCalendarFeed } from "@/lib/calendar-feed";
+
 export type ProfileResult =
   { ok: true } | { ok: false; error: "not-signed-in" | "failed" };
 
@@ -56,6 +58,7 @@ export async function feedTokenAction(
     getCurrentUserId(),
   ]);
   if (!email || !userId) return { ok: false, error: "not-signed-in" };
+  if (!canUseCalendarFeed(userId)) return { ok: false, error: "failed" };
   try {
     const existing = renew ? null : await getUserFeedToken(email);
     const token =

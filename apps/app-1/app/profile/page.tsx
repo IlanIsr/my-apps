@@ -1,13 +1,14 @@
-"use client";
-
 /**
- * `/profile` — the signed-in user's preferences ({@link ProfileView}). Room for
- * more sections later (CSV import, …).
+ * `/profile` — the signed-in user's preferences ({@link ProfileScreen}). The
+ * calendar-feed card is only shown to the users `canUseCalendarFeed` lets in.
  */
 
-import { useTranslations } from "@/i18n";
-import { ProfileView } from "./ProfileView";
+import { getCurrentUserId } from "@repo/auth/user";
 
-export default function ProfilePage() {
-  return <ProfileView t={useTranslations().profile} />;
+import { canUseCalendarFeed } from "@/lib/calendar-feed";
+import { ProfileScreen } from "./ProfileScreen";
+
+export default async function ProfilePage() {
+  const userId = await getCurrentUserId();
+  return <ProfileScreen showCalendarFeed={canUseCalendarFeed(userId)} />;
 }
