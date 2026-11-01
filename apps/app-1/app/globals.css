@@ -92,6 +92,12 @@
   --separator: var(--border);
 }
 
+/* HeroUI's modal body is `text-muted`, but app-1's Tailwind `muted` is a
+ * background tint — point it back at HeroUI's muted text colour. */
+.modal__body {
+  color: var(--muted);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

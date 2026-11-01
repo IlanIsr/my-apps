@@ -14,6 +14,7 @@ export const onboarding = {
       text: "séfarade ou ashkénaze : le vocabulaire, et l'Adar retenu par défaut les années à deux Adar.",
     },
     {
+      calendarFeed: true,
       title: "Calendrier Apple / Outlook",
       text: "un lien pour vous abonner depuis n'importe quel agenda.",
     },

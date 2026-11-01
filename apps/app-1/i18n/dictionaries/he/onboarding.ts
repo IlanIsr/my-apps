@@ -13,7 +13,11 @@ export const onboarding = {
       title: "מנהג",
       text: "ספרדי או אשכנזי: הניסוח, ואיזה אדר נבחר כברירת מחדל בשנה מעוברת.",
     },
-    { title: "יומן Apple / Outlook", text: "קישור להרשמה מכל אפליקציית יומן." },
+    {
+      calendarFeed: true,
+      title: "יומן Apple / Outlook",
+      text: "קישור להרשמה מכל אפליקציית יומן.",
+    },
     { title: "ייבוא CSV", text: "הוספת ימי השנה מייצוא של Hebcal." },
   ],
   openProfile: "לפרופיל שלי",

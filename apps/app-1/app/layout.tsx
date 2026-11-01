@@ -16,13 +16,14 @@ import {
 } from "next/font/google";
 
 import { AuthProvider } from "@repo/auth/provider";
-import { getCurrentUserEmail } from "@repo/auth/user";
+import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
 import {
   getUserMinhag,
   getUserProfile,
   isAnniversariesAdmin,
 } from "@repo/anniversaries";
 
+import { canUseCalendarFeed } from "@/lib/calendar-feed";
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
 import { OnboardingModal } from "./components/OnboardingModal";
@@ -102,7 +103,11 @@ export default async function RootLayout({
         <AuthProvider>
           <Providers minhag={minhag} location={profile?.location ?? null}>
             <Navbar isAdmin={isAdmin} />
-            {profile && !profile.onboardingShown && <OnboardingModal />}
+            {profile && !profile.onboardingShown && (
+              <OnboardingModal
+                showCalendarFeed={canUseCalendarFeed(await getCurrentUserId())}
+              />
+            )}
             <main className="mx-auto max-w-2xl px-6 py-12">{children}</main>
             <Footer />
           </Providers>

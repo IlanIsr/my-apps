@@ -14,6 +14,7 @@ export const onboarding = {
       text: "Sephardi or Ashkenazi: the wording, and which Adar is the default in leap years.",
     },
     {
+      calendarFeed: true,
       title: "Apple / Outlook calendar",
       text: "a link to subscribe from any calendar app.",
     },

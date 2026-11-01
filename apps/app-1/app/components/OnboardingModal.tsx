@@ -21,12 +21,22 @@ export type OnboardingTexts = {
   title: string;
   intro: string;
   /** One line per profile setting: name + what it does. */
-  items: readonly { title: string; text: string }[];
+  items: readonly {
+    title: string;
+    text: string;
+    /** Only shown to users who may use the calendar feed. */
+    calendarFeed?: true;
+  }[];
   openProfile: string;
   later: string;
 };
 
-export function OnboardingModal() {
+export function OnboardingModal({
+  showCalendarFeed,
+}: {
+  /** Whether this user may use the calendar feed (see `lib/calendar-feed.ts`). */
+  showCalendarFeed: boolean;
+}) {
   const t = useTranslations().onboarding;
   const router = useRouter();
   const [open, setOpen] = useState(true);
@@ -59,12 +69,14 @@ export function OnboardingModal() {
       }
     >
       <ul className="flex flex-col gap-3 text-sm">
-        {t.items.map((item) => (
-          <li key={item.title}>
-            <span className="font-medium">{item.title}</span>
-            <span className="text-muted-foreground"> — {item.text}</span>
-          </li>
-        ))}
+        {t.items
+          .filter((item) => showCalendarFeed || !item.calendarFeed)
+          .map((item) => (
+            <li key={item.title}>
+              <span className="font-medium text-foreground">{item.title}</span>
+              <span className="text-muted-foreground"> — {item.text}</span>
+            </li>
+          ))}
       </ul>
     </SimpleModal>
   );
