@@ -476,12 +476,14 @@ async function recordMembers(
 
 /**
  * Create a person + their events, or — if a matching person exists — add the
- * current user and top up missing future years.
+ * current user and top up missing future years. `forceNew` skips the match
+ * (used when an edit forks a person whose key doesn't change).
  */
 export async function addAnniversary(
   input: AddAnniversaryInput,
   viewerEmail: string,
-): Promise<{ created: number; joined: boolean }> {
+  { forceNew = false }: { forceNew?: boolean } = {},
+): Promise<{ id: string; created: number; joined: boolean }> {
   if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
 
   const email = viewerEmail.toLowerCase();
@@ -496,7 +498,7 @@ export async function addAnniversary(
   const colorId = colorIdFor(input.type);
   const hebMonth = monthKeyForYear(input.hebMonth, input.hebYear);
   const key = anniversaryKey(input.name, input.hebDay, hebMonth, input.type);
-  const existing = await findByKey(key);
+  const existing = forceNew ? null : await findByKey(key);
 
   if (!existing) {
     const base = desiredStored(null, { ...input, hebMonth }, years);
@@ -538,6 +540,7 @@ export async function addAnniversary(
     );
     if (sync.rateLimited) throw new CalendarRateLimitError();
     return {
+      id: record.id,
       created: sync.events.length,
       joined: finalMembers.includes(email),
     };
@@ -577,7 +580,7 @@ export async function addAnniversary(
   );
   if (sync.rateLimited) throw new CalendarRateLimitError();
   const created = sync.events.filter((e) => !priorYears.has(e.year)).length;
-  return { created, joined: finalMembers.includes(email) };
+  return { id: existing.id, created, joined: finalMembers.includes(email) };
 }
 
 /** One person whose stored occurrences no longer match the date rules. */
@@ -992,6 +995,8 @@ export type UpdatePersonInput = {
    * if name, type, or the Hebrew date actually changed.
    */
   summary: string;
+  /** Clerk id of the signed-in user — `createdBy` of a forked person. */
+  createdBy: string;
 };
 
 /**
@@ -1004,20 +1009,25 @@ export type UpdatePersonInput = {
  * occurrences and re-syncs only if a date actually moved (Adar, 30th-of-the-
  * month rules). hebrewName / origin are store-only. A member (or admin) may
  * edit; anyone else is a no-op.
+ *
+ * A member editing a person other members share **forks** it instead: what's
+ * right for the editor may be wrong for the others, so the editor joins (or
+ * creates) the person matching the new details and leaves the old one, which
+ * stays untouched for everyone else. Returns the id the editor now follows.
  */
 export async function updateAnniversary(
   input: UpdatePersonInput,
   viewerEmail: string,
-): Promise<{ updated: boolean }> {
+): Promise<{ updated: boolean; id: string }> {
   if (!isStoreConfigured()) throw new DatabaseNotConfiguredError();
 
+  const unchanged = { updated: false, id: input.id };
   const person = await getPerson(input.id);
-  if (!person) return { updated: false };
+  if (!person) return unchanged;
 
   const email = viewerEmail.toLowerCase();
-  if (!person.members.includes(email) && !isAnniversariesAdmin(viewerEmail)) {
-    return { updated: false };
-  }
+  const isMember = person.members.includes(email);
+  if (!isMember && !isAnniversariesAdmin(viewerEmail)) return unchanged;
 
   const name = input.name?.trim() || person.name;
   const type = input.type ?? person.type;
@@ -1080,7 +1090,33 @@ export async function updateAnniversary(
   if (hebYear !== priorYear) patch.hebYear = hebYear;
   if (minhag !== person.minhag) patch.minhag = minhag;
 
-  if (Object.keys(patch).length === 0) return { updated: false };
+  if (Object.keys(patch).length === 0) return unchanged;
+
+  if (isMember && person.members.some((m) => m !== email)) {
+    const hebrewName =
+      input.hebrewName === undefined ? person.hebrewName : input.hebrewName;
+    const origin = input.origin === undefined ? person.origin : input.origin;
+    const fork = await addAnniversary(
+      {
+        name,
+        type,
+        hebDay,
+        hebMonth,
+        years: Math.max(1, upcomingCount),
+        hebrewName: hebrewName ?? undefined,
+        origin: origin ?? undefined,
+        hebYear: hebYear ?? undefined,
+        minhag,
+        summary: input.summary,
+        createdBy: input.createdBy,
+      },
+      viewerEmail,
+      // Same key → findByKey would hand back this very person.
+      { forceNew: anniversaryKey(name, hebDay, hebMonth, type) === person.key },
+    );
+    await leaveAnniversary(person.id, viewerEmail);
+    return { updated: true, id: fork.id };
+  }
 
   await updatePerson(input.id, patch);
 
@@ -1100,7 +1136,7 @@ export async function updateAnniversary(
     if (sync.rateLimited) throw new CalendarRateLimitError();
   }
 
-  return { updated: true };
+  return { updated: true, id: input.id };
 }
 
 // --- prod → pre-prod data sync (admin only) ---

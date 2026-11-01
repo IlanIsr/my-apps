@@ -10,6 +10,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   gregorianToHebrew,
@@ -71,6 +72,7 @@ export function EditPersonForm({
   onDone: () => void;
 }) {
   const { locale } = useLanguage();
+  const router = useRouter();
   const months = useMemo(() => hebrewMonthOptions(t.months), [t.months]);
   const days = useMemo(() => hebrewDayOptions(locale), [locale]);
   const gregDays = useMemo(() => gregorianDayOptions(), []);
@@ -152,6 +154,11 @@ export function EditPersonForm({
           t.error,
         ),
       );
+      return;
+    }
+    // Others share this person → the edit forked a new one for this user.
+    if (result.data.id !== anniversary.id) {
+      router.replace(`/anniversaries/${result.data.id}`);
       return;
     }
     onDone();
