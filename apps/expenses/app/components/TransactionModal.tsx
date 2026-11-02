@@ -178,7 +178,7 @@ export function TransactionModal({
 
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted">{t.category}</span>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
             {shown.map((c) => (
               <Button
                 key={c.id}
@@ -188,7 +188,7 @@ export function TransactionModal({
                   setCategoryId(c.id === categoryId ? null : c.id);
                   setPicked(true);
                 }}
-                className="justify-start truncate"
+                className="w-full min-w-0 justify-start overflow-hidden px-2.5"
               >
                 <span aria-hidden>{c.icon}</span>
                 <span className="truncate">
