@@ -50,10 +50,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <header className="border-b border-line bg-surface/70 backdrop-blur print:hidden">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+        <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-3">
           <Link
             href="/exams/new"
-            className="flex items-center gap-2 font-display text-xl font-semibold"
+            className="flex shrink-0 items-center gap-2 font-display text-xl font-semibold"
           >
             <span
               aria-hidden
@@ -64,22 +64,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {t.brand}
           </Link>
 
-          <div className="ms-auto flex items-center gap-3">
-            <Select
-              aria-label={t.language}
-              options={LOCALES.map((key) => ({
-                key,
-                label: LOCALE_LABEL[key],
-              }))}
-              value={locale}
-              onChange={(value) => setLocale(value as Locale)}
-              className="w-32 text-sm"
-            />
-            <AuthControl />
-          </div>
-
           <Show when="signed-in">
-            <nav className="-mx-1 flex w-full gap-1 overflow-x-auto text-sm">
+            <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto text-sm">
               {LINKS.map((link) => {
                 const active = isActive(pathname, link.href);
                 return (
@@ -99,6 +85,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               })}
             </nav>
           </Show>
+          <div className="ms-auto flex shrink-0 items-center gap-3">
+            <Select
+              aria-label={t.language}
+              options={LOCALES.map((key) => ({
+                key,
+                label: LOCALE_LABEL[key],
+              }))}
+              value={locale}
+              onChange={(value) => setLocale(value as Locale)}
+              className="w-32 text-sm"
+            />
+            <AuthControl />
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-8 print:max-w-none print:p-0">
