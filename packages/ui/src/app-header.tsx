@@ -3,8 +3,9 @@
 /**
  * The header every app shares: one full-width row — brand at the start edge
  * (left, right in RTL), the section links centred, settings + account at the
- * end edge. Below `md` the links and settings move into a hamburger menu; the
- * brand and account stay in the row. Hidden when printing.
+ * end edge. Below `md` the links and settings move into a hamburger menu — a
+ * drawer sliding in from the end edge (right, left in RTL); the brand and
+ * account stay in the row. Hidden when printing.
  *
  * Framework-agnostic: the app passes its router's link component (`next/link`)
  * and decides which links to show (e.g. none while signed out). Colours come
@@ -15,6 +16,7 @@
 import { useState, type ComponentType, type ReactNode } from "react";
 
 import { Button } from "@heroui/react/button";
+import { Drawer } from "@heroui/react/drawer";
 
 export type AppHeaderLink = {
   href: string;
@@ -95,26 +97,36 @@ export function AppHeader({
             isIconOnly
             aria-label={menuLabel}
             aria-expanded={menuOpen}
-            onPress={() => setMenuOpen((open) => !open)}
+            onPress={() => setMenuOpen(true)}
             className="md:hidden"
           >
             <span aria-hidden className="text-lg leading-none">
-              {menuOpen ? "✕" : "☰"}
+              ☰
             </span>
           </Button>
         </div>
       </div>
 
-      {menuOpen && (
-        <div className="flex flex-col gap-3 border-t border-[var(--border)] px-4 py-3 md:hidden">
-          {links.length > 0 && (
-            <nav className="flex flex-col gap-1 text-sm">
-              {renderLinks(() => setMenuOpen(false))}
-            </nav>
-          )}
-          {settings?.("menu")}
-        </div>
-      )}
+      <Drawer.Backdrop isOpen={menuOpen} onOpenChange={setMenuOpen}>
+        {/* HeroUI's placements are logical: "right" = the end edge, which is
+            the hamburger's side (left in RTL). */}
+        <Drawer.Content placement="right">
+          <Drawer.Dialog aria-label={menuLabel} className="md:hidden">
+            <Drawer.Header>
+              <div onClick={() => setMenuOpen(false)}>{brand}</div>
+              <Drawer.CloseTrigger />
+            </Drawer.Header>
+            <Drawer.Body className="flex flex-col gap-4">
+              {links.length > 0 && (
+                <nav className="flex flex-col gap-1 text-sm">
+                  {renderLinks(() => setMenuOpen(false))}
+                </nav>
+              )}
+              {settings?.("menu")}
+            </Drawer.Body>
+          </Drawer.Dialog>
+        </Drawer.Content>
+      </Drawer.Backdrop>
     </header>
   );
 }
