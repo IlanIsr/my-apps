@@ -1,0 +1,112 @@
+import type { BilanTexts } from "@/app/components/BilanView";
+import type { CategoriesTexts } from "@/app/components/CategoriesView";
+import type { ImportTexts } from "@/app/components/ImportView";
+import type {
+  CategoryNameTexts,
+  MethodTexts,
+  TransactionModalTexts,
+} from "@/app/components/TransactionModal";
+import type { TransactionsTexts } from "@/app/components/TransactionsView";
+
+export const methods = {
+  cash: "Cash",
+  card: "Card",
+} as const satisfies MethodTexts;
+
+export const categoryNames = {
+  groceries: "Groceries",
+  restaurant: "Restaurants",
+  transport: "Transport",
+  housing: "Housing",
+  health: "Health",
+  clothing: "Clothing",
+  leisure: "Leisure",
+  subscriptions: "Subscriptions",
+  other: "Other",
+} as const satisfies CategoryNameTexts;
+
+export const transactions = {
+  title: "Expenses",
+  add: "Add an expense",
+  previous: "Previous month",
+  next: "Next month",
+  total: "Month total",
+  allCategories: "All categories",
+  allMethods: "Cash + card",
+  uncategorized: "Uncategorized",
+  emptyTitle: "No expenses",
+  emptyDescription:
+    "Tap “+” whenever you pay: amount, category, done. For groceries, enter the detailed receipt.",
+  noMatch: "No expense this month with these filters.",
+  receipt: "Grocery receipt",
+  importStatement: "Import a statement",
+  budgetNear: "{category}: {spent} of {budget} — almost at the budget.",
+  budgetOver: "{category}: {spent} of {budget} — over budget.",
+} as const satisfies TransactionsTexts;
+
+export const transactionModal = {
+  addTitle: "New expense",
+  editTitle: "Edit expense",
+  amount: "Amount",
+  category: "Category",
+  merchant: "Where",
+  merchantPlaceholder: "e.g. Bakery",
+  method: "Paid by",
+  date: "Date",
+  note: "Note",
+  save: "Save",
+  cancel: "Cancel",
+  delete: "Delete",
+  badAmount: "Enter an amount.",
+  fromReceipt: "This expense is a grocery receipt's total.",
+  openReceipt: "Open the receipt",
+} as const satisfies TransactionModalTexts;
+
+export const categories = {
+  title: "Categories",
+  description:
+    "Rename, change the icon, set a monthly budget (alert at 80% and when over) or hide a category.",
+  icon: "Icon",
+  name: "Name",
+  budget: "Budget / month",
+  noBudget: "None",
+  hidden: "Hidden",
+  save: "Save",
+  add: "Add",
+  newName: "New category",
+} as const satisfies CategoriesTexts;
+
+export const bilan = {
+  title: "Summary",
+  emptyTitle: "Nothing to analyse",
+  emptyDescription: "Add your expenses to see where your money goes.",
+  previous: "Previous month",
+  next: "Next month",
+  total: "Total",
+  vsPrevious: "{amount} vs the previous month",
+  byCategory: "By category",
+  ofBudget: "/ {budget}",
+  uncategorized: "Uncategorized",
+  methods: "Cash / card",
+  last12: "Last 12 months",
+  editBudgets: "Budgets",
+} as const satisfies BilanTexts;
+
+export const importTexts = {
+  title: "Import a statement",
+  description:
+    "Export your card statement as CSV or Excel from your bank's website, then pick the file. Nothing is sent until you confirm; lines already imported or already entered are unticked.",
+  pickFile: "Choose a file",
+  unreadable: "Can't read this file. Try the CSV or Excel (.xlsx) export.",
+  columns: "Columns",
+  date: "Date",
+  merchant: "Merchant",
+  amount: "Amount",
+  none: "—",
+  summary: "{n} lines read ({skipped} skipped).",
+  alreadyImported: "already imported",
+  matches: "already entered? ({what})",
+  uncategorized: "Uncategorized",
+  importButton: "Import {n} line(s)",
+  done: "{n} expense(s) imported.",
+} as const satisfies ImportTexts;

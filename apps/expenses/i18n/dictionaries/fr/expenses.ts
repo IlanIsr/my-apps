@@ -1,0 +1,113 @@
+import type { BilanTexts } from "@/app/components/BilanView";
+import type { CategoriesTexts } from "@/app/components/CategoriesView";
+import type { ImportTexts } from "@/app/components/ImportView";
+import type {
+  CategoryNameTexts,
+  MethodTexts,
+  TransactionModalTexts,
+} from "@/app/components/TransactionModal";
+import type { TransactionsTexts } from "@/app/components/TransactionsView";
+
+export const methods = {
+  cash: "Espèces",
+  card: "Carte",
+} as const satisfies MethodTexts;
+
+export const categoryNames = {
+  groceries: "Supermarché",
+  restaurant: "Restaurant",
+  transport: "Transport",
+  housing: "Logement",
+  health: "Santé",
+  clothing: "Vêtements",
+  leisure: "Loisirs",
+  subscriptions: "Abonnements",
+  other: "Divers",
+} as const satisfies CategoryNameTexts;
+
+export const transactions = {
+  title: "Dépenses",
+  add: "Ajouter une dépense",
+  previous: "Mois précédent",
+  next: "Mois suivant",
+  total: "Total du mois",
+  allCategories: "Toutes les catégories",
+  allMethods: "Espèces + carte",
+  uncategorized: "Sans catégorie",
+  emptyTitle: "Aucune dépense",
+  emptyDescription:
+    "Touche « + » à chaque paiement : montant, catégorie, c'est noté. Pour les courses, saisis le ticket détaillé.",
+  noMatch: "Aucune dépense ce mois-ci avec ces filtres.",
+  receipt: "Ticket de courses",
+  importStatement: "Importer un relevé",
+  budgetNear:
+    "{category} : {spent} sur {budget} — le budget est presque atteint.",
+  budgetOver: "{category} : {spent} sur {budget} — budget dépassé.",
+} as const satisfies TransactionsTexts;
+
+export const transactionModal = {
+  addTitle: "Nouvelle dépense",
+  editTitle: "Modifier la dépense",
+  amount: "Montant",
+  category: "Catégorie",
+  merchant: "Où",
+  merchantPlaceholder: "Ex. Boulangerie",
+  method: "Payé en",
+  date: "Date",
+  note: "Note",
+  save: "Enregistrer",
+  cancel: "Annuler",
+  delete: "Supprimer",
+  badAmount: "Indique un montant.",
+  fromReceipt: "Cette dépense est le total d'un ticket de courses.",
+  openReceipt: "Voir le ticket",
+} as const satisfies TransactionModalTexts;
+
+export const categories = {
+  title: "Catégories",
+  description:
+    "Renomme, change l'icône, fixe un budget mensuel (alerte à 80 % et au dépassement) ou masque une catégorie.",
+  icon: "Icône",
+  name: "Nom",
+  budget: "Budget / mois",
+  noBudget: "Aucun",
+  hidden: "Masquée",
+  save: "Enregistrer",
+  add: "Ajouter",
+  newName: "Nouvelle catégorie",
+} as const satisfies CategoriesTexts;
+
+export const bilan = {
+  title: "Bilan",
+  emptyTitle: "Rien à analyser",
+  emptyDescription: "Ajoute tes dépenses pour voir où part ton argent.",
+  previous: "Mois précédent",
+  next: "Mois suivant",
+  total: "Total",
+  vsPrevious: "{amount} par rapport au mois précédent",
+  byCategory: "Par catégorie",
+  ofBudget: "/ {budget}",
+  uncategorized: "Sans catégorie",
+  methods: "Espèces / carte",
+  last12: "12 derniers mois",
+  editBudgets: "Budgets",
+} as const satisfies BilanTexts;
+
+export const importTexts = {
+  title: "Importer un relevé",
+  description:
+    "Exporte le relevé de ta carte en CSV ou Excel depuis le site de la banque, puis choisis le fichier. Rien n'est envoyé avant que tu valides ; les lignes déjà importées ou déjà saisies sont décochées.",
+  pickFile: "Choisir un fichier",
+  unreadable: "Fichier illisible. Essaie l'export CSV ou Excel (.xlsx).",
+  columns: "Colonnes",
+  date: "Date",
+  merchant: "Commerçant",
+  amount: "Montant",
+  none: "—",
+  summary: "{n} lignes lues ({skipped} ignorées).",
+  alreadyImported: "déjà importée",
+  matches: "déjà saisie ? ({what})",
+  uncategorized: "Sans catégorie",
+  importButton: "Importer {n} ligne(s)",
+  done: "{n} dépense(s) importée(s).",
+} as const satisfies ImportTexts;

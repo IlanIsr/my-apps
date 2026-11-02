@@ -1,0 +1,35 @@
+import type { Messages } from "../../messages";
+import {
+  bilan,
+  categories,
+  categoryNames,
+  importTexts,
+  methods,
+  transactionModal,
+  transactions,
+} from "./expenses";
+import { appShell, errors, stats, stores } from "./common";
+import { product, products, shopping, shoppingToggle } from "./products";
+import { receipt, receiptForm, receipts } from "./receipts";
+
+/** The assembled message tree for this locale. */
+export const he = {
+  appShell,
+  errors,
+  methods,
+  categoryNames,
+  transactions,
+  transactionModal,
+  categories,
+  bilan,
+  import: importTexts,
+  receipts,
+  receipt,
+  receiptForm,
+  products,
+  product,
+  shoppingToggle,
+  stores,
+  shopping,
+  stats,
+} as const satisfies Messages;

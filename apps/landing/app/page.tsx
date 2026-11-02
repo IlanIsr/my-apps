@@ -26,10 +26,9 @@ const apps = [
     url: isDev ? "http://localhost:3003" : "https://training.myappshub.dev/",
   },
   {
-    name: "Courses",
-    description:
-      "Grocery receipts, price comparison and a cheapest-store shopping list.",
-    url: isDev ? "http://localhost:3004" : "https://groceries.myappshub.dev/",
+    name: "Expenses",
+    description: "Every expense — cash, card, grocery receipts — with budgets.",
+    url: isDev ? "http://localhost:3004" : "https://expenses.myappshub.dev/",
   },
 ];
 
