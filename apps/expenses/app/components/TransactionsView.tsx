@@ -127,9 +127,14 @@ export function TransactionsView({
           </div>
         </div>
         <div className="num flex gap-4 text-sm text-muted">
-          {METHODS.filter((m) => summary.byMethod[m] > 0).map((m) => (
-            <span key={m}>
-              {METHOD_ICON[m]} {formatMoney(summary.byMethod[m], tag)}
+          {METHODS.map((m) => (
+            <span key={m} className="flex flex-col items-end">
+              <span className="text-xs">
+                {METHOD_ICON[m]} {messages.methods[m]}
+              </span>
+              <span className="text-foreground">
+                {formatMoney(summary.byMethod[m], tag)}
+              </span>
             </span>
           ))}
         </div>
@@ -186,9 +191,6 @@ export function TransactionsView({
           ]}
         />
         <div className="flex w-full flex-wrap gap-2 sm:ms-auto sm:w-auto">
-          <Button variant="primary" size="sm" onClick={() => setEditing("new")}>
-            + {t.add}
-          </Button>
           <LinkButton href="/receipts/new" size="sm">
             🧾 {t.receipt}
           </LinkButton>
@@ -199,11 +201,7 @@ export function TransactionsView({
       </div>
 
       {transactions.length === 0 ? (
-        <EmptyState title={t.emptyTitle} description={t.emptyDescription}>
-          <Button variant="primary" onClick={() => setEditing("new")}>
-            + {t.add}
-          </Button>
-        </EmptyState>
+        <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
       ) : shown.length === 0 ? (
         <p className="text-muted">{t.noMatch}</p>
       ) : (
