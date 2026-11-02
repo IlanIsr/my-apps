@@ -1,8 +1,9 @@
 "use client";
 
 /**
- * The header every app shares: one row — brand, section links, settings,
- * account. Below `md` the links and settings move into a hamburger menu; the
+ * The header every app shares: one full-width row — brand at the start edge
+ * (left, right in RTL), then the section links, and settings + account at the
+ * end edge. Below `md` the links and settings move into a hamburger menu; the
  * brand and account stay in the row. Hidden when printing.
  *
  * Framework-agnostic: the app passes its router's link component (`next/link`)
@@ -45,8 +46,6 @@ export type AppHeaderProps = {
   account?: ReactNode;
   /** Accessible name of the hamburger button. */
   menuLabel: string;
-  /** Width of the inner row, matching the page's content column. */
-  maxWidthClassName?: string;
 };
 
 const LINK_BASE =
@@ -62,7 +61,6 @@ export function AppHeader({
   settings,
   account,
   menuLabel,
-  maxWidthClassName = "max-w-3xl",
 }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -81,9 +79,7 @@ export function AppHeader({
 
   return (
     <header className="border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_70%,transparent)] backdrop-blur print:hidden">
-      <div
-        className={`mx-auto flex items-center gap-4 px-4 py-3 ${maxWidthClassName}`}
-      >
+      <div className="flex items-center gap-4 px-4 py-3">
         <div className="shrink-0">{brand}</div>
 
         {links.length > 0 && (
@@ -112,9 +108,7 @@ export function AppHeader({
       </div>
 
       {menuOpen && (
-        <div
-          className={`mx-auto flex flex-col gap-3 border-t border-[var(--border)] px-4 py-3 md:hidden ${maxWidthClassName}`}
-        >
+        <div className="flex flex-col gap-3 border-t border-[var(--border)] px-4 py-3 md:hidden">
           {links.length > 0 && (
             <nav className="flex flex-col gap-1 text-sm">
               {renderLinks(() => setMenuOpen(false))}
