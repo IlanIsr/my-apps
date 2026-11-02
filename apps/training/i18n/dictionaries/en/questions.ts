@@ -44,6 +44,8 @@ export const questionForm = {
   withAnswer: "Add the answer",
   answerPlaceholder: "The expected answer (for the whole question)…",
   sources: "Sources",
+  sourcesWhole: "Sources (whole question)",
+  promptSources: "Sources of sub-question",
   special: "Special question",
   specialHint: "So you can target (or skip) it when generating an exam.",
   saveAndNext: "Save and continue",

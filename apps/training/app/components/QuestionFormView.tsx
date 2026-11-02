@@ -3,8 +3,9 @@
 /**
  * `/questions/new` and `/questions/[id]` — the question form. One shape for
  * every question: an optional case (switch), one or more prompts, an optional
- * answer (switch, off by default), siman / seif, the four sources and the
- * "special" flag. "Save and add another" keeps siman / seif / sources for the
+ * answer (switch, off by default), siman / seif, the four sources (one row,
+ * they're often a single letter) — for the whole question and, once there are
+ * sub-questions, for each one — and the "special" flag. "Save and add another" keeps siman / seif / sources for the
  * next one. Route boundary: reads its texts.
  */
 
@@ -19,6 +20,7 @@ import {
   SOURCE_KEYS,
   type Question,
   type QuestionInput,
+  type SourceKey,
   type Sources,
 } from "@/lib/exam-logic";
 
@@ -45,6 +47,10 @@ export type QuestionFormTexts = {
   withAnswer: string;
   answerPlaceholder: string;
   sources: string;
+  /** Heading of the question-level sources once there are sub-questions. */
+  sourcesWhole: string;
+  /** Accessible name of a sub-question's sources row (`a`, `b`… appended). */
+  promptSources: string;
   special: string;
   specialHint: string;
   saveAndNext: string;
@@ -70,6 +76,51 @@ function Field({
   );
 }
 
+/** The four sources on one row. `compact` = no labels above (placeholders). */
+function SourcesRow({
+  value,
+  onChange,
+  labels,
+  compact = false,
+  label,
+}: {
+  value: Sources;
+  onChange: (value: Sources) => void;
+  labels: Record<SourceKey, string>;
+  compact?: boolean;
+  label?: string;
+}) {
+  return (
+    <div role="group" aria-label={label} className="grid grid-cols-4 gap-2">
+      {SOURCE_KEYS.map((key) => {
+        const input = (
+          <TextInput
+            dir="auto"
+            aria-label={compact ? labels[key] : undefined}
+            placeholder={compact ? labels[key] : undefined}
+            value={value[key]}
+            maxLength={LIMITS.short}
+            onChange={(e) => onChange({ ...value, [key]: e.target.value })}
+            className={compact ? "text-sm" : undefined}
+          />
+        );
+        return compact ? (
+          <div key={key} className="min-w-0">
+            {input}
+          </div>
+        ) : (
+          <label key={key} className="flex min-w-0 flex-col gap-1">
+            <span className="truncate text-xs text-muted" title={labels[key]}>
+              {labels[key]}
+            </span>
+            {input}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
 export function QuestionFormView({ initial }: { initial?: Question }) {
   const messages = useTranslations();
   const t = messages.questionForm;
@@ -81,6 +132,9 @@ export function QuestionFormView({ initial }: { initial?: Question }) {
   const [hasCase, setHasCase] = useState(Boolean(initial?.cas));
   const [cas, setCas] = useState(initial?.cas ?? "");
   const [prompts, setPrompts] = useState<string[]>(initial?.prompts ?? [""]);
+  const [promptSources, setPromptSources] = useState<Sources[]>(
+    initial?.promptSources ?? [emptySources()],
+  );
   const [hasAnswer, setHasAnswer] = useState(Boolean(initial?.answer));
   const [answer, setAnswer] = useState(initial?.answer ?? "");
   const [sources, setSources] = useState<Sources>(
@@ -95,17 +149,28 @@ export function QuestionFormView({ initial }: { initial?: Question }) {
     setPrompts((list) => list.map((p, i) => (i === index ? value : p)));
   }
 
+  function addPrompt() {
+    setPrompts((list) => [...list, ""]);
+    setPromptSources((list) => [...list, emptySources()]);
+  }
+
+  function removePrompt(index: number) {
+    setPrompts((list) => list.filter((_, i) => i !== index));
+    setPromptSources((list) => list.filter((_, i) => i !== index));
+  }
+
   async function save(next: boolean) {
     const input: QuestionInput = {
       siman,
       seif,
       cas: hasCase ? cas : null,
-      prompts: prompts.filter((p) => p.trim()),
+      prompts,
+      promptSources,
       answer: hasAnswer ? answer : null,
       sources,
       isSpecial,
     };
-    if (input.prompts.length === 0) {
+    if (!prompts.some((p) => p.trim())) {
       setError(t.promptRequired);
       return;
     }
@@ -124,6 +189,7 @@ export function QuestionFormView({ initial }: { initial?: Question }) {
       setCas("");
       setHasCase(false);
       setPrompts([""]);
+      setPromptSources([emptySources()]);
       setAnswer("");
       setHasAnswer(false);
       setIsSpecial(false);
@@ -207,7 +273,7 @@ export function QuestionFormView({ initial }: { initial?: Question }) {
                     {letter(body.letters, i)}.
                   </span>
                 )}
-                <div className="flex-1">
+                <div className="min-w-0 flex-1 space-y-2">
                   <TextArea
                     dir="auto"
                     rows={2}
@@ -218,15 +284,28 @@ export function QuestionFormView({ initial }: { initial?: Question }) {
                     autoFocus={i === prompts.length - 1 && i > 0}
                     onChange={(e) => setPrompt(i, e.target.value)}
                   />
+                  {prompts.length > 1 && (
+                    <SourcesRow
+                      compact
+                      label={`${t.promptSources} ${letter(body.letters, i)}`}
+                      labels={body.sources}
+                      value={promptSources[i] ?? emptySources()}
+                      onChange={(value) =>
+                        setPromptSources((list) =>
+                          prompts.map((_, j) =>
+                            j === i ? value : (list[j] ?? emptySources()),
+                          ),
+                        )
+                      }
+                    />
+                  )}
                 </div>
                 {prompts.length > 1 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     aria-label={t.removePrompt}
-                    onClick={() =>
-                      setPrompts((list) => list.filter((_, j) => j !== i))
-                    }
+                    onClick={() => removePrompt(i)}
                   >
                     ✕
                   </Button>
@@ -235,11 +314,7 @@ export function QuestionFormView({ initial }: { initial?: Question }) {
             ))}
           </ol>
           {prompts.length < LIMITS.prompts && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setPrompts((list) => [...list, ""])}
-            >
+            <Button variant="ghost" size="sm" onClick={addPrompt}>
               + {t.addPrompt}
             </Button>
           )}
@@ -264,21 +339,14 @@ export function QuestionFormView({ initial }: { initial?: Question }) {
       </section>
 
       <section className="sheet space-y-4 px-5 py-5">
-        <span className="eyebrow">{t.sources}</span>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {SOURCE_KEYS.map((key) => (
-            <Field key={key} label={body.sources[key]}>
-              <TextInput
-                dir="auto"
-                value={sources[key]}
-                maxLength={LIMITS.short}
-                onChange={(e) =>
-                  setSources((s) => ({ ...s, [key]: e.target.value }))
-                }
-              />
-            </Field>
-          ))}
-        </div>
+        <span className="eyebrow">
+          {prompts.length > 1 ? t.sourcesWhole : t.sources}
+        </span>
+        <SourcesRow
+          labels={body.sources}
+          value={sources}
+          onChange={setSources}
+        />
         <div>
           <Checkbox checked={isSpecial} onChange={setIsSpecial}>
             <span className="text-sm">

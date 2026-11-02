@@ -1,7 +1,8 @@
 /**
  * How a question reads everywhere (bank, exam, correction, print): the case
  * text, then the prompts — lettered when there's more than one — and, on
- * request, the answer and the reference / sources line.
+ * request, the answer, the reference / sources line and each prompt's own
+ * sources.
  */
 
 import {
@@ -9,6 +10,7 @@ import {
   SOURCE_KEYS,
   type Question,
   type SourceKey,
+  type Sources,
 } from "@/lib/exam-logic";
 
 export type QuestionBodyTexts = {
@@ -38,10 +40,9 @@ export function QuestionMeta({
   withSources?: boolean;
 }) {
   const ref = reference(question, t);
-  const sources = withSources
-    ? SOURCE_KEYS.filter((key) => question.sources[key].trim())
-    : [];
-  if (!ref && !question.isSpecial && sources.length === 0) return null;
+  const hasSources =
+    withSources && SOURCE_KEYS.some((key) => question.sources[key].trim());
+  if (!ref && !question.isSpecial && !hasSources) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
@@ -51,15 +52,32 @@ export function QuestionMeta({
           ★ {t.special}
         </span>
       )}
-      {sources.map((key) => (
+      {hasSources && <SourceList sources={question.sources} t={t} />}
+    </div>
+  );
+}
+
+/** The filled-in sources, inline (`Michna Broura ס · Kol Yaakov ב`). */
+function SourceList({
+  sources,
+  t,
+}: {
+  sources: Sources | undefined;
+  t: QuestionBodyTexts;
+}) {
+  const keys = SOURCE_KEYS.filter((key) => sources?.[key].trim());
+  if (!sources || keys.length === 0) return null;
+  return (
+    <span className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+      {keys.map((key) => (
         <span key={key} dir="auto">
           <span className="font-medium text-foreground/80">
             {t.sources[key]}
           </span>{" "}
-          {question.sources[key]}
+          {sources[key]}
         </span>
       ))}
-    </div>
+    </span>
   );
 }
 
@@ -68,10 +86,13 @@ export function QuestionBody({
   t,
   showAnswer = false,
   answerLines = 0,
+  withSources = false,
 }: {
   question: Question;
   t: QuestionBodyTexts;
   showAnswer?: boolean;
+  /** Each prompt's own sources under it. */
+  withSources?: boolean;
   /** Blank ruled lines under each prompt (printed exams). */
   answerLines?: number;
 }) {
@@ -103,6 +124,9 @@ export function QuestionBody({
               >
                 {prompt}
               </p>
+              {withSources && (
+                <SourceList sources={question.promptSources[i]} t={t} />
+              )}
               {answerLines > 0 && (
                 <div aria-hidden className="mt-2">
                   {Array.from({ length: answerLines }, (_, l) => (

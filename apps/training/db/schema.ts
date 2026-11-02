@@ -32,6 +32,11 @@ export const questions = pgTable(
     cas: text("cas"),
     /** One or more prompts (non-empty). */
     prompts: jsonb("prompts").$type<string[]>().notNull(),
+    /** Per-prompt sources, aligned with `prompts`. */
+    promptSources: jsonb("prompt_sources")
+      .$type<Sources[]>()
+      .notNull()
+      .default([]),
     /** Optional answer for the whole question. */
     answer: text("answer"),
     siman: text("siman").notNull().default(""),

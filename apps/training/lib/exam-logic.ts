@@ -6,7 +6,9 @@
  * A **question** is always the same shape: an optional case text (`cas`) and
  * one or more prompts (`prompts`) — a single prompt, a group of sub-questions,
  * or a case followed by its questions are all the same type. The answer is
- * optional and covers the whole question. Corrections are manual: after an
+ * optional and covers the whole question. Sources sit on the question and,
+ * optionally, on each prompt (`promptSources[i]`, same length as `prompts`) —
+ * sub-questions often come from different places. Corrections are manual: after an
  * exam the user rates each question correct / partial / incorrect.
  */
 
@@ -26,6 +28,8 @@ export type Question = {
   id: string;
   cas: string | null;
   prompts: string[];
+  /** One set per prompt (all `""` when that prompt has none of its own). */
+  promptSources: Sources[];
   answer: string | null;
   siman: string;
   seif: string;
@@ -38,7 +42,14 @@ export type Question = {
 /** What the question form sends. */
 export type QuestionInput = Pick<
   Question,
-  "cas" | "prompts" | "answer" | "siman" | "seif" | "sources" | "isSpecial"
+  | "cas"
+  | "prompts"
+  | "promptSources"
+  | "answer"
+  | "siman"
+  | "seif"
+  | "sources"
+  | "isSpecial"
 >;
 
 export const RESULT_STATUSES = ["correct", "partial", "incorrect"] as const;
@@ -81,6 +92,24 @@ export function sourceValues(sources: Sources): string[] {
   return SOURCE_KEYS.map((key) => sources[key]).filter((v) => v.trim() !== "");
 }
 
+/** Pads / trims `promptSources` to one set per prompt (older rows and exam
+ * snapshots have none). */
+export function withPromptSources<
+  Q extends { prompts: string[]; promptSources?: Sources[] },
+>(question: Q): Q & { promptSources: Sources[] } {
+  return {
+    ...question,
+    promptSources: question.prompts.map(
+      (_, i) => question.promptSources?.[i] ?? emptySources(),
+    ),
+  };
+}
+
+/** Every filled-in source of a question, its prompts' included. */
+export function allSourceValues(question: Question): string[] {
+  return [question.sources, ...question.promptSources].flatMap(sourceValues);
+}
+
 /** `Siman 12 · Seif 3` style reference, or `""`. */
 export function reference(
   question: Pick<Question, "siman" | "seif">,
@@ -108,7 +137,7 @@ export function matchesSearch(question: Question, query: string): boolean {
     question.answer ?? "",
     question.siman,
     question.seif,
-    ...sourceValues(question.sources),
+    ...allSourceValues(question),
   ]
     .join("\n")
     .toLocaleLowerCase()
@@ -198,7 +227,7 @@ export function filterQuestions(
     if (filters.special === "without" && q.isSpecial) return false;
     if (
       ref &&
-      ![q.siman, q.seif, ...sourceValues(q.sources)].some((v) =>
+      ![q.siman, q.seif, ...allSourceValues(q)].some((v) =>
         normalize(v).includes(ref),
       )
     ) {

@@ -308,7 +308,12 @@ function Correction({
               <ResultMark status={exam.results[q.id]} />
             </div>
             <QuestionMeta question={q} t={messages.questionBody} withSources />
-            <QuestionBody question={q} t={messages.questionBody} showAnswer />
+            <QuestionBody
+              question={q}
+              t={messages.questionBody}
+              showAnswer
+              withSources
+            />
             <div className="border-t border-dashed border-line pt-3">
               <ResultPicker
                 label={t.result}

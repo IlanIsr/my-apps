@@ -86,16 +86,23 @@ export function questionInput(value: unknown): QuestionInput {
   if (!Array.isArray(input.prompts) || input.prompts.length > LIMITS.prompts) {
     throw new InvalidInputError("prompts");
   }
-  const prompts = input.prompts
-    .map((p) => text(p, "prompt", LIMITS.text))
-    .filter(Boolean);
-  if (prompts.length === 0) throw new InvalidInputError("prompts");
+  const rawSources = input.promptSources ?? [];
+  if (!Array.isArray(rawSources)) throw new InvalidInputError("promptSources");
+  // Empty prompts are dropped together with their sources.
+  const kept = input.prompts
+    .map((p, i) => ({
+      prompt: text(p, "prompt", LIMITS.text),
+      sources: sources(rawSources[i] ?? {}),
+    }))
+    .filter((p) => p.prompt);
+  if (kept.length === 0) throw new InvalidInputError("prompts");
   if (typeof input.isSpecial !== "boolean") {
     throw new InvalidInputError("isSpecial");
   }
   return {
     cas: optionalText(input.cas, "cas"),
-    prompts,
+    prompts: kept.map((p) => p.prompt),
+    promptSources: kept.map((p) => p.sources),
     answer: optionalText(input.answer, "answer"),
     siman: text(input.siman ?? "", "siman", LIMITS.short),
     seif: text(input.seif ?? "", "seif", LIMITS.short),

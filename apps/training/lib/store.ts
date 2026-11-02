@@ -12,7 +12,13 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { exams, questions } from "@/db/schema";
 
-import type { Exam, Question, QuestionInput, ResultStatus } from "./exam-logic";
+import {
+  withPromptSources,
+  type Exam,
+  type Question,
+  type QuestionInput,
+  type ResultStatus,
+} from "./exam-logic";
 
 export type StoreErrorCode = "not-found" | "empty-exam";
 
@@ -28,10 +34,11 @@ type QuestionRow = typeof questions.$inferSelect;
 type ExamRow = typeof exams.$inferSelect;
 
 function toQuestion(row: QuestionRow): Question {
-  return {
+  return withPromptSources({
     id: row.id,
     cas: row.cas,
     prompts: row.prompts,
+    promptSources: row.promptSources,
     answer: row.answer,
     siman: row.siman,
     seif: row.seif,
@@ -39,14 +46,14 @@ function toQuestion(row: QuestionRow): Question {
     isSpecial: row.isSpecial,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
-  };
+  });
 }
 
 function toExam(row: ExamRow): Exam {
   return {
     id: row.id,
     sourceExamId: row.sourceExamId,
-    questions: row.questions,
+    questions: row.questions.map(withPromptSources),
     results: row.results,
     currentIndex: row.currentIndex,
     status: row.status === "completed" ? "completed" : "active",

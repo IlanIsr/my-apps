@@ -46,6 +46,8 @@ export const questionForm = {
   withAnswer: "Ajouter la réponse",
   answerPlaceholder: "La réponse attendue (pour toute la question)…",
   sources: "Sources",
+  sourcesWhole: "Sources (toute la question)",
+  promptSources: "Sources de la sous-question",
   special: "Question spéciale",
   specialHint: "Pour la cibler (ou l’exclure) en générant un examen.",
   saveAndNext: "Enregistrer et continuer",

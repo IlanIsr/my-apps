@@ -44,6 +44,8 @@ export const questionForm = {
   withAnswer: "הוספת תשובה",
   answerPlaceholder: "התשובה הצפויה (לכל השאלה)…",
   sources: "מקורות",
+  sourcesWhole: "מקורות (לכל השאלה)",
+  promptSources: "מקורות לתת־שאלה",
   special: "שאלה מיוחדת",
   specialHint: "כדי לבחור אותה (או לדלג עליה) ביצירת מבחן.",
   saveAndNext: "שמירה והמשך",

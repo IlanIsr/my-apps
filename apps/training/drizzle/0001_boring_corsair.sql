@@ -1,0 +1,1 @@
+ALTER TABLE "questions" ADD COLUMN "prompt_sources" jsonb DEFAULT '[]'::jsonb NOT NULL;
