@@ -99,7 +99,7 @@ export function ProductView({
   return (
     <>
       <Link href="/products" className="mb-2 inline-block text-sm text-muted">
-        ← {t.back}
+        <span className="inline-block rtl:rotate-180">←</span> {t.back}
       </Link>
       <PageHeader eyebrow={product.barcode ?? undefined} title={product.name}>
         <ShoppingToggle

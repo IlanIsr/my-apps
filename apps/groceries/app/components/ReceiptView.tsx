@@ -66,7 +66,7 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
   return (
     <>
       <Link href="/receipts" className="mb-2 inline-block text-sm text-muted">
-        ← {t.back}
+        <span className="inline-block rtl:rotate-180">←</span> {t.back}
       </Link>
       <PageHeader
         eyebrow={formatDay(receipt.date, tag)}

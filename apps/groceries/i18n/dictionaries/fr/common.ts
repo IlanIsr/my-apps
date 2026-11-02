@@ -5,6 +5,8 @@ import type { StoresTexts } from "@/app/components/StoresView";
 
 export const appShell = {
   brand: "Courses",
+  language: "Langue",
+  menu: "Menu",
   nav: {
     receipts: "Tickets",
     products: "Produits",

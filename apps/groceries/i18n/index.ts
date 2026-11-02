@@ -10,6 +10,7 @@ export {
   DEFAULT_LOCALE,
   isLocale,
   LOCALE_DIR,
+  LOCALE_LABEL,
   LOCALE_TAG,
   LOCALES,
   type Locale,

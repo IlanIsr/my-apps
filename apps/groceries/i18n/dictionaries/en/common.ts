@@ -1,0 +1,51 @@
+import type { AppShellTexts } from "@/app/components/AppShell";
+import type { ErrorTexts } from "@/app/components/common";
+import type { StatsTexts } from "@/app/components/StatsView";
+import type { StoresTexts } from "@/app/components/StoresView";
+
+export const appShell = {
+  brand: "Groceries",
+  language: "Language",
+  menu: "Menu",
+  nav: {
+    receipts: "Receipts",
+    products: "Products",
+    stores: "Stores",
+    shopping: "Shopping list",
+    stats: "Spending",
+  },
+} as const satisfies AppShellTexts;
+
+export const errors = {
+  "not-found": "Not found.",
+  "barcode-taken": "This barcode is already used by another product.",
+  "not-signed-in": "Please sign in first.",
+  invalid: "Invalid data — check the fields.",
+  "db-not-configured": "The database is not configured.",
+  unknown: "Something went wrong. Try again.",
+} as const satisfies ErrorTexts;
+
+export const stores = {
+  title: "Stores",
+  emptyTitle: "No stores",
+  emptyDescription: "A store is created when you enter a receipt.",
+  receiptCount: "{n} receipt(s)",
+  lastVisit: "last visit {date}",
+  products: "Products",
+  rename: "Rename",
+  save: "Save",
+  cancel: "Cancel",
+} as const satisfies StoresTexts;
+
+export const stats = {
+  title: "Spending",
+  emptyTitle: "Nothing to analyse",
+  emptyDescription: "Enter your receipts to see where your money goes.",
+  byMonth: "By month",
+  byStore: "By store",
+  topProducts: "What costs the most",
+  priceRises: "Biggest price rises",
+  noRises: "No price rise spotted.",
+  receiptCount: "{n} receipt(s)",
+  atStore: "at {store}",
+} as const satisfies StatsTexts;

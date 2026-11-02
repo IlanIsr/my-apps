@@ -1,12 +1,17 @@
 /**
- * Root layout for Groceries. Loads the fonts (`next/font/google`) and wraps
- * the tree in `<AuthProvider>` (Clerk) → `<Providers>` (i18n) → `<AppShell>`.
+ * Root layout for Groceries. Loads the fonts (`next/font/google`), sets
+ * `<html lang/dir>` before paint from the stored locale, and wraps the tree in `<AuthProvider>` (Clerk) → `<Providers>` (i18n) → `<AppShell>`.
  */
 
 import "./globals.css";
 
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Inter, JetBrains_Mono } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Heebo,
+  Inter,
+  JetBrains_Mono,
+} from "next/font/google";
 
 import { AuthProvider } from "@repo/auth/provider";
 
@@ -21,6 +26,11 @@ const bricolage = Bricolage_Grotesque({
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+const heebo = Heebo({
+  subsets: ["hebrew"],
+  variable: "--font-heebo",
   display: "swap",
 });
 const mono = JetBrains_Mono({
@@ -43,15 +53,26 @@ export const metadata: Metadata = {
   description: "Tickets de caisse, prix par magasin, liste de courses.",
 };
 
+// Runs before paint: set <html lang/dir> from the stored / preferred language.
+// Keep the key + locale list in sync with i18n/config.ts.
+const LANG_INIT = `(function(){try{
+  var l=localStorage.getItem('groceries.locale');
+  if(l!=='fr'&&l!=='en'&&l!=='he'){var n=navigator.language.slice(0,2);l=(n==='he'||n==='en')?n:'fr';}
+  var d=document.documentElement;
+  d.lang=l;d.dir=(l==='he')?'rtl':'ltr';
+}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="fr"
-      className={`${bricolage.variable} ${inter.variable} ${mono.variable}`}
+      className={`${bricolage.variable} ${inter.variable} ${heebo.variable} ${mono.variable}`}
+      suppressHydrationWarning
     >
       <body className="antialiased">
+        <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
         <AuthProvider>
           <Providers>
             <AppShell>{children}</AppShell>
