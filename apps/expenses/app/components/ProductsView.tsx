@@ -1,20 +1,27 @@
 "use client";
 
 /**
- * Every product bought so far, searchable by name or barcode. Filtered on one
- * store, it lists what was bought there with its last price; otherwise each
- * product shows its cheapest store.
+ * Every product bought so far, searchable by name or barcode, filterable by
+ * shelf. Filtered on one store, it lists what was bought there with its last
+ * price; otherwise each product shows its cheapest store. Sorting by price
+ * per L / kg compares different formats (all the milks…). Links to the
+ * Duplicates page when there are suggestions.
  */
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
+  AISLE_ICON,
+  AISLES,
   cheapest,
+  duplicateSuggestions,
   formatDay,
   formatMoney,
   latestPrices,
   normalizeName,
+  pricePerMeasure,
+  type Aisle,
   type PricePoint,
   type Product,
   type Store,
@@ -22,6 +29,7 @@ import {
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { EmptyState, LinkButton, PageHeader, fill } from "./common";
+import { measureLabel } from "./ProductView";
 import { Select } from "./Select";
 import { ShoppingToggle } from "./ShoppingToggle";
 import { TextInput } from "./TextInput";
@@ -42,6 +50,13 @@ export type ProductsTexts = {
   perKg: string;
   /** `{n}`. */
   count: string;
+  aisle: string;
+  allAisles: string;
+  sort: string;
+  sortName: string;
+  sortMeasure: string;
+  /** `{n}` suggestions. */
+  duplicates: string;
 };
 
 export function ProductsView({
@@ -50,29 +65,51 @@ export function ProductsView({
   points,
   shoppingIds,
   initialStoreId,
+  distinctPairs,
 }: {
   products: Product[];
   stores: Store[];
   points: PricePoint[];
   shoppingIds: string[];
   initialStoreId: string | null;
+  distinctPairs: string[];
 }) {
   const messages = useTranslations();
   const t = messages.products;
   const tag = LOCALE_TAG[useLanguage().locale];
   const [query, setQuery] = useState("");
   const [storeId, setStoreId] = useState(initialStoreId ?? "all");
+  const [aisle, setAisle] = useState<Aisle | "all">("all");
+  const [sort, setSort] = useState<"name" | "measure">("name");
+  const duplicates = useMemo(
+    () => duplicateSuggestions(products, new Set(distinctPairs)).length,
+    [products, distinctPairs],
+  );
 
   const prices = useMemo(() => latestPrices(points), [points]);
   const storeName = new Map(stores.map((s) => [s.id, s.name]));
   const inList = new Set(shoppingIds);
 
   const q = normalizeName(query);
-  const shown = products.filter((p) => {
+  const pointOf = (p: Product) => {
+    const byStore = prices.get(p.id);
+    return storeId === "all" ? cheapest(byStore) : byStore?.get(storeId);
+  };
+  const filtered = products.filter((p) => {
     if (storeId !== "all" && !prices.get(p.id)?.has(storeId)) return false;
+    if (aisle !== "all" && p.aisle !== aisle) return false;
     if (!q) return true;
     return normalizeName(p.name).includes(q) || p.barcode?.includes(q.trim());
   });
+  // Price per L / kg, cheapest first; unknown ones last.
+  const measureOf = (p: Product) => {
+    const point = pointOf(p);
+    return (point && pricePerMeasure(p, point.unitPrice)?.price) ?? Infinity;
+  };
+  const shown =
+    sort === "measure"
+      ? [...filtered].sort((a, b) => measureOf(a) - measureOf(b))
+      : filtered;
 
   if (products.length === 0) {
     return (
@@ -86,6 +123,11 @@ export function ProductsView({
   return (
     <>
       <PageHeader title={t.title}>
+        {duplicates > 0 && (
+          <LinkButton href="/products/duplicates" size="sm">
+            {fill(t.duplicates, { n: duplicates })}
+          </LinkButton>
+        )}
         <LinkButton href="/stores" size="sm">
           🏪 {t.stores}
         </LinkButton>
@@ -108,6 +150,29 @@ export function ProductsView({
             ...stores.map((s) => ({ key: s.id, label: s.name })),
           ]}
         />
+        <Select
+          aria-label={t.aisle}
+          className="w-48"
+          value={aisle}
+          onChange={(v) => setAisle(v as Aisle | "all")}
+          options={[
+            { key: "all", label: t.allAisles },
+            ...AISLES.map((a) => ({
+              key: a,
+              label: `${AISLE_ICON[a]} ${messages.aisles[a]}`,
+            })),
+          ]}
+        />
+        <Select
+          aria-label={t.sort}
+          className="w-44"
+          value={sort}
+          onChange={(v) => setSort(v as "name" | "measure")}
+          options={[
+            { key: "name", label: t.sortName },
+            { key: "measure", label: t.sortMeasure },
+          ]}
+        />
       </div>
       <p className="mb-2 text-xs text-muted">
         {fill(t.count, { n: shown.length })}
@@ -118,9 +183,15 @@ export function ProductsView({
       ) : (
         <ul className="card divide-y divide-line">
           {shown.map((p) => {
-            const byStore = prices.get(p.id);
-            const point =
-              storeId === "all" ? cheapest(byStore) : byStore?.get(storeId);
+            const point = pointOf(p);
+            const measure =
+              point &&
+              measureLabel(
+                p,
+                point.unitPrice,
+                tag,
+                messages.product.contentUnits,
+              );
             return (
               <li
                 key={p.id}
@@ -130,7 +201,14 @@ export function ProductsView({
                   href={`/products/${p.id}`}
                   className="min-w-0 flex-1 hover:underline"
                 >
-                  <span className="block font-medium">{p.name}</span>
+                  <span className="block font-medium">
+                    {p.aisle && (
+                      <span aria-hidden className="me-1">
+                        {AISLE_ICON[p.aisle]}
+                      </span>
+                    )}
+                    {p.name}
+                  </span>
                   <span className="text-xs text-muted">
                     {point &&
                       (storeId === "all"
@@ -144,10 +222,15 @@ export function ProductsView({
                   </span>
                 </Link>
                 {point && (
-                  <span className="num font-semibold">
+                  <span className="num text-end font-semibold">
                     {formatMoney(point.unitPrice, tag)}
                     {p.unit === "kg" && (
                       <span className="text-xs text-muted">{t.perKg}</span>
+                    )}
+                    {measure && (
+                      <span className="block text-xs font-normal text-muted">
+                        {measure}
+                      </span>
                     )}
                   </span>
                 )}

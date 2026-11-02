@@ -1,3 +1,5 @@
+import type { AisleTexts } from "@/app/components/ProductView";
+import type { DuplicatesTexts } from "@/app/components/DuplicatesView";
 import type { ProductsTexts } from "@/app/components/ProductsView";
 import type { ProductTexts } from "@/app/components/ProductView";
 import type { ShoppingToggleTexts } from "@/app/components/ShoppingToggle";
@@ -16,6 +18,12 @@ export const products = {
   lastBought: "acheté le {date}",
   perKg: "/kg",
   count: "{n} produit(s)",
+  aisle: "Rayon",
+  allAisles: "Tous les rayons",
+  sort: "Tri",
+  sortName: "Par nom",
+  sortMeasure: "Prix au L / kg",
+  duplicates: "🔁 Doublons ({n})",
 } as const satisfies ProductsTexts;
 
 export const product = {
@@ -37,6 +45,12 @@ export const product = {
   save: "Enregistrer",
   cancel: "Annuler",
   range: "Payé entre {min} et {max}",
+  aisle: "Rayon",
+  noAisle: "—",
+  content: "Contenance d'une pièce",
+  contentHint: "Ex. 1,5 L ou 0,5 kg — pour comparer au litre / au kilo.",
+  contentUnits: { l: "L", kg: "kg" },
+  badContent: "Contenance invalide.",
 } as const satisfies ProductTexts;
 
 export const shoppingToggle = {
@@ -65,3 +79,35 @@ export const shopping = {
   splitNoGain: "Aucune économie à répartir : un seul magasin suffit.",
   unpriced: "Sans prix connu : {names}",
 } as const satisfies ShoppingTexts;
+
+export const aisles = {
+  produce: "Fruits & légumes",
+  dairy: "Produits laitiers",
+  meat: "Viande",
+  fish: "Poisson",
+  bakery: "Boulangerie",
+  pantry: "Épicerie",
+  frozen: "Surgelés",
+  snacks: "Snacks & sucreries",
+  drinks: "Boissons",
+  hygiene: "Hygiène",
+  cleaning: "Ménage",
+  household: "Maison",
+  other: "Autre",
+} as const satisfies AisleTexts;
+
+export const duplicates = {
+  back: "Produits",
+  title: "Doublons",
+  description:
+    "Ces produits ont des noms proches : est-ce le même produit ? Rien n'est fusionné sans ton accord.",
+  emptyTitle: "Aucun doublon",
+  emptyDescription: "Aucune paire de produits suspecte pour l'instant.",
+  purchases: "{n} achat(s)",
+  lastPrice: "dernier prix {price}",
+  noBarcode: "sans code-barres",
+  keepName: "Garder",
+  keepBarcode: "Code-barres à garder",
+  same: "Oui, même produit",
+  different: "Non, différents",
+} as const satisfies DuplicatesTexts;

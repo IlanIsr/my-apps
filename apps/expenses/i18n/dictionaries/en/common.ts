@@ -24,6 +24,9 @@ export const errors = {
   invalid: "Invalid data — check the fields.",
   "db-not-configured": "The database is not configured.",
   unknown: "Something went wrong. Try again.",
+  "photo-unreadable":
+    "Couldn't read the photo. Try a sharper one, or enter the receipt by hand.",
+  "photo-ai-off": "Photo reading isn't enabled yet (Vercel AI Gateway).",
 } as const satisfies ErrorTexts;
 
 export const stores = {
@@ -47,4 +50,6 @@ export const stats = {
   noRises: "No price rise spotted.",
   receiptCount: "{n} receipt(s)",
   atStore: "at {store}",
+  byAisle: "By shelf",
+  noAisle: "No shelf",
 } as const satisfies StatsTexts;

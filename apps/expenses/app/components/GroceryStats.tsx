@@ -1,16 +1,19 @@
 "use client";
 
 /**
- * The groceries part of the Bilan: receipt spending per month, per store, the
- * products that cost the most overall, and the prices that rose the most.
+ * The groceries part of the Bilan: receipt spending per month, per store, per
+ * shelf, the products that cost the most overall, and the prices that rose
+ * the most.
  * Renders nothing until there's a receipt.
  */
 
 import Link from "next/link";
 
 import {
+  AISLE_ICON,
   formatMoney,
   priceChanges,
+  spendingByAisle,
   spendingByMonth,
   spendingByProduct,
   spendingByStore,
@@ -34,6 +37,8 @@ export type StatsTexts = {
   receiptCount: string;
   /** `{store}`. */
   atStore: string;
+  byAisle: string;
+  noAisle: string;
 };
 
 export function Bar({
@@ -68,7 +73,8 @@ export function GroceryStats({
   stores: Store[];
   products: Product[];
 }) {
-  const t = useTranslations().stats;
+  const messages = useTranslations();
+  const t = messages.stats;
   const tag = LOCALE_TAG[useLanguage().locale];
 
   if (receipts.length === 0) return null;
@@ -84,6 +90,8 @@ export function GroceryStats({
   const monthMax = Math.max(...months.map((m) => m.total));
   const storeMax = byStore[0]?.total ?? 0;
   const topMax = top[0]?.total ?? 0;
+  const byAisle = spendingByAisle(points, products);
+  const aisleMax = byAisle[0]?.total ?? 0;
 
   return (
     <section className="mt-10">
@@ -131,6 +139,27 @@ export function GroceryStats({
             ))}
           </ul>
         </section>
+
+        {byAisle.some((a) => a.aisle) && (
+          <section className="card p-4 sm:col-span-2">
+            <h2 className="mb-3 text-lg">{t.byAisle}</h2>
+            <ul className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              {byAisle.map((a) => (
+                <li key={a.aisle ?? "none"}>
+                  <div className="flex justify-between gap-2">
+                    <span className="truncate">
+                      {a.aisle
+                        ? `${AISLE_ICON[a.aisle]} ${messages.aisles[a.aisle]}`
+                        : `❔ ${t.noAisle}`}
+                    </span>
+                    <span className="num">{formatMoney(a.total, tag)}</span>
+                  </div>
+                  <Bar value={a.total} max={aisleMax} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="card p-4">
           <h2 className="mb-3 text-lg">{t.topProducts}</h2>

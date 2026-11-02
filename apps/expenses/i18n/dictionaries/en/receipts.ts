@@ -1,3 +1,4 @@
+import type { ScannerTexts } from "@/app/components/BarcodeScanner";
 import type { ReceiptFormTexts } from "@/app/components/ReceiptFormView";
 import type { ReceiptsTexts } from "@/app/components/ReceiptsView";
 import type { ReceiptTexts } from "@/app/components/ReceiptView";
@@ -13,6 +14,10 @@ export const receipts = {
   lineCount: "{n} item(s)",
   matches: "OK",
   mismatch: "Mismatch",
+  monthSpent: "Groceries this month",
+  ofBudget: "/ {budget}",
+  projection: "≈ {amount} by month end at this pace",
+  setBudget: "Set a budget",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -61,4 +66,18 @@ export const receiptForm = {
   cancel: "Cancel",
   needStore: "Enter the store.",
   badLine: "Line {n}: invalid name, quantity or price.",
+  scan: "Scan the barcode",
+  scanContinuous: "Scan in a row",
+  photo: "Receipt photo",
+  reading: "Reading…",
+  photoRead: "{n} line(s) read from the photo — check each one before saving.",
 } as const satisfies ReceiptFormTexts;
+
+export const scanner = {
+  title: "Scan a barcode",
+  continuousTitle: "Scan in a row",
+  hint: "Point at the barcode — it's read automatically.",
+  noCamera: "Camera unavailable — allow camera access in the browser.",
+  scanned: "{n} code(s) scanned",
+  done: "Done",
+} as const satisfies ScannerTexts;

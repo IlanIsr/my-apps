@@ -24,6 +24,9 @@ export const errors = {
   invalid: "נתונים לא תקינים — בדקו את השדות.",
   "db-not-configured": "מסד הנתונים לא מוגדר.",
   unknown: "משהו השתבש. נסו שוב.",
+  "photo-unreadable":
+    "לא הצלחנו לקרוא את התמונה. נסו תמונה חדה יותר, או הזינו את הקבלה ידנית.",
+  "photo-ai-off": "קריאת תמונות עדיין לא הופעלה (Vercel AI Gateway).",
 } as const satisfies ErrorTexts;
 
 export const stores = {
@@ -47,4 +50,6 @@ export const stats = {
   noRises: "לא נמצאו עליות מחיר.",
   receiptCount: "{n} קבלות",
   atStore: "ב{store}",
+  byAisle: "לפי מחלקה",
+  noAisle: "ללא מחלקה",
 } as const satisfies StatsTexts;

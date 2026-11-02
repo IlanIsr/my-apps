@@ -24,6 +24,10 @@ export const errors = {
   invalid: "Données invalides — vérifie les champs.",
   "db-not-configured": "La base de données n'est pas configurée.",
   unknown: "Une erreur est survenue. Réessaie.",
+  "photo-unreadable":
+    "Impossible de lire la photo. Réessaie avec une photo plus nette, ou saisis le ticket à la main.",
+  "photo-ai-off":
+    "La lecture des photos n'est pas encore activée (Vercel AI Gateway).",
 } as const satisfies ErrorTexts;
 
 export const stores = {
@@ -47,4 +51,6 @@ export const stats = {
   noRises: "Aucune hausse de prix repérée.",
   receiptCount: "{n} ticket(s)",
   atStore: "chez {store}",
+  byAisle: "Par rayon",
+  noAisle: "Sans rayon",
 } as const satisfies StatsTexts;

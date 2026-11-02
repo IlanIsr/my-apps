@@ -43,6 +43,7 @@ export const transactions = {
   importStatement: "ייבוא דף פירוט",
   budgetNear: "{category}: {spent} מתוך {budget} — קרוב לתקציב.",
   budgetOver: "{category}: {spent} מתוך {budget} — חריגה מהתקציב.",
+  projection: "≈ {amount} בסוף החודש בקצב הזה",
 } as const satisfies TransactionsTexts;
 
 export const transactionModal = {

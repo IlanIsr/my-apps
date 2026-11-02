@@ -15,6 +15,7 @@ import {
   METHOD_ICON,
   METHODS,
   monthOf,
+  projectMonth,
   shiftMonth,
   summarize,
   type Category,
@@ -47,6 +48,8 @@ export type TransactionsTexts = {
   /** `{category}`, `{spent}`, `{budget}`. */
   budgetNear: string;
   budgetOver: string;
+  /** `{amount}` = the month's total at the current pace. */
+  projection: string;
 };
 
 export function TransactionsView({
@@ -78,6 +81,7 @@ export function TransactionsView({
 
   const inMonth = transactions.filter((x) => monthOf(x.date) === month);
   const summary = summarize(inMonth);
+  const projection = projectMonth(summary.total, month, today());
   const shown = inMonth.filter(
     (x) =>
       (categoryId === "all" ||
@@ -125,6 +129,11 @@ export function TransactionsView({
           <div className="num text-3xl font-semibold">
             {formatMoney(summary.total, tag)}
           </div>
+          {projection !== null && (
+            <div className="num text-xs text-muted">
+              {fill(t.projection, { amount: formatMoney(projection, tag) })}
+            </div>
+          )}
         </div>
         <div className="num flex gap-4 text-sm text-muted">
           {METHODS.map((m) => (

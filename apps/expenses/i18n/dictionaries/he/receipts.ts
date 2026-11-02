@@ -1,3 +1,4 @@
+import type { ScannerTexts } from "@/app/components/BarcodeScanner";
 import type { ReceiptFormTexts } from "@/app/components/ReceiptFormView";
 import type { ReceiptsTexts } from "@/app/components/ReceiptsView";
 import type { ReceiptTexts } from "@/app/components/ReceiptView";
@@ -13,6 +14,10 @@ export const receipts = {
   lineCount: "{n} פריטים",
   matches: "תקין",
   mismatch: "פער",
+  monthSpent: "קניות החודש",
+  ofBudget: "/ {budget}",
+  projection: "≈ {amount} בסוף החודש בקצב הזה",
+  setBudget: "לקבוע תקציב",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -61,4 +66,18 @@ export const receiptForm = {
   cancel: "ביטול",
   needStore: "יש לציין חנות.",
   badLine: "שורה {n}: שם, כמות או מחיר לא תקינים.",
+  scan: "סריקת ברקוד",
+  scanContinuous: "סריקה ברצף",
+  photo: "צילום קבלה",
+  reading: "קורא…",
+  photoRead: "{n} שורות נקראו מהתמונה — בדקו כל אחת לפני השמירה.",
 } as const satisfies ReceiptFormTexts;
+
+export const scanner = {
+  title: "סריקת ברקוד",
+  continuousTitle: "סריקה ברצף",
+  hint: "כוונו אל הברקוד — הוא נקרא אוטומטית.",
+  noCamera: "המצלמה לא זמינה — אשרו גישה למצלמה בדפדפן.",
+  scanned: "{n} ברקודים נסרקו",
+  done: "סיום",
+} as const satisfies ScannerTexts;

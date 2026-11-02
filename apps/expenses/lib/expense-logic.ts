@@ -155,6 +155,21 @@ export function monthlyTotals(
   });
 }
 
+/**
+ * Where `spent` ends the month at the same pace — only for the current
+ * month (`null` otherwise, or before anything was spent).
+ */
+export function projectMonth(
+  spent: number,
+  month: string,
+  day: string,
+): number | null {
+  if (monthOf(day) !== month || spent <= 0) return null;
+  const [y, m] = month.split("-").map(Number) as [number, number];
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return Math.round((spent / Number(day.slice(8, 10))) * days);
+}
+
 export type BudgetState = "ok" | "near" | "over";
 
 /** ≥ 80 % = near, > 100 % = over. */

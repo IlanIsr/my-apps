@@ -43,6 +43,7 @@ export const transactions = {
   importStatement: "Import a statement",
   budgetNear: "{category}: {spent} of {budget} — almost at the budget.",
   budgetOver: "{category}: {spent} of {budget} — over budget.",
+  projection: "≈ {amount} by month end at this pace",
 } as const satisfies TransactionsTexts;
 
 export const transactionModal = {

@@ -25,7 +25,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import type { DefaultCategoryKey, Method } from "@/lib/expense-logic";
-import type { Unit } from "@/lib/grocery-logic";
+import type { Aisle, ContentUnit, Unit } from "@/lib/grocery-logic";
 
 const ts = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
@@ -50,6 +50,11 @@ export const products = pgTable(
     name: text("name").notNull(),
     barcode: text("barcode"),
     unit: text("unit").$type<Unit>().notNull().default("unit"),
+    /** Its shelf (dairy, produce…), see `AISLES`. */
+    aisle: text("aisle").$type<Aisle>(),
+    /** What one piece holds (1.5 L = 1500 + "l"), for a price per L / kg. */
+    contentMilli: integer("content_milli"),
+    contentUnit: text("content_unit").$type<ContentUnit>(),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [
@@ -179,4 +184,22 @@ export const categoryRules = pgTable(
       .references(() => categories.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.ownerId, t.merchantKey] })],
+);
+
+/**
+ * Two products the user said are NOT the same (Duplicates page) — never
+ * suggested again. `product_a` < `product_b`.
+ */
+export const productDistinctPairs = pgTable(
+  "product_distinct_pairs",
+  {
+    ownerId: text("owner_id").notNull(),
+    productA: uuid("product_a")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    productB: uuid("product_b")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.ownerId, t.productA, t.productB] })],
 );

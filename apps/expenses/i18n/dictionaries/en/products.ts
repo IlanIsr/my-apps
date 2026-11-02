@@ -1,3 +1,5 @@
+import type { AisleTexts } from "@/app/components/ProductView";
+import type { DuplicatesTexts } from "@/app/components/DuplicatesView";
 import type { ProductsTexts } from "@/app/components/ProductsView";
 import type { ProductTexts } from "@/app/components/ProductView";
 import type { ShoppingToggleTexts } from "@/app/components/ShoppingToggle";
@@ -16,6 +18,12 @@ export const products = {
   lastBought: "bought on {date}",
   perKg: "/kg",
   count: "{n} product(s)",
+  aisle: "Shelf",
+  allAisles: "All shelves",
+  sort: "Sort",
+  sortName: "By name",
+  sortMeasure: "Price per L / kg",
+  duplicates: "🔁 Duplicates ({n})",
 } as const satisfies ProductsTexts;
 
 export const product = {
@@ -37,6 +45,12 @@ export const product = {
   save: "Save",
   cancel: "Cancel",
   range: "Paid between {min} and {max}",
+  aisle: "Shelf",
+  noAisle: "—",
+  content: "Content of one piece",
+  contentHint: "E.g. 1.5 L or 0.5 kg — to compare per litre / kilo.",
+  contentUnits: { l: "L", kg: "kg" },
+  badContent: "Invalid content.",
 } as const satisfies ProductTexts;
 
 export const shoppingToggle = {
@@ -65,3 +79,35 @@ export const shopping = {
   splitNoGain: "Nothing to gain by splitting: one store is enough.",
   unpriced: "No known price: {names}",
 } as const satisfies ShoppingTexts;
+
+export const aisles = {
+  produce: "Fruit & veg",
+  dairy: "Dairy",
+  meat: "Meat",
+  fish: "Fish",
+  bakery: "Bakery",
+  pantry: "Pantry",
+  frozen: "Frozen",
+  snacks: "Snacks & sweets",
+  drinks: "Drinks",
+  hygiene: "Hygiene",
+  cleaning: "Cleaning",
+  household: "Household",
+  other: "Other",
+} as const satisfies AisleTexts;
+
+export const duplicates = {
+  back: "Products",
+  title: "Duplicates",
+  description:
+    "These products have alike names: are they the same product? Nothing is merged without your say.",
+  emptyTitle: "No duplicates",
+  emptyDescription: "No suspicious pair of products for now.",
+  purchases: "{n} purchase(s)",
+  lastPrice: "last price {price}",
+  noBarcode: "no barcode",
+  keepName: "Keep",
+  keepBarcode: "Barcode to keep",
+  same: "Yes, same product",
+  different: "No, different",
+} as const satisfies DuplicatesTexts;

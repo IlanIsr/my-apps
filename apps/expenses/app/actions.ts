@@ -12,12 +12,19 @@ import { DatabaseNotConfiguredError } from "@/db/client";
 import type { Category, Transaction } from "@/lib/expense-logic";
 import * as expenses from "@/lib/expense-store";
 import { LIMITS, type Product } from "@/lib/grocery-logic";
+import {
+  readReceiptPhoto,
+  ReaderError,
+  type ReceiptDraft,
+} from "@/lib/receipt-reader";
 import { currentOwnerId } from "@/lib/owner";
 import * as store from "@/lib/store";
 import * as v from "@/lib/validate";
 
 export type ActionErrorCode =
   | store.StoreErrorCode
+  | "photo-unreadable"
+  | "photo-ai-off"
   | "not-signed-in"
   | "invalid"
   | "db-not-configured"
@@ -43,6 +50,9 @@ async function run<T>(
       return { ok: false, error: "not-signed-in" };
     }
     if (error instanceof store.StoreError) {
+      return { ok: false, error: error.code };
+    }
+    if (error instanceof ReaderError) {
       return { ok: false, error: error.code };
     }
     if (error instanceof v.InvalidInputError) {
@@ -177,4 +187,39 @@ export async function importTransactionsAction(
   return run((ownerId) =>
     expenses.importTransactions(ownerId, v.importRows(rows)),
   );
+}
+
+/** Reads a receipt photo (nothing saved — it pre-fills the form). */
+export async function readReceiptPhotoAction(
+  photo: unknown,
+): Promise<ActionResult<ReceiptDraft>> {
+  return run(() => readReceiptPhoto(v.photo(photo)));
+}
+
+/** "These two are different products." */
+export async function markDistinctAction(
+  a: string,
+  b: string,
+): Promise<ActionResult<null>> {
+  return run(async (ownerId) => {
+    await store.markDistinct(ownerId, v.id(a), v.id(b));
+    return null;
+  });
+}
+
+/** Merges `drop` into `keep` (name / barcode chosen in `input`). */
+export async function mergeProductsAction(
+  keep: string,
+  drop: string,
+  input: unknown,
+): Promise<ActionResult<null>> {
+  return run(async (ownerId) => {
+    await store.mergeProducts(
+      ownerId,
+      v.id(keep),
+      v.id(drop),
+      v.mergeInput(input),
+    );
+    return null;
+  });
 }

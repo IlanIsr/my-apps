@@ -28,6 +28,44 @@ export const LIMITS = {
   shoppingItems: 300,
 } as const;
 
+/** A product's shelf — a fixed list for now. */
+export const AISLES = [
+  "produce",
+  "dairy",
+  "meat",
+  "fish",
+  "bakery",
+  "pantry",
+  "frozen",
+  "snacks",
+  "drinks",
+  "hygiene",
+  "cleaning",
+  "household",
+  "other",
+] as const;
+export type Aisle = (typeof AISLES)[number];
+
+export const AISLE_ICON: Record<Aisle, string> = {
+  produce: "🥦",
+  dairy: "🥛",
+  meat: "🥩",
+  fish: "🐟",
+  bakery: "🥖",
+  pantry: "🥫",
+  frozen: "🧊",
+  snacks: "🍫",
+  drinks: "🥤",
+  hygiene: "🧴",
+  cleaning: "🧽",
+  household: "🧻",
+  other: "📦",
+};
+
+/** A piece's content: litres or kilos. */
+export const CONTENT_UNITS = ["l", "kg"] as const;
+export type ContentUnit = (typeof CONTENT_UNITS)[number];
+
 export type Store = { id: string; name: string };
 
 export type Product = {
@@ -35,7 +73,32 @@ export type Product = {
   name: string;
   barcode: string | null;
   unit: Unit;
+  aisle: Aisle | null;
+  /** What one piece holds, milli-units of `contentUnit` (1.5 L = 1500). */
+  contentMilli: number | null;
+  contentUnit: ContentUnit | null;
 };
+
+export type ProductInput = Pick<
+  Product,
+  "name" | "barcode" | "unit" | "aisle" | "contentMilli" | "contentUnit"
+>;
+
+/**
+ * Price per L / kg (cents): a per-kg product's price as is, a per-piece one
+ * divided by its content; `null` when unknown.
+ */
+export function pricePerMeasure(
+  product: Pick<Product, "unit" | "contentMilli" | "contentUnit">,
+  unitPrice: number,
+): { price: number; unit: ContentUnit } | null {
+  if (product.unit === "kg") return { price: unitPrice, unit: "kg" };
+  if (!product.contentMilli || !product.contentUnit) return null;
+  return {
+    price: Math.round((unitPrice * 1000) / product.contentMilli),
+    unit: product.contentUnit,
+  };
+}
 
 /** A line as typed in the form / sent to the server. */
 export type LineInput = {
@@ -332,6 +395,19 @@ export function spendingByProduct(points: PricePoint[]) {
     .sort((a, b) => b.total - a.total);
 }
 
+/** What was paid per shelf (`null` = not set), biggest first. */
+export function spendingByAisle(points: PricePoint[], products: Product[]) {
+  const aisle = new Map(products.map((p) => [p.id, p.aisle]));
+  const totals = new Map<Aisle | null, number>();
+  for (const p of points) {
+    const key = aisle.get(p.productId) ?? null;
+    totals.set(key, (totals.get(key) ?? 0) + p.paid);
+  }
+  return [...totals]
+    .map(([aisle, total]) => ({ aisle, total }))
+    .sort((a, b) => b.total - a.total);
+}
+
 /**
  * Per product × store: first vs latest price paid, biggest rise first. Only
  * pairs bought at least twice.
@@ -359,4 +435,77 @@ export function priceChanges(points: PricePoint[]) {
       ),
     }))
     .sort((a, b) => b.pct - a.pct);
+}
+
+// ---------------------------------------------------------------------------
+// Duplicates
+
+/** `"a|b"` with a < b — the key of an unordered pair of product ids. */
+export const pairKey = (a: string, b: string) =>
+  a < b ? `${a}|${b}` : `${b}|${a}`;
+
+const tokens = (name: string) =>
+  new Set(
+    normalizeName(name)
+      .replace(/[^\p{L}\p{N} ]/gu, " ")
+      .split(" ")
+      .filter(Boolean),
+  );
+
+/** Edit distance, for short names. */
+function distance(a: string, b: string): number {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(
+        prev[j]! + 1,
+        row[j - 1]! + 1,
+        prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    prev = row;
+  }
+  return prev[b.length]!;
+}
+
+/** 0..1 — how alike two product names look. */
+export function nameSimilarity(a: string, b: string): number {
+  const x = normalizeName(a);
+  const y = normalizeName(b);
+  if (!x || !y) return 0;
+  if (x === y) return 1;
+  const ta = tokens(a);
+  const tb = tokens(b);
+  const common = [...ta].filter((t) => tb.has(t)).length;
+  const jaccard = common / (ta.size + tb.size - common || 1);
+  // "lait 1l" inside "lait tnuva 1l": every word of the shorter one is in the other.
+  const contained = common / (Math.min(ta.size, tb.size) || 1);
+  const edit = 1 - distance(x, y) / Math.max(x.length, y.length);
+  return Math.max(jaccard, edit, contained === 1 ? 0.75 : 0);
+}
+
+export type DuplicateSuggestion = { a: Product; b: Product; score: number };
+
+/**
+ * Pairs of products that may be the same one (alike names), best first,
+ * minus the pairs already declared distinct. Two different barcodes with
+ * different names are never suggested.
+ */
+export function duplicateSuggestions(
+  products: Product[],
+  distinct: Set<string>,
+  threshold = 0.7,
+): DuplicateSuggestion[] {
+  const out: DuplicateSuggestion[] = [];
+  for (let i = 0; i < products.length; i++) {
+    for (let j = i + 1; j < products.length; j++) {
+      const a = products[i]!;
+      const b = products[j]!;
+      if (distinct.has(pairKey(a.id, b.id))) continue;
+      const score = nameSimilarity(a.name, b.name);
+      if (score >= threshold) out.push({ a, b, score });
+    }
+  }
+  return out.sort((x, y) => y.score - x.score);
 }

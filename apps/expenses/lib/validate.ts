@@ -10,9 +10,14 @@ import {
   type TransactionInput,
 } from "./expense-logic";
 import {
+  AISLES,
+  CONTENT_UNITS,
   LIMITS,
   UNITS,
+  type Aisle,
+  type ContentUnit,
   type LineInput,
+  type ProductInput,
   type ReceiptInput,
   type Unit,
 } from "./grocery-logic";
@@ -191,11 +196,54 @@ export function importRows(value: unknown) {
   });
 }
 
-export function productInput(value: unknown) {
+function oneOf<T extends string>(
+  value: unknown,
+  list: readonly T[],
+  field: string,
+): T {
+  if (!(list as readonly unknown[]).includes(value)) {
+    throw new InvalidInputError(field);
+  }
+  return value as T;
+}
+
+export function productInput(value: unknown): ProductInput {
   const input = record(value, "product");
+  const u = unit(input.unit);
+  // A content only makes sense for a product sold by the piece.
+  const contentMilli =
+    u === "unit" && input.contentMilli != null
+      ? int(input.contentMilli, "contentMilli", 1, LIMITS.quantityMilli)
+      : null;
   return {
     name: text(input.name, "name", LIMITS.label),
     barcode: barcode(input.barcode),
-    unit: unit(input.unit),
+    unit: u,
+    aisle:
+      input.aisle == null ? null : oneOf<Aisle>(input.aisle, AISLES, "aisle"),
+    contentMilli,
+    contentUnit: contentMilli
+      ? oneOf<ContentUnit>(input.contentUnit, CONTENT_UNITS, "contentUnit")
+      : null,
   };
+}
+
+export function mergeInput(value: unknown) {
+  const input = record(value, "merge");
+  return {
+    name: text(input.name, "name", LIMITS.label),
+    barcode: barcode(input.barcode),
+  };
+}
+
+/** A data-URL'd JPEG / PNG / WebP photo, at most ~4 MB. */
+export function photo(value: unknown): { data: string; mediaType: string } {
+  if (typeof value !== "string" || value.length > 5_600_000) {
+    throw new InvalidInputError("photo");
+  }
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(
+    value,
+  );
+  if (!m) throw new InvalidInputError("photo");
+  return { mediaType: m[1]!, data: m[2]! };
 }

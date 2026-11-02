@@ -2,7 +2,9 @@
 
 /**
  * One product: its latest price at each store (cheapest first, with how much
- * more the others cost), its price history, and its details (editable).
+ * more the others cost, and the price per L / kg when its content is known),
+ * its price history, and its details (editable: name, barcode, piece / kg,
+ * shelf, content).
  */
 
 import Link from "next/link";
@@ -11,9 +13,17 @@ import { useState } from "react";
 
 import { updateProductAction } from "@/app/actions";
 import {
+  AISLE_ICON,
+  AISLES,
+  CONTENT_UNITS,
   formatDay,
   formatMoney,
   latestByStore,
+  parseQuantity,
+  pricePerMeasure,
+  quantityToInput,
+  type Aisle,
+  type ContentUnit,
   type PricePoint,
   type Product,
   type Store,
@@ -24,6 +34,7 @@ import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 import { Button } from "./Button";
 import { ErrorLine, Field, PageHeader, fill } from "./common";
 import { Segmented } from "./Segmented";
+import { Select } from "./Select";
 import { ShoppingToggle } from "./ShoppingToggle";
 import { TextInput } from "./TextInput";
 
@@ -48,7 +59,29 @@ export type ProductTexts = {
   cancel: string;
   /** `{min}`, `{max}`. */
   range: string;
+  aisle: string;
+  noAisle: string;
+  /** What one piece holds. */
+  content: string;
+  contentHint: string;
+  contentUnits: Record<ContentUnit, string>;
+  badContent: string;
 };
+
+export type AisleTexts = Record<Aisle, string>;
+
+/** `"12,90 ₪/L"` — a price per L / kg, or `null`. */
+export function measureLabel(
+  product: Pick<Product, "unit" | "contentMilli" | "contentUnit">,
+  unitPrice: number,
+  tag: string,
+  units: Record<ContentUnit, string>,
+): string | null {
+  // A per-kg product already shows its price per kg.
+  if (product.unit === "kg") return null;
+  const m = pricePerMeasure(product, unitPrice);
+  return m ? `${formatMoney(m.price, tag)}/${units[m.unit]}` : null;
+}
 
 export function ProductView({
   product,
@@ -71,6 +104,13 @@ export function ProductView({
   const [name, setName] = useState(product.name);
   const [barcode, setBarcode] = useState(product.barcode ?? "");
   const [unit, setUnit] = useState<Unit>(product.unit);
+  const [aisle, setAisle] = useState<Aisle | "none">(product.aisle ?? "none");
+  const [content, setContent] = useState(
+    product.contentMilli ? quantityToInput(product.contentMilli) : "",
+  );
+  const [contentUnit, setContentUnit] = useState<ContentUnit>(
+    product.contentUnit ?? "l",
+  );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -82,13 +122,21 @@ export function ProductView({
   const suffix = product.unit === "kg" ? t.perKg : "";
   const prices = points.map((p) => p.unitPrice);
 
+  const measure = (price: number) =>
+    measureLabel(product, price, tag, t.contentUnits);
+
   async function save() {
+    const contentMilli = content.trim() ? parseQuantity(content) : null;
+    if (content.trim() && !contentMilli) return setError(t.badContent);
     setBusy(true);
     setError(null);
     const result = await updateProductAction(product.id, {
       name,
       barcode,
       unit,
+      aisle: aisle === "none" ? null : aisle,
+      contentMilli: unit === "unit" ? contentMilli : null,
+      contentUnit,
     });
     setBusy(false);
     if (!result.ok) return setError(messages.errors[result.error]);
@@ -101,7 +149,21 @@ export function ProductView({
       <Link href="/products" className="mb-2 inline-block text-sm text-muted">
         <span className="inline-block rtl:rotate-180">←</span> {t.back}
       </Link>
-      <PageHeader eyebrow={product.barcode ?? undefined} title={product.name}>
+      <PageHeader
+        eyebrow={
+          [
+            product.aisle &&
+              `${AISLE_ICON[product.aisle]} ${messages.aisles[product.aisle]}`,
+            product.contentMilli &&
+              product.contentUnit &&
+              `${quantityToInput(product.contentMilli)} ${t.contentUnits[product.contentUnit]}`,
+            product.barcode,
+          ]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        }
+        title={product.name}
+      >
         <ShoppingToggle
           productId={product.id}
           inList={inList}
@@ -153,9 +215,14 @@ export function ProductView({
                       </span>
                     )
                   )}
-                  <span className="num font-semibold">
+                  <span className="num text-end font-semibold">
                     {formatMoney(p.unitPrice, tag)}
                     <span className="text-xs text-muted">{suffix}</span>
+                    {measure(p.unitPrice) && (
+                      <span className="block text-xs font-normal text-muted">
+                        {measure(p.unitPrice)}
+                      </span>
+                    )}
                   </span>
                 </li>
               );
@@ -225,6 +292,49 @@ export function ProductView({
               value={unit}
               onChange={setUnit}
             />
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-muted">{t.aisle}</span>
+              <Select
+                aria-label={t.aisle}
+                className="w-full sm:w-64"
+                value={aisle}
+                onChange={(v) => setAisle(v as Aisle | "none")}
+                options={[
+                  { key: "none", label: t.noAisle },
+                  ...AISLES.map((a) => ({
+                    key: a,
+                    label: `${AISLE_ICON[a]} ${messages.aisles[a]}`,
+                  })),
+                ]}
+              />
+            </div>
+            {unit === "unit" && (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted">
+                  {t.content}
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <TextInput
+                    aria-label={t.content}
+                    inputMode="decimal"
+                    className="num w-28"
+                    placeholder="1,5"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                  />
+                  <Segmented
+                    aria-label={t.content}
+                    options={CONTENT_UNITS.map((u) => ({
+                      value: u,
+                      label: t.contentUnits[u],
+                    }))}
+                    value={contentUnit}
+                    onChange={setContentUnit}
+                  />
+                </div>
+                <span className="text-xs text-muted">{t.contentHint}</span>
+              </div>
+            )}
             <ErrorLine message={error} />
             <div className="flex gap-2">
               <Button onClick={() => setEditing(false)} disabled={busy}>

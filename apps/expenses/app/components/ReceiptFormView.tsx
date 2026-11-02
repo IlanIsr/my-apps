@@ -5,14 +5,17 @@
  * row per line (barcode, label, piece / kg, quantity, unit price, discount).
  * The running sum is compared with the printed total as you type. A known
  * barcode or product name fills the rest of the line (last price at this store).
+ * Barcodes can be scanned with the camera (one line, or one line per code in
+ * a row), and a photo of the receipt can pre-fill the whole form (read by
+ * Claude — always checked before saving).
  * Its expense goes in Groceries unless another category is picked (paper,
  * tools… bought at a store but not food).
  */
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
-import { saveReceiptAction } from "@/app/actions";
+import { readReceiptPhotoAction, saveReceiptAction } from "@/app/actions";
 import {
   categoryLabel,
   GROCERIES_KEY,
@@ -38,6 +41,7 @@ import {
 } from "@/lib/grocery-logic";
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
+import { BarcodeScanner } from "./BarcodeScanner";
 import { Button } from "./Button";
 import { Combo } from "./Combo";
 import { ErrorLine, Field, PageHeader, fill, type ErrorTexts } from "./common";
@@ -78,6 +82,12 @@ export type ReceiptFormTexts = {
   needStore: string;
   /** `{n}` = 1-based line number. */
   badLine: string;
+  scan: string;
+  scanContinuous: string;
+  photo: string;
+  reading: string;
+  /** `{n}` lines read. */
+  photoRead: string;
 };
 
 type Row = {
@@ -104,7 +114,34 @@ const emptyRow = (): Row => ({
   discount: "",
 });
 
-const isBlank = (row: Row) => !row.label.trim() && !row.price.trim();
+const isBlank = (row: Row) =>
+  !row.barcode.trim() && !row.label.trim() && !row.price.trim();
+
+/** Always one blank row at the end to type into. */
+const keepBlank = (rows: Row[]) =>
+  rows.length && isBlank(rows.at(-1)!) ? rows : [...rows, emptyRow()];
+
+const toRow = (line: LineInput): Row => ({
+  key: nextKey++,
+  barcode: line.barcode ?? "",
+  label: line.label,
+  unit: line.unit,
+  quantity: quantityToInput(line.quantityMilli),
+  price: centsToInput(line.unitPrice),
+  discount: line.discount ? centsToInput(line.discount) : "",
+});
+
+/** A photo → a JPEG data URL, at most 2000 px on its long side. */
+async function shrink(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
 
 /** The row as a line, or `null` when it isn't valid. */
 function toLine(row: Row): LineInput | null {
@@ -155,23 +192,15 @@ export function ReceiptFormView({
       null,
   );
   const [rows, setRows] = useState<Row[]>(() =>
-    receipt
-      ? [
-          ...receipt.lines.map((line) => ({
-            key: nextKey++,
-            barcode: line.barcode ?? "",
-            label: line.label,
-            unit: line.unit,
-            quantity: quantityToInput(line.quantityMilli),
-            price: centsToInput(line.unitPrice),
-            discount: line.discount ? centsToInput(line.discount) : "",
-          })),
-          emptyRow(),
-        ]
-      : [emptyRow()],
+    receipt ? [...receipt.lines.map(toRow), emptyRow()] : [emptyRow()],
   );
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  /** The row a single scan fills, or every new code in a row. */
+  const [scanning, setScanning] = useState<number | "continuous" | null>(null);
+  const [reading, setReading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const photoInput = useRef<HTMLInputElement>(null);
 
   const storeId = stores.find(
     (s) => normalizeName(s.name) === normalizeName(storeName),
@@ -187,23 +216,72 @@ export function ReceiptFormView({
   );
 
   const update = (key: number, patch: Partial<Row>) =>
-    setRows((current) => {
-      const next = current.map((r) => (r.key === key ? { ...r, ...patch } : r));
-      // Always keep one blank row at the end to type into.
-      return isBlank(next.at(-1)!) ? next : [...next, emptyRow()];
-    });
+    setRows((current) =>
+      keepBlank(current.map((r) => (r.key === key ? { ...r, ...patch } : r))),
+    );
 
-  /** Fill a row from a known product (keeps what was already typed). */
-  const fillFrom = (row: Row, product: Product) => {
+  /** What a known product fills in a row (keeps what was already typed). */
+  const fromProduct = (row: Row, product: Product): Partial<Row> => {
     const last = storeId ? lastPrices[product.id]?.[storeId] : undefined;
-    update(row.key, {
+    return {
       label: row.label.trim() ? row.label : product.name,
       barcode: product.barcode ?? row.barcode,
       unit: product.unit,
       price:
         row.price.trim() || last === undefined ? row.price : centsToInput(last),
-    });
+    };
   };
+  const fillFrom = (row: Row, product: Product) =>
+    update(row.key, fromProduct(row, product));
+
+  /** The row with this barcode, filled when the product is known. */
+  const withBarcode = (row: Row, code: string): Row => {
+    const next = { ...row, barcode: code };
+    const product = byBarcode.get(code.trim());
+    return product ? { ...next, ...fromProduct(next, product) } : next;
+  };
+
+  function scanned(code: string) {
+    const target = scanning;
+    setRows((current) => {
+      if (target !== "continuous") {
+        return keepBlank(
+          current.map((r) => (r.key === target ? withBarcode(r, code) : r)),
+        );
+      }
+      // Each code goes on the blank last row (a new line per code).
+      const last = current.at(-1)!;
+      return keepBlank([...current.slice(0, -1), withBarcode(last, code)]);
+    });
+  }
+
+  async function readPhoto(file: File) {
+    setReading(true);
+    setError(null);
+    setNotice(null);
+    let result;
+    try {
+      result = await readReceiptPhotoAction(await shrink(file));
+    } catch (e) {
+      console.error(e);
+      result = { ok: false, error: "photo-unreadable" } as const;
+    }
+    setReading(false);
+    if (!result.ok) return setError(errors[result.error]);
+    const draft = result.data;
+    if (draft.storeName && !storeName.trim()) setStoreName(draft.storeName);
+    if (draft.date) setDate(draft.date);
+    if (draft.declaredTotal !== null && !declared.trim()) {
+      setDeclared(centsToInput(draft.declaredTotal));
+    }
+    setRows((current) =>
+      keepBlank([
+        ...current.filter((r) => !isBlank(r)),
+        ...draft.lines.map(toRow),
+      ]),
+    );
+    setNotice(fill(t.photoRead, { n: draft.lines.length }));
+  }
 
   const filled = rows.filter((r) => !isBlank(r));
   const lines = filled.map(toLine);
@@ -233,7 +311,28 @@ export function ReceiptFormView({
 
   return (
     <div className="pb-28">
-      <PageHeader title={receipt ? t.editTitle : t.newTitle} />
+      <PageHeader title={receipt ? t.editTitle : t.newTitle}>
+        <Button onClick={() => photoInput.current?.click()} disabled={reading}>
+          📸 {reading ? t.reading : t.photo}
+        </Button>
+      </PageHeader>
+      {/* The native photo picker (camera or gallery), driven by the button. */}
+      <input
+        ref={photoInput}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void readPhoto(file);
+          e.target.value = "";
+        }}
+      />
+      {notice && (
+        <p className="mb-4 rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">
+          {notice}
+        </p>
+      )}
 
       <section className="card mb-6 grid gap-3 p-4 sm:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-1">
@@ -264,7 +363,12 @@ export function ReceiptFormView({
         </Field>
       </section>
 
-      <h2 className="mb-3 text-lg">{t.lines}</h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-lg">{t.lines}</h2>
+        <Button size="sm" onClick={() => setScanning("continuous")}>
+          📷 {t.scanContinuous}
+        </Button>
+      </div>
       <ol className="flex flex-col gap-3">
         {rows.map((row, index) => {
           const line = isBlank(row) ? null : toLine(row);
@@ -293,6 +397,14 @@ export function ReceiptFormView({
                     if (product) fillFrom({ ...row, barcode: code }, product);
                   }}
                 />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t.scan}
+                  onClick={() => setScanning(row.key)}
+                >
+                  📷
+                </Button>
               </div>
               <div className="col-span-6 sm:col-span-4">
                 <Combo
@@ -419,6 +531,15 @@ export function ReceiptFormView({
       <Field label={t.note} className="mt-4">
         <TextInput value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
+
+      {scanning !== null && (
+        <BarcodeScanner
+          continuous={scanning === "continuous"}
+          onDetect={scanned}
+          onClose={() => setScanning(null)}
+          t={messages.scanner}
+        />
+      )}
 
       <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">

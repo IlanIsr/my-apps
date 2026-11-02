@@ -2,8 +2,9 @@
 
 /**
  * The receipt list, newest first, grouped by month (with each month's total),
- * filterable by store. Each row says whether the computed sum matches the
- * total printed on the receipt.
+ * filterable by store, under this month's groceries spending (against its
+ * budget, with the month-end projection). Each row says whether the computed
+ * sum matches the total printed on the receipt.
  */
 
 import Link from "next/link";
@@ -18,6 +19,7 @@ import {
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { EmptyState, LinkButton, PageHeader, fill } from "./common";
+import { Bar } from "./GroceryStats";
 import { Select } from "./Select";
 
 export type ReceiptsTexts = {
@@ -31,6 +33,19 @@ export type ReceiptsTexts = {
   lineCount: string;
   matches: string;
   mismatch: string;
+  monthSpent: string;
+  /** `{budget}`. */
+  ofBudget: string;
+  /** `{amount}`. */
+  projection: string;
+  setBudget: string;
+};
+
+/** This month's spending in Groceries. */
+export type GroceriesMonth = {
+  spent: number;
+  budget: number | null;
+  projection: number | null;
 };
 
 export function CheckBadge({
@@ -56,9 +71,11 @@ export function CheckBadge({
 export function ReceiptsView({
   receipts,
   stores,
+  month,
 }: {
   receipts: ReceiptSummary[];
   stores: Store[];
+  month: GroceriesMonth;
 }) {
   const t = useTranslations().receipts;
   const tag = LOCALE_TAG[useLanguage().locale];
@@ -90,6 +107,52 @@ export function ReceiptsView({
         </EmptyState>
       ) : (
         <>
+          <section className="card mb-4 p-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="eyebrow">🛒 {t.monthSpent}</span>
+              <span className="num text-sm">
+                <span className="text-lg font-semibold">
+                  {formatMoney(month.spent, tag)}
+                </span>
+                {month.budget && (
+                  <span className="text-muted">
+                    {" "}
+                    {fill(t.ofBudget, {
+                      budget: formatMoney(month.budget, tag),
+                    })}
+                  </span>
+                )}
+              </span>
+            </div>
+            {month.budget && (
+              <div className="mt-2">
+                <Bar
+                  value={month.spent}
+                  max={month.budget}
+                  tone={
+                    month.spent > month.budget
+                      ? "danger"
+                      : month.spent >= month.budget * 0.8
+                        ? "warn"
+                        : "accent"
+                  }
+                />
+              </div>
+            )}
+            <div className="mt-1 flex flex-wrap justify-between gap-2 text-xs text-muted">
+              <span className="num">
+                {month.projection !== null &&
+                  fill(t.projection, {
+                    amount: formatMoney(month.projection, tag),
+                  })}
+              </span>
+              {!month.budget && (
+                <Link href="/categories" className="text-accent">
+                  {t.setBudget}
+                </Link>
+              )}
+            </div>
+          </section>
           {stores.length > 1 && (
             <Select
               aria-label={t.store}

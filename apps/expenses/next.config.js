@@ -9,6 +9,8 @@ const nextConfig = {
   // Don't let `next dev` write AGENTS.md + CLAUDE.md here — this repo's
   // guidance lives in the root CLAUDE.md.
   agentRules: false,
+  // A receipt photo (resized in the browser) goes through a server action.
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
 };
 
 export default nextConfig;

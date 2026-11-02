@@ -1,3 +1,4 @@
+import type { ScannerTexts } from "@/app/components/BarcodeScanner";
 import type { ReceiptFormTexts } from "@/app/components/ReceiptFormView";
 import type { ReceiptsTexts } from "@/app/components/ReceiptsView";
 import type { ReceiptTexts } from "@/app/components/ReceiptView";
@@ -13,6 +14,10 @@ export const receipts = {
   lineCount: "{n} article(s)",
   matches: "OK",
   mismatch: "Écart",
+  monthSpent: "Courses ce mois-ci",
+  ofBudget: "/ {budget}",
+  projection: "≈ {amount} en fin de mois à ce rythme",
+  setBudget: "Fixer un budget",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -61,4 +66,20 @@ export const receiptForm = {
   cancel: "Annuler",
   needStore: "Indique le magasin.",
   badLine: "Ligne {n} : nom, quantité ou prix invalide.",
+  scan: "Scanner le code-barres",
+  scanContinuous: "Scanner à la suite",
+  photo: "Photo du ticket",
+  reading: "Lecture…",
+  photoRead:
+    "{n} ligne(s) lue(s) sur la photo — vérifie chacune avant d'enregistrer.",
 } as const satisfies ReceiptFormTexts;
+
+export const scanner = {
+  title: "Scanner un code-barres",
+  continuousTitle: "Scanner à la suite",
+  hint: "Vise le code-barres, il est lu tout seul.",
+  noCamera:
+    "Caméra indisponible — autorise l'accès à la caméra dans le navigateur.",
+  scanned: "{n} code(s) scanné(s)",
+  done: "Terminé",
+} as const satisfies ScannerTexts;

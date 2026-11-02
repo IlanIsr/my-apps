@@ -44,6 +44,7 @@ export const transactions = {
   budgetNear:
     "{category} : {spent} sur {budget} — le budget est presque atteint.",
   budgetOver: "{category} : {spent} sur {budget} — budget dépassé.",
+  projection: "≈ {amount} en fin de mois à ce rythme",
 } as const satisfies TransactionsTexts;
 
 export const transactionModal = {

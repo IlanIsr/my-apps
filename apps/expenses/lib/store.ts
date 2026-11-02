@@ -6,10 +6,11 @@
 
 import "server-only";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import {
+  productDistinctPairs,
   products,
   receiptItems,
   receipts,
@@ -23,16 +24,17 @@ import { StoreError } from "./store-error";
 
 import {
   normalizeName,
+  pairKey,
   receiptTotal,
   type LineInput,
   type PricePoint,
   type Product,
+  type ProductInput,
   type Receipt,
   type ReceiptInput,
   type ReceiptSummary,
   type ShoppingItem,
   type Store,
-  type Unit,
 } from "./grocery-logic";
 
 export { StoreError, type StoreErrorCode } from "./store-error";
@@ -42,6 +44,9 @@ const toProduct = (row: typeof products.$inferSelect): Product => ({
   name: row.name,
   barcode: row.barcode,
   unit: row.unit,
+  aisle: row.aisle,
+  contentMilli: row.contentMilli,
+  contentUnit: row.contentUnit,
 });
 
 /** `round(quantity × unit price) − discount`, as in `lineTotal`. */
@@ -95,7 +100,7 @@ export async function listProducts(ownerId: string): Promise<Product[]> {
 export async function updateProduct(
   ownerId: string,
   id: string,
-  input: { name: string; barcode: string | null; unit: Unit },
+  input: ProductInput,
 ): Promise<Product> {
   if (input.barcode) {
     const [taken] = await db()
@@ -113,6 +118,92 @@ export async function updateProduct(
     .returning();
   if (!row) throw new StoreError("not-found");
   return toProduct(row);
+}
+
+/** The pairs declared "not the same product", as `pairKey`s. */
+export async function listDistinctPairs(ownerId: string): Promise<string[]> {
+  const rows = await db()
+    .select()
+    .from(productDistinctPairs)
+    .where(eq(productDistinctPairs.ownerId, ownerId));
+  return rows.map((r) => pairKey(r.productA, r.productB));
+}
+
+async function assertOwnProducts(ownerId: string, ids: string[]) {
+  const rows = await db()
+    .select({ id: products.id })
+    .from(products)
+    .where(and(eq(products.ownerId, ownerId), inArray(products.id, ids)));
+  if (rows.length !== new Set(ids).size) throw new StoreError("not-found");
+}
+
+/** "These two are different products" — never suggested again. */
+export async function markDistinct(ownerId: string, a: string, b: string) {
+  await assertOwnProducts(ownerId, [a, b]);
+  const [productA, productB] = a < b ? [a, b] : [b, a];
+  await db()
+    .insert(productDistinctPairs)
+    .values({ ownerId, productA, productB })
+    .onConflictDoNothing();
+}
+
+/**
+ * Merges `drop` into `keep`: every receipt line and the shopping list move to
+ * `keep`, which takes the chosen name / barcode (and `drop`'s shelf / content
+ * where it has none); `drop` is deleted. One transaction.
+ */
+export async function mergeProducts(
+  ownerId: string,
+  keep: string,
+  drop: string,
+  input: { name: string; barcode: string | null },
+): Promise<void> {
+  if (keep === drop) throw new StoreError("not-found");
+  const rows = await db()
+    .select()
+    .from(products)
+    .where(
+      and(eq(products.ownerId, ownerId), inArray(products.id, [keep, drop])),
+    );
+  const kept = rows.find((r) => r.id === keep);
+  const dropped = rows.find((r) => r.id === drop);
+  if (!kept || !dropped) throw new StoreError("not-found");
+  if (input.barcode) {
+    const [taken] = await db()
+      .select({ id: products.id })
+      .from(products)
+      .where(
+        and(eq(products.ownerId, ownerId), eq(products.barcode, input.barcode)),
+      );
+    if (taken && taken.id !== keep && taken.id !== drop) {
+      throw new StoreError("barcode-taken");
+    }
+  }
+  await db().batch([
+    db()
+      .update(receiptItems)
+      .set({ productId: keep })
+      .where(eq(receiptItems.productId, drop)),
+    // Both in the shopping list: keep the larger quantity.
+    db().execute(sql`
+      insert into ${shoppingItems} (owner_id, product_id, quantity_milli)
+      select owner_id, ${keep}, quantity_milli from ${shoppingItems}
+      where owner_id = ${ownerId} and product_id = ${drop}
+      on conflict (owner_id, product_id) do update
+      set quantity_milli = greatest(${shoppingItems.quantityMilli}, excluded.quantity_milli)
+    `),
+    db().delete(products).where(eq(products.id, drop)),
+    db()
+      .update(products)
+      .set({
+        name: input.name,
+        barcode: input.barcode,
+        aisle: kept.aisle ?? dropped.aisle,
+        contentMilli: kept.contentMilli ?? dropped.contentMilli,
+        contentUnit: kept.contentMilli ? kept.contentUnit : dropped.contentUnit,
+      })
+      .where(eq(products.id, keep)),
+  ]);
 }
 
 /**
