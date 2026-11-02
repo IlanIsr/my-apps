@@ -122,8 +122,13 @@ export function AppHeader({
                   {renderLinks(() => setMenuOpen(false))}
                 </nav>
               )}
-              {settings?.("menu")}
             </Drawer.Body>
+            {/* Settings sit at the very bottom of the drawer. */}
+            {settings && (
+              <Drawer.Footer className="flex-col items-stretch">
+                {settings("menu")}
+              </Drawer.Footer>
+            )}
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>
