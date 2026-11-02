@@ -21,6 +21,8 @@ import {
 import {
   categoryLabel,
   merchantKey,
+  METHOD_ICON,
+  METHODS,
   type Category,
   type CategoryRules,
   type DefaultCategoryKey,
@@ -220,10 +222,10 @@ export function TransactionModal({
                 </span>
                 <Segmented
                   aria-label={t.method}
-                  options={[
-                    { value: "cash", label: `💵 ${messages.methods.cash}` },
-                    { value: "card", label: `💳 ${messages.methods.card}` },
-                  ]}
+                  options={METHODS.map((m) => ({
+                    value: m,
+                    label: `${METHOD_ICON[m]} ${messages.methods[m]}`,
+                  }))}
                   value={method}
                   onChange={setMethod}
                 />

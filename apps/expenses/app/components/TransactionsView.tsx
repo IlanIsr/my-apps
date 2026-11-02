@@ -12,6 +12,8 @@ import {
   budgetState,
   categoryLabel,
   formatMonth,
+  METHOD_ICON,
+  METHODS,
   monthOf,
   shiftMonth,
   summarize,
@@ -125,8 +127,11 @@ export function TransactionsView({
           </div>
         </div>
         <div className="num flex gap-4 text-sm text-muted">
-          <span>💵 {formatMoney(summary.byMethod.cash, tag)}</span>
-          <span>💳 {formatMoney(summary.byMethod.card, tag)}</span>
+          {METHODS.filter((m) => summary.byMethod[m] > 0).map((m) => (
+            <span key={m}>
+              {METHOD_ICON[m]} {formatMoney(summary.byMethod[m], tag)}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -174,11 +179,16 @@ export function TransactionsView({
           onChange={(v) => setMethod(v as "all" | Method)}
           options={[
             { key: "all", label: t.allMethods },
-            { key: "cash", label: `💵 ${messages.methods.cash}` },
-            { key: "card", label: `💳 ${messages.methods.card}` },
+            ...METHODS.map((m) => ({
+              key: m,
+              label: `${METHOD_ICON[m]} ${messages.methods[m]}`,
+            })),
           ]}
         />
-        <div className="ms-auto flex gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:ms-auto sm:w-auto">
+          <Button variant="primary" size="sm" onClick={() => setEditing("new")}>
+            + {t.add}
+          </Button>
           <LinkButton href="/receipts/new" size="sm">
             🧾 {t.receipt}
           </LinkButton>
@@ -189,7 +199,11 @@ export function TransactionsView({
       </div>
 
       {transactions.length === 0 ? (
-        <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
+        <EmptyState title={t.emptyTitle} description={t.emptyDescription}>
+          <Button variant="primary" onClick={() => setEditing("new")}>
+            + {t.add}
+          </Button>
+        </EmptyState>
       ) : shown.length === 0 ? (
         <p className="text-muted">{t.noMatch}</p>
       ) : (
@@ -229,7 +243,7 @@ export function TransactionsView({
                           </span>
                         </span>
                         <span aria-hidden className="text-sm">
-                          {x.method === "cash" ? "💵" : "💳"}
+                          {METHOD_ICON[x.method]}
                         </span>
                         <span className="num font-semibold">
                           {formatMoney(x.amount, tag)}

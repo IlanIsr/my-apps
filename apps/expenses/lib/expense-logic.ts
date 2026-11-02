@@ -5,8 +5,14 @@
 
 import { normalizeName } from "./grocery-logic";
 
-export const METHODS = ["cash", "card"] as const;
+export const METHODS = ["cash", "card", "cibus"] as const;
 export type Method = (typeof METHODS)[number];
+
+export const METHOD_ICON: Record<Method, string> = {
+  cash: "💵",
+  card: "💳",
+  cibus: "🍽️",
+};
 
 /**
  * The starting categories, created for every new user. `key` lets the UI
@@ -119,7 +125,7 @@ export type MonthSummary = {
 
 export function summarize(transactions: Transaction[]): MonthSummary {
   const byCategory = new Map<string | null, number>();
-  const byMethod: Record<Method, number> = { cash: 0, card: 0 };
+  const byMethod: Record<Method, number> = { cash: 0, card: 0, cibus: 0 };
   let total = 0;
   for (const t of transactions) {
     total += t.amount;

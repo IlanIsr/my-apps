@@ -7,6 +7,8 @@
  * `round(quantity × unitPrice) − discount`.
  */
 
+import type { Method } from "./expense-logic";
+
 /** Display currency — one constant, change it here. */
 export const CURRENCY = "ILS";
 
@@ -54,8 +56,8 @@ export type ReceiptInput = {
   /** The total printed on the receipt, to check against. */
   declaredTotal: number | null;
   note: string | null;
-  /** How it was paid (`"cash" | "card"`) — copied onto its transaction. */
-  method: "cash" | "card";
+  /** How it was paid — copied onto its transaction. */
+  method: Method;
   lines: LineInput[];
 };
 
@@ -68,7 +70,7 @@ export type Receipt = {
   date: string;
   declaredTotal: number | null;
   note: string | null;
-  method: "cash" | "card";
+  method: Method;
   lines: ReceiptLine[];
 };
 

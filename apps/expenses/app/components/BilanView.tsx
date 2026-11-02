@@ -12,6 +12,8 @@ import {
   budgetState,
   categoryLabel,
   formatMonth,
+  METHOD_ICON,
+  METHODS,
   monthlyTotals,
   monthOf,
   shiftMonth,
@@ -150,11 +152,11 @@ export function BilanView({
         </div>
         <div className="min-w-48 flex-1 sm:max-w-64">
           <div className="eyebrow mb-1">{t.methods}</div>
-          {(["cash", "card"] as const).map((m) => (
+          {METHODS.map((m) => (
             <div key={m} className="mb-1 text-sm">
               <div className="flex justify-between">
                 <span>
-                  {m === "cash" ? "💵" : "💳"} {messages.methods[m]}
+                  {METHOD_ICON[m]} {messages.methods[m]}
                 </span>
                 <span className="num">
                   {formatMoney(summary.byMethod[m], tag)}

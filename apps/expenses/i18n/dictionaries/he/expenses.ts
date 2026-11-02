@@ -11,6 +11,7 @@ import type { TransactionsTexts } from "@/app/components/TransactionsView";
 export const methods = {
   cash: "מזומן",
   card: "כרטיס",
+  cibus: "סיבוס",
 } as const satisfies MethodTexts;
 
 export const categoryNames = {
@@ -32,7 +33,7 @@ export const transactions = {
   next: "החודש הבא",
   total: "סה״כ החודש",
   allCategories: "כל הקטגוריות",
-  allMethods: "מזומן + כרטיס",
+  allMethods: "כל אמצעי התשלום",
   uncategorized: "ללא קטגוריה",
   emptyTitle: "אין הוצאות",
   emptyDescription:
@@ -87,7 +88,7 @@ export const bilan = {
   byCategory: "לפי קטגוריה",
   ofBudget: "/ {budget}",
   uncategorized: "ללא קטגוריה",
-  methods: "מזומן / כרטיס",
+  methods: "אמצעי תשלום",
   last12: "12 החודשים האחרונים",
   editBudgets: "תקציבים",
 } as const satisfies BilanTexts;

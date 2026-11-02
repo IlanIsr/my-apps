@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { saveReceiptAction } from "@/app/actions";
+import { METHOD_ICON, METHODS, type Method } from "@/lib/expense-logic";
 import {
   centsToInput,
   formatMoney,
@@ -134,9 +135,7 @@ export function ReceiptFormView({
     receipt?.declaredTotal != null ? centsToInput(receipt.declaredTotal) : "",
   );
   const [note, setNote] = useState(receipt?.note ?? "");
-  const [method, setMethod] = useState<"cash" | "card">(
-    receipt?.method ?? "cash",
-  );
+  const [method, setMethod] = useState<Method>(receipt?.method ?? "cash");
   const [rows, setRows] = useState<Row[]>(() =>
     receipt
       ? [
@@ -372,10 +371,10 @@ export function ReceiptFormView({
         <span className="text-xs font-medium text-muted">{t.method}</span>
         <Segmented
           aria-label={t.method}
-          options={[
-            { value: "cash", label: `💵 ${messages.methods.cash}` },
-            { value: "card", label: `💳 ${messages.methods.card}` },
-          ]}
+          options={METHODS.map((m) => ({
+            value: m,
+            label: `${METHOD_ICON[m]} ${messages.methods[m]}`,
+          }))}
           value={method}
           onChange={setMethod}
         />

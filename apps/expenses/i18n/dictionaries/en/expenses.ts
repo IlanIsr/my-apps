@@ -11,6 +11,7 @@ import type { TransactionsTexts } from "@/app/components/TransactionsView";
 export const methods = {
   cash: "Cash",
   card: "Card",
+  cibus: "Cibus",
 } as const satisfies MethodTexts;
 
 export const categoryNames = {
@@ -32,7 +33,7 @@ export const transactions = {
   next: "Next month",
   total: "Month total",
   allCategories: "All categories",
-  allMethods: "Cash + card",
+  allMethods: "All payments",
   uncategorized: "Uncategorized",
   emptyTitle: "No expenses",
   emptyDescription:
@@ -87,7 +88,7 @@ export const bilan = {
   byCategory: "By category",
   ofBudget: "/ {budget}",
   uncategorized: "Uncategorized",
-  methods: "Cash / card",
+  methods: "Payment methods",
   last12: "Last 12 months",
   editBudgets: "Budgets",
 } as const satisfies BilanTexts;

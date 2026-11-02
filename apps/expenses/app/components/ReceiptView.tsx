@@ -12,6 +12,7 @@ import { useState } from "react";
 import { SimpleModal } from "@repo/ui/modal";
 
 import { deleteReceiptAction } from "@/app/actions";
+import { METHOD_ICON } from "@/lib/expense-logic";
 import {
   formatDay,
   formatMoney,
@@ -70,7 +71,7 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
       </Link>
       <PageHeader
         eyebrow={`${formatDay(receipt.date, tag)} · ${
-          receipt.method === "cash" ? "💵" : "💳"
+          METHOD_ICON[receipt.method]
         } ${messages.methods[receipt.method]}`}
         title={receipt.storeName}
       >
