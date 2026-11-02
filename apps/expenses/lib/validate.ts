@@ -43,6 +43,15 @@ function optionalText(value: unknown, field: string, max: number) {
   return text(value, field, max);
 }
 
+/** Trimmed, line breaks kept (a textarea), or `null` when empty. */
+function optionalMultiline(value: unknown, field: string, max: number) {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") throw new InvalidInputError(field);
+  const trimmed = value.trim();
+  if (trimmed.length > max) throw new InvalidInputError(field);
+  return trimmed || null;
+}
+
 export function int(value: unknown, field: string, min: number, max: number) {
   if (typeof value !== "number" || !Number.isInteger(value)) {
     throw new InvalidInputError(field);
@@ -143,7 +152,7 @@ export function transactionInput(value: unknown): TransactionInput {
     categoryId: optionalId(input.categoryId, "categoryId"),
     merchant: optionalText(input.merchant, "merchant", EXPENSE_LIMITS.merchant),
     method: method(input.method),
-    note: optionalText(input.note, "note", EXPENSE_LIMITS.note),
+    note: optionalMultiline(input.note, "note", EXPENSE_LIMITS.note),
   };
 }
 

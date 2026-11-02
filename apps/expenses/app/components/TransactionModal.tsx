@@ -36,6 +36,7 @@ import { Button } from "./Button";
 import { Combo } from "./Combo";
 import { ErrorLine, Field } from "./common";
 import { Segmented } from "./Segmented";
+import { TextArea } from "./TextArea";
 import { TextInput } from "./TextInput";
 
 export type TransactionModalTexts = {
@@ -242,7 +243,11 @@ export function TransactionModal({
         )}
 
         <Field label={t.note}>
-          <TextInput value={note} onChange={(e) => setNote(e.target.value)} />
+          <TextArea
+            rows={3}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
         </Field>
         <ErrorLine message={error} />
       </div>
