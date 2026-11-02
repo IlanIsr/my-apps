@@ -1,3 +1,6 @@
+import type { GoalCardTexts } from "@/app/components/GoalCard";
+import type { GoalModalTexts } from "@/app/components/GoalModal";
+import type { GoalsTexts } from "@/app/components/GoalsView";
 import type { BilanTexts } from "@/app/components/BilanView";
 import type { CategoriesTexts } from "@/app/components/CategoriesView";
 import type { ImportTexts } from "@/app/components/ImportView";
@@ -45,6 +48,8 @@ export const transactions = {
   budgetOver: "{category}: {spent} מתוך {budget} — חריגה מהתקציב.",
   projection: "≈ {amount} בסוף החודש בקצב הזה",
   perLiter: "{liters} ל׳ × {price} לליטר",
+  goals: "יעדי החודש",
+  seeGoals: "לצפייה",
 } as const satisfies TransactionsTexts;
 
 export const transactionModal = {
@@ -117,3 +122,41 @@ export const importTexts = {
   importButton: "ייבוא {n} שורות",
   done: "יובאו {n} הוצאות.",
 } as const satisfies ImportTexts;
+
+export const goals = {
+  title: "יעדים",
+  description:
+    "קבעו כמה לכל היותר להוציא החודש: בסך הכול, לפי קטגוריה או לפי אמצעי תשלום.",
+  previous: "החודש הקודם",
+  next: "החודש הבא",
+  add: "הוספת יעד",
+  emptyTitle: "אין יעדים החודש",
+  emptyDescription: "הוסיפו יעד, למשל „3,000 ₪ בסך הכול” או „400 ₪ על מסעדות”.",
+  copy: "להעתיק את {n} היעדים של {month}",
+} as const satisfies GoalsTexts;
+
+export const goalCard = {
+  total: "כל ההוצאות",
+  spentOf: "{spent} מתוך {amount}",
+  remaining: "נשארו {amount}",
+  over: "חריגה של {amount}",
+  perDay: "כלומר {amount} ליום ({days} ימים נותרו)",
+  projection: "≈ {amount} בסוף החודש בקצב הזה",
+  projectionOver: "⚠ בקצב הזה: {amount} בסוף החודש, מעל היעד",
+} as const satisfies GoalCardTexts;
+
+export const goalModal = {
+  addTitle: "יעד חדש",
+  editTitle: "עריכת יעד",
+  scope: "על",
+  scopes: { total: "הכול", category: "קטגוריה", method: "אמצעי תשלום" },
+  category: "קטגוריה",
+  method: "אמצעי תשלום",
+  amount: "מקסימום להוצאה",
+  name: "שם (לא חובה)",
+  namePlaceholder: "למשל חודש חסכוני",
+  save: "שמירה",
+  cancel: "ביטול",
+  delete: "מחיקה",
+  badAmount: "סכום לא תקין.",
+} as const satisfies GoalModalTexts;

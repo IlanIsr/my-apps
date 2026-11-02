@@ -345,3 +345,69 @@ export function findHeaderRow(rows: unknown[][]): number {
   });
   return Math.max(0, i);
 }
+
+// ---------------------------------------------------------------------------
+// Goals
+
+/** What a goal caps: all spending, one category, or one payment method. */
+export const GOAL_SCOPES = ["total", "category", "method"] as const;
+export type GoalScope = (typeof GOAL_SCOPES)[number];
+
+export type Goal = {
+  id: string;
+  /** `YYYY-MM`. */
+  month: string;
+  scope: GoalScope;
+  categoryId: string | null;
+  method: Method | null;
+  /** The most to spend, cents. */
+  amount: number;
+  name: string | null;
+};
+
+export type GoalInput = Omit<Goal, "id">;
+
+export type GoalProgress = {
+  spent: number;
+  /** Negative once over. */
+  remaining: number;
+  /** What can still be spent per day, today included (current month only). */
+  perDay: number | null;
+  /** Days left in the month, today included (current month only). */
+  daysLeft: number | null;
+  /** Month-end spending at the current pace (current month only). */
+  projection: number | null;
+  state: BudgetState;
+};
+
+/** The transactions a goal counts. */
+export function goalMatches(goal: Goal, t: Transaction): boolean {
+  if (monthOf(t.date) !== goal.month) return false;
+  if (goal.scope === "category") return t.categoryId === goal.categoryId;
+  if (goal.scope === "method") return t.method === goal.method;
+  return true;
+}
+
+export function goalProgress(
+  goal: Goal,
+  transactions: Transaction[],
+  day: string,
+): GoalProgress {
+  const spent = transactions
+    .filter((t) => goalMatches(goal, t))
+    .reduce((s, t) => s + t.amount, 0);
+  const remaining = goal.amount - spent;
+  const current = monthOf(day) === goal.month;
+  const [y, m] = goal.month.split("-").map(Number) as [number, number];
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const daysLeft = current ? days - Number(day.slice(8, 10)) + 1 : null;
+  return {
+    spent,
+    remaining,
+    daysLeft,
+    perDay:
+      daysLeft === null ? null : Math.max(0, Math.floor(remaining / daysLeft)),
+    projection: current ? projectMonth(spent, goal.month, day) : null,
+    state: budgetState(spent, goal.amount),
+  };
+}

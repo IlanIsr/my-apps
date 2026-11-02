@@ -6,6 +6,7 @@
  * opens the quick add; tapping a line edits it.
  */
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import {
@@ -20,6 +21,7 @@ import {
   summarize,
   type Category,
   type CategoryRules,
+  type Goal,
   type Method,
   type Transaction,
 } from "@/lib/expense-logic";
@@ -32,6 +34,7 @@ import {
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
+import { GoalCard } from "./GoalCard";
 import { EmptyState, LinkButton, fill } from "./common";
 import { Select } from "./Select";
 import { TransactionModal } from "./TransactionModal";
@@ -53,6 +56,8 @@ export type TransactionsTexts = {
   /** `{category}`, `{spent}`, `{budget}`. */
   budgetNear: string;
   budgetOver: string;
+  goals: string;
+  seeGoals: string;
   /** `{liters}`, `{price}` = per litre. */
   perLiter: string;
   /** `{amount}` = the month's total at the current pace. */
@@ -63,10 +68,12 @@ export function TransactionsView({
   transactions,
   categories,
   rules,
+  goals,
 }: {
   transactions: Transaction[];
   categories: Category[];
   rules: CategoryRules;
+  goals: Goal[];
 }) {
   const messages = useTranslations();
   const t = messages.transactions;
@@ -87,6 +94,7 @@ export function TransactionsView({
   );
 
   const inMonth = transactions.filter((x) => monthOf(x.date) === month);
+  const monthGoals = goals.filter((g) => g.month === month);
   const summary = summarize(inMonth);
   const projection = projectMonth(summary.total, month, today());
   const shown = inMonth.filter(
@@ -199,6 +207,26 @@ export function TransactionsView({
             </li>
           ))}
         </ul>
+      )}
+
+      {monthGoals.length > 0 && (
+        <section className="card mb-4 flex flex-col gap-3 p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="eyebrow">🎯 {t.goals}</span>
+            <Link href="/goals" className="text-sm text-accent">
+              {t.seeGoals}
+            </Link>
+          </div>
+          {monthGoals.map((g) => (
+            <GoalCard
+              key={g.id}
+              goal={g}
+              transactions={transactions}
+              categories={categories}
+              compact
+            />
+          ))}
+        </section>
       )}
 
       <div className="mb-4 flex flex-wrap gap-2">

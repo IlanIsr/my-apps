@@ -1,3 +1,6 @@
+import type { GoalCardTexts } from "@/app/components/GoalCard";
+import type { GoalModalTexts } from "@/app/components/GoalModal";
+import type { GoalsTexts } from "@/app/components/GoalsView";
 import type { BilanTexts } from "@/app/components/BilanView";
 import type { CategoriesTexts } from "@/app/components/CategoriesView";
 import type { ImportTexts } from "@/app/components/ImportView";
@@ -46,6 +49,8 @@ export const transactions = {
   budgetOver: "{category} : {spent} sur {budget} — budget dépassé.",
   projection: "≈ {amount} en fin de mois à ce rythme",
   perLiter: "{liters} L × {price}/L",
+  goals: "Objectifs du mois",
+  seeGoals: "Voir",
 } as const satisfies TransactionsTexts;
 
 export const transactionModal = {
@@ -118,3 +123,43 @@ export const importTexts = {
   importButton: "Importer {n} ligne(s)",
   done: "{n} dépense(s) importée(s).",
 } as const satisfies ImportTexts;
+
+export const goals = {
+  title: "Objectifs",
+  description:
+    "Fixe ce que tu veux dépenser au maximum ce mois-ci : au total, par catégorie ou par moyen de paiement.",
+  previous: "Mois précédent",
+  next: "Mois suivant",
+  add: "Ajouter un objectif",
+  emptyTitle: "Aucun objectif ce mois-ci",
+  emptyDescription:
+    "Ajoute un objectif, par exemple « 3 000 ₪ au total » ou « 400 ₪ de restaurants ».",
+  copy: "Reprendre les {n} objectif(s) de {month}",
+} as const satisfies GoalsTexts;
+
+export const goalCard = {
+  total: "Toutes les dépenses",
+  spentOf: "{spent} dépensés sur {amount}",
+  remaining: "Reste {amount}",
+  over: "Dépassé de {amount}",
+  perDay: "soit {amount} par jour ({days} j restants)",
+  projection: "≈ {amount} en fin de mois à ce rythme",
+  projectionOver:
+    "⚠ À ce rythme : {amount} en fin de mois, au-dessus de l'objectif",
+} as const satisfies GoalCardTexts;
+
+export const goalModal = {
+  addTitle: "Nouvel objectif",
+  editTitle: "Modifier l'objectif",
+  scope: "Sur",
+  scopes: { total: "Tout", category: "Une catégorie", method: "Un paiement" },
+  category: "Catégorie",
+  method: "Moyen de paiement",
+  amount: "Maximum à dépenser",
+  name: "Nom (optionnel)",
+  namePlaceholder: "Ex. Mois raisonnable",
+  save: "Enregistrer",
+  cancel: "Annuler",
+  delete: "Supprimer",
+  badAmount: "Montant invalide.",
+} as const satisfies GoalModalTexts;

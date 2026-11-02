@@ -29,6 +29,7 @@ export type AppShellTexts = {
   menu: string;
   nav: {
     expenses: string;
+    goals: string;
     receipts: string;
     products: string;
     shopping: string;
@@ -39,6 +40,7 @@ export type AppShellTexts = {
 
 const LINKS = [
   { href: "/", key: "expenses" },
+  { href: "/goals", key: "goals" },
   { href: "/receipts", key: "receipts" },
   { href: "/products", key: "products" },
   { href: "/shopping", key: "shopping" },

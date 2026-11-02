@@ -3,6 +3,9 @@ import {
   bilan,
   categories,
   categoryNames,
+  goalCard,
+  goalModal,
+  goals,
   importTexts,
   methods,
   transactionModal,
@@ -42,4 +45,7 @@ export const he = {
   aisles,
   duplicates,
   scanner,
+  goals,
+  goalCard,
+  goalModal,
 } as const satisfies Messages;

@@ -16,6 +16,7 @@ import {
   receipts,
   stores,
   transactions,
+  goals,
 } from "@/db/schema";
 
 import {
@@ -26,6 +27,8 @@ import {
   type CategoryRules,
   type Transaction,
   type TransactionInput,
+  type Goal,
+  type GoalInput,
 } from "./expense-logic";
 import { payable } from "./grocery-logic";
 import { StoreError } from "./store-error";
@@ -300,4 +303,87 @@ export async function importTransactions(
     await learn(ownerId, merchant, categoryId);
   }
   return inserted.length;
+}
+
+// ---------------------------------------------------------------------------
+// Goals
+
+const toGoal = (row: typeof goals.$inferSelect): Goal => ({
+  id: row.id,
+  month: row.month,
+  scope: row.scope,
+  categoryId: row.categoryId,
+  method: row.method,
+  amount: row.amount,
+  name: row.name,
+});
+
+export async function listGoals(ownerId: string): Promise<Goal[]> {
+  const rows = await db()
+    .select()
+    .from(goals)
+    .where(eq(goals.ownerId, ownerId))
+    .orderBy(asc(goals.month), asc(goals.createdAt));
+  return rows.map(toGoal);
+}
+
+export async function createGoal(
+  ownerId: string,
+  input: GoalInput,
+): Promise<Goal> {
+  await assertOwnCategory(ownerId, input.categoryId);
+  const [row] = await db()
+    .insert(goals)
+    .values({ ownerId, ...input })
+    .returning();
+  return toGoal(row!);
+}
+
+export async function updateGoal(
+  ownerId: string,
+  id: string,
+  input: GoalInput,
+): Promise<Goal> {
+  await assertOwnCategory(ownerId, input.categoryId);
+  const [row] = await db()
+    .update(goals)
+    .set(input)
+    .where(and(eq(goals.ownerId, ownerId), eq(goals.id, id)))
+    .returning();
+  if (!row) throw new StoreError("not-found");
+  return toGoal(row);
+}
+
+export async function deleteGoal(ownerId: string, id: string) {
+  const rows = await db()
+    .delete(goals)
+    .where(and(eq(goals.ownerId, ownerId), eq(goals.id, id)))
+    .returning({ id: goals.id });
+  if (rows.length === 0) throw new StoreError("not-found");
+}
+
+/** Copies `from`'s goals into `to` (a month with none yet). Returns how many. */
+export async function copyGoals(
+  ownerId: string,
+  from: string,
+  to: string,
+): Promise<number> {
+  const all = await listGoals(ownerId);
+  if (all.some((g) => g.month === to)) return 0;
+  const source = all.filter((g) => g.month === from);
+  if (source.length === 0) return 0;
+  await db()
+    .insert(goals)
+    .values(
+      source.map((g) => ({
+        ownerId,
+        month: to,
+        scope: g.scope,
+        categoryId: g.categoryId,
+        method: g.method,
+        amount: g.amount,
+        name: g.name,
+      })),
+    );
+  return source.length;
 }

@@ -1,3 +1,6 @@
+import type { GoalCardTexts } from "@/app/components/GoalCard";
+import type { GoalModalTexts } from "@/app/components/GoalModal";
+import type { GoalsTexts } from "@/app/components/GoalsView";
 import type { BilanTexts } from "@/app/components/BilanView";
 import type { CategoriesTexts } from "@/app/components/CategoriesView";
 import type { ImportTexts } from "@/app/components/ImportView";
@@ -45,6 +48,8 @@ export const transactions = {
   budgetOver: "{category}: {spent} of {budget} — over budget.",
   projection: "≈ {amount} by month end at this pace",
   perLiter: "{liters} L × {price}/L",
+  goals: "This month's goals",
+  seeGoals: "See",
 } as const satisfies TransactionsTexts;
 
 export const transactionModal = {
@@ -117,3 +122,42 @@ export const importTexts = {
   importButton: "Import {n} line(s)",
   done: "{n} expense(s) imported.",
 } as const satisfies ImportTexts;
+
+export const goals = {
+  title: "Goals",
+  description:
+    "Set the most you want to spend this month: in total, per category or per payment method.",
+  previous: "Previous month",
+  next: "Next month",
+  add: "Add a goal",
+  emptyTitle: "No goal this month",
+  emptyDescription:
+    "Add a goal, e.g. “₪3,000 in total” or “₪400 on restaurants”.",
+  copy: "Reuse {month}'s {n} goal(s)",
+} as const satisfies GoalsTexts;
+
+export const goalCard = {
+  total: "All spending",
+  spentOf: "{spent} spent of {amount}",
+  remaining: "{amount} left",
+  over: "{amount} over",
+  perDay: "that's {amount} a day ({days} days left)",
+  projection: "≈ {amount} by month end at this pace",
+  projectionOver: "⚠ At this pace: {amount} by month end, above the goal",
+} as const satisfies GoalCardTexts;
+
+export const goalModal = {
+  addTitle: "New goal",
+  editTitle: "Edit goal",
+  scope: "On",
+  scopes: { total: "Everything", category: "A category", method: "A payment" },
+  category: "Category",
+  method: "Payment method",
+  amount: "Most to spend",
+  name: "Name (optional)",
+  namePlaceholder: "E.g. Careful month",
+  save: "Save",
+  cancel: "Cancel",
+  delete: "Delete",
+  badAmount: "Invalid amount.",
+} as const satisfies GoalModalTexts;

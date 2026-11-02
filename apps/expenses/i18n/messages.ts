@@ -6,6 +6,9 @@
 
 import type { AppShellTexts } from "@/app/components/AppShell";
 import type { BilanTexts } from "@/app/components/BilanView";
+import type { GoalCardTexts } from "@/app/components/GoalCard";
+import type { GoalModalTexts } from "@/app/components/GoalModal";
+import type { GoalsTexts } from "@/app/components/GoalsView";
 import type { CategoriesTexts } from "@/app/components/CategoriesView";
 import type { ImportTexts } from "@/app/components/ImportView";
 import type {
@@ -50,4 +53,7 @@ export type Messages = {
   aisles: AisleTexts;
   duplicates: DuplicatesTexts;
   scanner: ScannerTexts;
+  goals: GoalsTexts;
+  goalCard: GoalCardTexts;
+  goalModal: GoalModalTexts;
 };

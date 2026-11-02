@@ -1,5 +1,6 @@
 import {
   listCategories,
+  listGoals,
   listRules,
   listTransactions,
 } from "@/lib/expense-store";
@@ -12,15 +13,17 @@ export default async function Page() {
   const owner = await requireOwner();
   // Categories first: the first visit creates them (and the receipts' expenses).
   const categories = await listCategories(owner);
-  const [transactions, rules] = await Promise.all([
+  const [transactions, rules, goals] = await Promise.all([
     listTransactions(owner),
     listRules(owner),
+    listGoals(owner),
   ]);
   return (
     <TransactionsView
       transactions={transactions}
       categories={categories}
       rules={rules}
+      goals={goals}
     />
   );
 }

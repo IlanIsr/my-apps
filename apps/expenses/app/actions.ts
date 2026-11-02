@@ -9,7 +9,7 @@
 import { revalidatePath } from "next/cache";
 
 import { DatabaseNotConfiguredError } from "@/db/client";
-import type { Category, Transaction } from "@/lib/expense-logic";
+import type { Category, Goal, Transaction } from "@/lib/expense-logic";
 import * as expenses from "@/lib/expense-store";
 import { LIMITS, type Product, type Receipt } from "@/lib/grocery-logic";
 import {
@@ -236,5 +236,39 @@ export async function getReceiptAction(
       return receipt;
     },
     { readOnly: true },
+  );
+}
+
+export async function createGoalAction(
+  input: unknown,
+): Promise<ActionResult<Goal>> {
+  return run((ownerId) => expenses.createGoal(ownerId, v.goalInput(input)));
+}
+
+export async function updateGoalAction(
+  id: string,
+  input: unknown,
+): Promise<ActionResult<Goal>> {
+  return run((ownerId) =>
+    expenses.updateGoal(ownerId, v.id(id), v.goalInput(input)),
+  );
+}
+
+export async function deleteGoalAction(
+  id: string,
+): Promise<ActionResult<null>> {
+  return run(async (ownerId) => {
+    await expenses.deleteGoal(ownerId, v.id(id));
+    return null;
+  });
+}
+
+/** Last month's goals, again for `to`. */
+export async function copyGoalsAction(
+  from: string,
+  to: string,
+): Promise<ActionResult<number>> {
+  return run((ownerId) =>
+    expenses.copyGoals(ownerId, v.month(from), v.month(to)),
   );
 }

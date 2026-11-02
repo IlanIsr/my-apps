@@ -37,6 +37,7 @@ import {
   formatMoney,
   parseMoney,
   parseQuantity,
+  payable,
   quantityToInput,
   today,
   type Receipt,
@@ -45,7 +46,7 @@ import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
 import { Combo } from "./Combo";
-import { ErrorLine, Field, LinkButton } from "./common";
+import { ErrorLine, Field, LinkButton, fill } from "./common";
 import { ReceiptLines } from "./ReceiptView";
 import { Segmented } from "./Segmented";
 import { TextArea } from "./TextArea";
@@ -108,14 +109,16 @@ export function TransactionModal({
   );
   const litersMilli = parseQuantity(liters);
   const pricePerLiter = parseMoney(perLiter);
-  const literTotal =
-    litersMilli && pricePerLiter
-      ? litersAmount(litersMilli, pricePerLiter)
-      : null;
   const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? null);
   const [picked, setPicked] = useState(Boolean(transaction));
   const [merchant, setMerchant] = useState(transaction?.merchant ?? "");
   const [method, setMethod] = useState<Method>(transaction?.method ?? "cash");
+  const literExact =
+    litersMilli && pricePerLiter
+      ? litersAmount(litersMilli, pricePerLiter)
+      : null;
+  // Paid in cash: rounded to 10 agorot, like a receipt.
+  const literTotal = literExact === null ? null : payable(literExact, method);
   const [date, setDate] = useState(transaction?.date ?? today());
   const [note, setNote] = useState(transaction?.note ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -266,6 +269,13 @@ export function TransactionModal({
               <span className="text-xs font-medium text-muted">{t.amount}</span>
               <span className="num text-2xl font-semibold">
                 {literTotal === null ? "—" : formatMoney(literTotal, tag)}
+                {literTotal !== null && literExact !== literTotal && (
+                  <span className="block text-end text-xs font-normal text-muted">
+                    {fill(messages.receiptForm.rounding, {
+                      amount: `${literTotal > literExact! ? "+" : ""}${formatMoney(literTotal - literExact!, tag)}`,
+                    })}
+                  </span>
+                )}
               </span>
             </div>
           </div>

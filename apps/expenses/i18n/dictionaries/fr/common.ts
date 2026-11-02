@@ -8,6 +8,7 @@ export const appShell = {
   language: "Langue",
   menu: "Menu",
   nav: {
+    goals: "Objectifs",
     expenses: "Dépenses",
     receipts: "Tickets",
     products: "Produits",

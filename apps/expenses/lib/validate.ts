@@ -5,6 +5,9 @@
 
 import {
   EXPENSE_LIMITS,
+  GOAL_SCOPES,
+  type GoalInput,
+  type GoalScope,
   litersAmount,
   METHODS,
   type Method,
@@ -14,6 +17,7 @@ import {
   AISLES,
   CONTENT_UNITS,
   LIMITS,
+  payable,
   UNITS,
   type Aisle,
   type ContentUnit,
@@ -168,7 +172,11 @@ export function transactionInput(value: unknown): TransactionInput {
     amount:
       litersMilli && pricePerLiter
         ? int(
-            litersAmount(litersMilli, pricePerLiter),
+            // Paid in cash: rounded to 10 agorot, like a receipt.
+            payable(
+              litersAmount(litersMilli, pricePerLiter),
+              method(input.method),
+            ),
             "amount",
             1,
             LIMITS.cents,
@@ -265,4 +273,27 @@ export function photo(value: unknown): { data: string; mediaType: string } {
   );
   if (!m) throw new InvalidInputError("photo");
   return { mediaType: m[1]!, data: m[2]! };
+}
+
+const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+export function month(value: unknown): string {
+  if (typeof value !== "string" || !MONTH.test(value)) {
+    throw new InvalidInputError("month");
+  }
+  return value;
+}
+
+export function goalInput(value: unknown): GoalInput {
+  const input = record(value, "goal");
+  const scope = oneOf<GoalScope>(input.scope, GOAL_SCOPES, "scope");
+  return {
+    month: month(input.month),
+    scope,
+    categoryId:
+      scope === "category" ? id(input.categoryId, "categoryId") : null,
+    method: scope === "method" ? method(input.method) : null,
+    amount: int(input.amount, "amount", 1, LIMITS.cents),
+    name: optionalText(input.name, "name", EXPENSE_LIMITS.categoryName),
+  };
 }

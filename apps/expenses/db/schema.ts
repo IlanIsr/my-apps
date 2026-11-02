@@ -24,7 +24,11 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import type { DefaultCategoryKey, Method } from "@/lib/expense-logic";
+import type {
+  DefaultCategoryKey,
+  GoalScope,
+  Method,
+} from "@/lib/expense-logic";
 import type { Aisle, ContentUnit, Unit } from "@/lib/grocery-logic";
 
 const ts = (name: string) =>
@@ -205,4 +209,27 @@ export const productDistinctPairs = pgTable(
       .references(() => products.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.ownerId, t.productA, t.productB] })],
+);
+
+/**
+ * A month's goal: spend at most `amount` (cents) — on everything, one
+ * category or one payment method. Set per month (`YYYY-MM`).
+ */
+export const goals = pgTable(
+  "goals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: text("owner_id").notNull(),
+    month: text("month").notNull(),
+    scope: text("scope").$type<GoalScope>().notNull(),
+    categoryId: uuid("category_id").references(() => categories.id, {
+      onDelete: "cascade",
+    }),
+    method: text("method").$type<Method>(),
+    amount: integer("amount").notNull(),
+    /** Optional label ("Vacances", "Pas de restos"…). */
+    name: text("name"),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("goals_owner_month_idx").on(t.ownerId, t.month)],
 );
