@@ -25,7 +25,7 @@ import { StoreError } from "./store-error";
 import {
   normalizeName,
   pairKey,
-  paidTotal,
+  payable,
   receiptTotal,
   type LineInput,
   type PricePoint,
@@ -291,7 +291,11 @@ export async function listReceipts(ownerId: string): Promise<ReceiptSummary[]> {
     .where(eq(receipts.ownerId, ownerId))
     .groupBy(receipts.id, stores.name)
     .orderBy(desc(receipts.date), desc(receipts.createdAt));
-  return rows.map((row) => ({ ...row, total: Number(row.total) }));
+  // The total paid (cash rounded to 10 agorot).
+  return rows.map((row) => ({
+    ...row,
+    total: payable(Number(row.total), row.method),
+  }));
 }
 
 export async function getReceipt(
@@ -361,11 +365,7 @@ export async function saveReceipt(
   // The receipt's total as an expense (same transaction as the receipt).
   const expense = {
     date: input.date,
-    amount: paidTotal(
-      receiptTotal(input.lines),
-      input.declaredTotal,
-      input.method,
-    ),
+    amount: payable(receiptTotal(input.lines), input.method),
     merchant: input.storeName,
     method: input.method,
     categoryId,

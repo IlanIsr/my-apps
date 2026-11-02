@@ -27,6 +27,7 @@ import {
   type Transaction,
   type TransactionInput,
 } from "./expense-logic";
+import { payable } from "./grocery-logic";
 import { StoreError } from "./store-error";
 
 const toCategory = (row: typeof categories.$inferSelect): Category => ({
@@ -128,7 +129,7 @@ async function backfillReceipts(ownerId: string, categoryId: string) {
         date: r.date,
         method: r.method,
         merchant: r.merchant,
-        amount: Number(r.amount),
+        amount: payable(Number(r.amount), r.method),
       })),
     )
     .onConflictDoNothing();

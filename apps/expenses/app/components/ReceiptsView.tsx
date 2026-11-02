@@ -10,7 +10,6 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import type { Method } from "@/lib/expense-logic";
 import {
   checkTotal,
   formatDay,
@@ -35,7 +34,6 @@ export type ReceiptsTexts = {
   lineCount: string;
   matches: string;
   mismatch: string;
-  rounded: string;
   monthSpent: string;
   /** `{budget}`. */
   ofBudget: string;
@@ -55,27 +53,20 @@ export function CheckBadge({
   receipt,
   t,
 }: {
-  receipt: { total: number; declaredTotal: number | null; method: Method };
-  t: { matches: string; mismatch: string; rounded: string };
+  /** `total` = what was paid (cash already rounded). */
+  receipt: { total: number; declaredTotal: number | null };
+  t: { matches: string; mismatch: string };
 }) {
-  const check = checkTotal(
-    receipt.total,
-    receipt.declaredTotal,
-    receipt.method,
-  );
+  const check = checkTotal(receipt.total, receipt.declaredTotal);
   if (check === "none") return null;
-  const ok = check !== "mismatch";
+  const ok = check === "match";
   return (
     <span
       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
         ok ? "bg-accent-soft text-accent" : "bg-danger-soft text-danger"
       }`}
     >
-      {check === "match"
-        ? `✓ ${t.matches}`
-        : check === "rounded"
-          ? `✓ ${t.rounded}`
-          : `≠ ${t.mismatch}`}
+      {ok ? `✓ ${t.matches}` : `≠ ${t.mismatch}`}
     </span>
   );
 }

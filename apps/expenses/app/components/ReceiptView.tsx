@@ -14,11 +14,11 @@ import { SimpleModal } from "@repo/ui/modal";
 import { deleteReceiptAction } from "@/app/actions";
 import { METHOD_ICON } from "@/lib/expense-logic";
 import {
-  checkTotal,
   formatDay,
   formatMoney,
   formatQuantity,
   lineTotal,
+  payable,
   receiptTotal,
   type Receipt,
   type ReceiptLine,
@@ -44,7 +44,8 @@ export type ReceiptTexts = {
   discount: string;
   matches: string;
   mismatch: string;
-  rounded: string;
+  subtotal: string;
+  rounding: string;
 };
 
 /** A receipt's lines: label, total, quantity × price (+ per L / kg). */
@@ -104,7 +105,9 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const total = receiptTotal(receipt.lines);
+  const sum = receiptTotal(receipt.lines);
+  // Cash: rounded to 10 agorot, shown as its own line like on the paper.
+  const total = payable(sum, receipt.method);
   const diff =
     receipt.declaredTotal === null ? null : total - receipt.declaredTotal;
 
@@ -136,6 +139,21 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
       <div className="card mx-auto max-w-md p-5">
         <ReceiptLines lines={receipt.lines} t={t} />
         <div className="mt-4 border-t border-dashed border-line-strong pt-3">
+          {total !== sum && (
+            <>
+              <div className="flex justify-between text-sm text-muted">
+                <span>{t.subtotal}</span>
+                <span className="num">{formatMoney(sum, tag)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-muted">
+                <span>{t.rounding}</span>
+                <span className="num">
+                  {total > sum ? "+" : ""}
+                  {formatMoney(total - sum, tag)}
+                </span>
+              </div>
+            </>
+          )}
           <div className="flex justify-between text-lg font-semibold">
             <span>{t.sum}</span>
             <span className="num">{formatMoney(total, tag)}</span>
@@ -150,16 +168,13 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <CheckBadge receipt={{ ...receipt, total }} t={t} />
-                {diff !== 0 &&
-                  diff !== null &&
-                  checkTotal(total, receipt.declaredTotal, receipt.method) ===
-                    "mismatch" && (
-                    <span className="num text-sm text-danger">
-                      {fill(t.difference, {
-                        diff: `${diff > 0 ? "+" : ""}${formatMoney(diff, tag)}`,
-                      })}
-                    </span>
-                  )}
+                {diff !== 0 && diff !== null && (
+                  <span className="num text-sm text-danger">
+                    {fill(t.difference, {
+                      diff: `${diff > 0 ? "+" : ""}${formatMoney(diff, tag)}`,
+                    })}
+                  </span>
+                )}
               </div>
             </>
           )}

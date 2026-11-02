@@ -138,31 +138,19 @@ export function guessContent(
 }
 
 /**
- * How the printed total compares with the sum. Cash in Israel is rounded to
- * the nearest 10 agorot, so a cash receipt of 82.69 printed 82.70 is fine.
+ * What is paid for a receipt: cash in Israel is rounded to the nearest
+ * 10 agorot (82.69 → 82.70, 82.64 → 82.60); card / Cibus pay the exact sum.
  */
-export type TotalCheck = "none" | "match" | "rounded" | "mismatch";
-
-export function checkTotal(
-  sum: number,
-  declared: number | null,
-  method: Method,
-): TotalCheck {
-  if (declared === null) return "none";
-  if (sum === declared) return "match";
-  if (method === "cash" && Math.round(sum / 10) * 10 === declared) {
-    return "rounded";
-  }
-  return "mismatch";
+export function payable(sum: number, method: Method): number {
+  return method === "cash" ? Math.round(sum / 10) * 10 : sum;
 }
 
-/** What was actually paid: the printed total when it's the rounded sum. */
-export function paidTotal(
-  sum: number,
-  declared: number | null,
-  method: Method,
-) {
-  return checkTotal(sum, declared, method) === "rounded" ? declared! : sum;
+/** How the printed total compares with what was paid. */
+export type TotalCheck = "none" | "match" | "mismatch";
+
+export function checkTotal(total: number, declared: number | null): TotalCheck {
+  if (declared === null) return "none";
+  return total === declared ? "match" : "mismatch";
 }
 
 /** A line as typed in the form / sent to the server. */

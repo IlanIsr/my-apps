@@ -18,7 +18,6 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} בסוף החודש בקצב הזה",
   setBudget: "לקבוע תקציב",
-  rounded: "מעוגל",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -34,7 +33,8 @@ export const receipt = {
   discount: "הנחה",
   matches: "תואם",
   mismatch: "לא תואם",
-  rounded: "מעוגל ל-10 אגורות",
+  subtotal: "סכום ביניים",
+  rounding: "עיגול (מזומן)",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -73,8 +73,8 @@ export const receiptForm = {
   photo: "צילום קבלה",
   reading: "קורא…",
   photoRead: "{n} שורות נקראו מהתמונה — בדקו כל אחת לפני השמירה.",
-  rounded: "תואם (מעוגל ל-10 אגורות)",
   gallery: "גלריה",
+  rounding: "כולל עיגול {amount}",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

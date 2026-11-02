@@ -26,9 +26,9 @@ import {
 } from "@/lib/expense-logic";
 import {
   centsToInput,
-  checkTotal,
   formatMoney,
   lineTotal,
+  payable,
   normalizeName,
   parseMoney,
   parseQuantity,
@@ -76,8 +76,8 @@ export type ReceiptFormTexts = {
   /** `{diff}` = signed difference. */
   mismatch: string;
   noDeclared: string;
-  /** The printed total is the sum rounded (cash). */
-  rounded: string;
+  /** `{amount}` = the cash rounding (to 10 agorot) included. */
+  rounding: string;
   method: string;
   category: string;
   save: string;
@@ -307,9 +307,10 @@ export function ReceiptFormView({
   const filled = rows.filter((r) => !isBlank(r));
   const lines = filled.map(toLine);
   const sum = lines.reduce((s, l) => s + (l ? lineTotal(l) : 0), 0);
+  // What is paid: cash rounds to 10 agorot.
+  const total = payable(sum, method);
   const declaredCents = declared.trim() ? parseMoney(declared) : null;
-  const diff = declaredCents === null ? null : sum - declaredCents;
-  const check = checkTotal(sum, declaredCents, method);
+  const diff = declaredCents === null ? null : total - declaredCents;
 
   async function save() {
     setError(null);
@@ -580,17 +581,20 @@ export function ReceiptFormView({
           <div className="flex flex-col">
             <span className="eyebrow">{t.sum}</span>
             <span className="num text-xl font-semibold">
-              {formatMoney(sum, tag)}
+              {formatMoney(total, tag)}
             </span>
+            {total !== sum && (
+              <span className="num text-xs text-muted">
+                {fill(t.rounding, {
+                  amount: `${total > sum ? "+" : ""}${formatMoney(total - sum, tag)}`,
+                })}
+              </span>
+            )}
           </div>
           <div className="flex min-w-0 flex-col">
             <span className="eyebrow">{t.printed}</span>
             {diff === null ? (
               <span className="text-sm text-muted">{t.noDeclared}</span>
-            ) : check === "rounded" ? (
-              <span className="text-sm font-medium text-accent">
-                ✓ {t.rounded}
-              </span>
             ) : diff === 0 ? (
               <span className="text-sm font-medium text-accent">
                 ✓ {t.matches}
