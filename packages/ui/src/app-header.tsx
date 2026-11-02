@@ -2,7 +2,7 @@
 
 /**
  * The header every app shares: one full-width row — brand at the start edge
- * (left, right in RTL), then the section links, and settings + account at the
+ * (left, right in RTL), the section links centred, settings + account at the
  * end edge. Below `md` the links and settings move into a hamburger menu; the
  * brand and account stay in the row. Hidden when printing.
  *
@@ -80,15 +80,13 @@ export function AppHeader({
   return (
     <header className="border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--surface)_70%,transparent)] backdrop-blur print:hidden">
       <div className="flex items-center gap-4 px-4 py-3">
-        <div className="shrink-0">{brand}</div>
+        <div className="flex min-w-0 flex-1">{brand}</div>
 
         {links.length > 0 && (
-          <nav className="hidden min-w-0 flex-1 gap-1 text-sm md:flex">
-            {renderLinks()}
-          </nav>
+          <nav className="hidden gap-1 text-sm md:flex">{renderLinks()}</nav>
         )}
 
-        <div className="ms-auto flex shrink-0 items-center gap-3">
+        <div className="flex flex-1 items-center justify-end gap-3">
           {settings && <div className="hidden md:block">{settings("bar")}</div>}
           {account}
           <Button
