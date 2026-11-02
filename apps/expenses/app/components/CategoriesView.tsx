@@ -93,12 +93,12 @@ function CategoryRow({
         <Checkbox
           checked={draft.archived}
           onChange={(archived) => set({ archived })}
-          className="flex items-center gap-2 text-sm sm:pb-2"
+          className="col-span-2 flex items-center gap-2 text-sm sm:col-span-1 sm:pb-2"
         >
           {t.hidden}
         </Checkbox>
       ) : (
-        <span />
+        <span className="hidden sm:block" />
       )}
       <Button
         size="sm"
@@ -110,7 +110,7 @@ function CategoryRow({
           setBusy(false);
           if (ok && !category) setDraft(initial);
         }}
-        className="sm:mb-1"
+        className="col-span-2 justify-self-end sm:col-span-1 sm:mb-1"
       >
         {category ? t.save : t.add}
       </Button>
