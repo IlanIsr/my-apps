@@ -14,17 +14,20 @@ import { SimpleModal } from "@repo/ui/modal";
 import { deleteReceiptAction } from "@/app/actions";
 import { METHOD_ICON } from "@/lib/expense-logic";
 import {
+  checkTotal,
   formatDay,
   formatMoney,
   formatQuantity,
   lineTotal,
   receiptTotal,
   type Receipt,
+  type ReceiptLine,
 } from "@/lib/grocery-logic";
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
 import { ErrorLine, LinkButton, PageHeader, fill } from "./common";
+import { measureLabel } from "./ProductView";
 import { CheckBadge } from "./ReceiptsView";
 
 export type ReceiptTexts = {
@@ -41,7 +44,56 @@ export type ReceiptTexts = {
   discount: string;
   matches: string;
   mismatch: string;
+  rounded: string;
 };
+
+/** A receipt's lines: label, total, quantity × price (+ per L / kg). */
+export function ReceiptLines({
+  lines,
+  t,
+}: {
+  lines: ReceiptLine[];
+  t: { discount: string };
+}) {
+  const messages = useTranslations();
+  const tag = LOCALE_TAG[useLanguage().locale];
+  return (
+    <ul className="flex flex-col gap-2">
+      {lines.map((line, i) => {
+        const measure = measureLabel(
+          { ...line, name: line.label },
+          line.unitPrice,
+          tag,
+          messages.product.contentUnits,
+        );
+        return (
+          <li key={i} className="text-sm">
+            <div className="flex justify-between gap-3">
+              <Link
+                href={`/products/${line.productId}`}
+                className="min-w-0 hover:underline"
+              >
+                {line.label}
+              </Link>
+              <span className="num shrink-0">
+                {formatMoney(lineTotal(line), tag)}
+              </span>
+            </div>
+            <div className="num text-xs text-muted">
+              {formatQuantity(line.quantityMilli, line.unit, tag)} ·{" "}
+              {formatMoney(line.unitPrice, tag)}
+              {line.unit === "kg" ? "/kg" : ""}
+              {measure && ` (${measure})`}
+              {line.discount > 0 &&
+                ` · ${t.discount} −${formatMoney(line.discount, tag)}`}
+              {line.barcode && ` · ${line.barcode}`}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 export function ReceiptView({ receipt }: { receipt: Receipt }) {
   const messages = useTranslations();
@@ -82,31 +134,7 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
       </PageHeader>
 
       <div className="card mx-auto max-w-md p-5">
-        <ul className="flex flex-col gap-2">
-          {receipt.lines.map((line, i) => (
-            <li key={i} className="text-sm">
-              <div className="flex justify-between gap-3">
-                <Link
-                  href={`/products/${line.productId}`}
-                  className="min-w-0 hover:underline"
-                >
-                  {line.label}
-                </Link>
-                <span className="num shrink-0">
-                  {formatMoney(lineTotal(line), tag)}
-                </span>
-              </div>
-              <div className="num text-xs text-muted">
-                {formatQuantity(line.quantityMilli, line.unit, tag)} ·{" "}
-                {formatMoney(line.unitPrice, tag)}
-                {line.unit === "kg" ? "/kg" : ""}
-                {line.discount > 0 &&
-                  ` · ${t.discount} −${formatMoney(line.discount, tag)}`}
-                {line.barcode && ` · ${line.barcode}`}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <ReceiptLines lines={receipt.lines} t={t} />
         <div className="mt-4 border-t border-dashed border-line-strong pt-3">
           <div className="flex justify-between text-lg font-semibold">
             <span>{t.sum}</span>
@@ -122,13 +150,16 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <CheckBadge receipt={{ ...receipt, total }} t={t} />
-                {diff !== 0 && diff !== null && (
-                  <span className="num text-sm text-danger">
-                    {fill(t.difference, {
-                      diff: `${diff > 0 ? "+" : ""}${formatMoney(diff, tag)}`,
-                    })}
-                  </span>
-                )}
+                {diff !== 0 &&
+                  diff !== null &&
+                  checkTotal(total, receipt.declaredTotal, receipt.method) ===
+                    "mismatch" && (
+                    <span className="num text-sm text-danger">
+                      {fill(t.difference, {
+                        diff: `${diff > 0 ? "+" : ""}${formatMoney(diff, tag)}`,
+                      })}
+                    </span>
+                  )}
               </div>
             </>
           )}

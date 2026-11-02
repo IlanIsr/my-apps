@@ -9,13 +9,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SimpleModal } from "@repo/ui/modal";
 
 import {
   createTransactionAction,
   deleteTransactionAction,
+  getReceiptAction,
   updateTransactionAction,
 } from "@/app/actions";
 import {
@@ -29,12 +30,18 @@ import {
   type Method,
   type Transaction,
 } from "@/lib/expense-logic";
-import { centsToInput, parseMoney, today } from "@/lib/grocery-logic";
+import {
+  centsToInput,
+  parseMoney,
+  today,
+  type Receipt,
+} from "@/lib/grocery-logic";
 import { useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
 import { Combo } from "./Combo";
 import { ErrorLine, Field } from "./common";
+import { ReceiptLines } from "./ReceiptView";
 import { Segmented } from "./Segmented";
 import { TextArea } from "./TextArea";
 import { TextInput } from "./TextInput";
@@ -90,6 +97,18 @@ export function TransactionModal({
   const [note, setNote] = useState(transaction?.note ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // A receipt's expense shows what was bought.
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
+  useEffect(() => {
+    if (!fromReceipt) return;
+    let live = true;
+    void getReceiptAction(fromReceipt).then((result) => {
+      if (live && result.ok) setReceipt(result.data);
+    });
+    return () => {
+      live = false;
+    };
+  }, [fromReceipt]);
 
   const shown = categories.filter(
     (c) => !c.archived || c.id === transaction?.categoryId,
@@ -160,12 +179,21 @@ export function TransactionModal({
     >
       <div className="flex flex-col gap-4">
         {fromReceipt && (
-          <p className="text-sm text-muted">
-            {t.fromReceipt}{" "}
-            <Link href={`/receipts/${fromReceipt}`} className="underline">
-              {t.openReceipt}
-            </Link>
-          </p>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted">
+              {t.fromReceipt}{" "}
+              <Link href={`/receipts/${fromReceipt}`} className="underline">
+                {t.openReceipt}
+              </Link>
+            </p>
+            <div className="max-h-64 overflow-y-auto rounded-lg bg-sunken p-3">
+              {receipt ? (
+                <ReceiptLines lines={receipt.lines} t={messages.receipt} />
+              ) : (
+                <p className="text-xs text-muted">…</p>
+              )}
+            </div>
+          </div>
         )}
         <Field label={t.amount}>
           <TextInput

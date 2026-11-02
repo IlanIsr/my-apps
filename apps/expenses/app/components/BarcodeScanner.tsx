@@ -21,6 +21,8 @@ export type ScannerTexts = {
   noCamera: string;
   /** `{n}` codes scanned so far. */
   scanned: string;
+  /** `{code}` — read again, not added. */
+  already: string;
   done: string;
 };
 
@@ -40,7 +42,8 @@ export function BarcodeScanner({
   t,
 }: {
   continuous?: boolean;
-  onDetect: (code: string) => void;
+  /** Returns `false` when the code wasn't added (already there). */
+  onDetect: (code: string) => boolean | void;
   onClose: () => void;
   t: ScannerTexts;
 }) {
@@ -49,7 +52,9 @@ export function BarcodeScanner({
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState(false);
   const [count, setCount] = useState(0);
-  const [last, setLast] = useState<string | null>(null);
+  const [last, setLast] = useState<{ code: string; added: boolean } | null>(
+    null,
+  );
   // The latest callbacks, without restarting the camera on every render.
   const handlers = useRef({ onDetect, onClose, continuous });
   useEffect(() => {
@@ -70,10 +75,10 @@ export function BarcodeScanner({
       if (stopped || (code === seen.code && now - seen.at < REPEAT_MS)) return;
       seen.code = code;
       seen.at = now;
-      navigator.vibrate?.(60);
-      setLast(code);
-      setCount((n) => n + 1);
-      handlers.current.onDetect(code);
+      const added = handlers.current.onDetect(code) !== false;
+      navigator.vibrate?.(added ? 60 : [30, 60, 30]);
+      setLast({ code, added });
+      if (added) setCount((n) => n + 1);
       if (!handlers.current.continuous) handlers.current.onClose();
     };
 
@@ -163,9 +168,15 @@ export function BarcodeScanner({
       title={continuous ? t.continuousTitle : t.title}
       footer={
         <div className="flex w-full items-center justify-between gap-2">
-          <span className="num text-sm text-muted">
+          <span className="num min-w-0 text-sm text-muted">
             {continuous && fill(t.scanned, { n: count })}
-            {continuous && last && ` · ${last}`}
+            {continuous && last && (
+              <span
+                className={`block truncate ${last.added ? "" : "text-warn"}`}
+              >
+                {last.added ? last.code : fill(t.already, { code: last.code })}
+              </span>
+            )}
           </span>
           <Button variant="primary" onClick={onClose}>
             {t.done}

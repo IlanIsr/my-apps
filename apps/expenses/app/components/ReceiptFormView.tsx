@@ -26,6 +26,7 @@ import {
 } from "@/lib/expense-logic";
 import {
   centsToInput,
+  checkTotal,
   formatMoney,
   lineTotal,
   normalizeName,
@@ -75,6 +76,8 @@ export type ReceiptFormTexts = {
   /** `{diff}` = signed difference. */
   mismatch: string;
   noDeclared: string;
+  /** The printed total is the sum rounded (cash). */
+  rounded: string;
   method: string;
   category: string;
   save: string;
@@ -85,6 +88,7 @@ export type ReceiptFormTexts = {
   scan: string;
   scanContinuous: string;
   photo: string;
+  gallery: string;
   reading: string;
   /** `{n}` lines read. */
   photoRead: string;
@@ -201,6 +205,7 @@ export function ReceiptFormView({
   const [reading, setReading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
 
   const storeId = stores.find(
     (s) => normalizeName(s.name) === normalizeName(storeName),
@@ -241,8 +246,17 @@ export function ReceiptFormView({
     return product ? { ...next, ...fromProduct(next, product) } : next;
   };
 
-  function scanned(code: string) {
+  /** `false` when a scan in a row reads a code already on the receipt. */
+  function scanned(code: string): boolean {
     const target = scanning;
+    // Scanning in a row: a code already there is the same item read twice —
+    // its quantity is typed on its line, not added as a new one.
+    if (
+      target === "continuous" &&
+      rows.some((r) => r.barcode.trim() === code.trim())
+    ) {
+      return false;
+    }
     setRows((current) => {
       if (target !== "continuous") {
         return keepBlank(
@@ -253,7 +267,14 @@ export function ReceiptFormView({
       const last = current.at(-1)!;
       return keepBlank([...current.slice(0, -1), withBarcode(last, code)]);
     });
+    return true;
   }
+
+  const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void readPhoto(file);
+    e.target.value = "";
+  };
 
   async function readPhoto(file: File) {
     setReading(true);
@@ -288,6 +309,7 @@ export function ReceiptFormView({
   const sum = lines.reduce((s, l) => s + (l ? lineTotal(l) : 0), 0);
   const declaredCents = declared.trim() ? parseMoney(declared) : null;
   const diff = declaredCents === null ? null : sum - declaredCents;
+  const check = checkTotal(sum, declaredCents, method);
 
   async function save() {
     setError(null);
@@ -312,21 +334,33 @@ export function ReceiptFormView({
   return (
     <div className="pb-28">
       <PageHeader title={receipt ? t.editTitle : t.newTitle}>
-        <Button onClick={() => photoInput.current?.click()} disabled={reading}>
+        <Button onClick={() => cameraInput.current?.click()} disabled={reading}>
           📸 {reading ? t.reading : t.photo}
         </Button>
+        <Button
+          variant="ghost"
+          onClick={() => photoInput.current?.click()}
+          disabled={reading}
+        >
+          🖼️ {t.gallery}
+        </Button>
       </PageHeader>
-      {/* The native photo picker (camera or gallery), driven by the button. */}
+      {/* The native pickers, driven by the buttons: the camera straight away,
+          or an existing picture. */}
+      <input
+        ref={cameraInput}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={pickPhoto}
+      />
       <input
         ref={photoInput}
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) void readPhoto(file);
-          e.target.value = "";
-        }}
+        onChange={pickPhoto}
       />
       {notice && (
         <p className="mb-4 rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent">
@@ -553,6 +587,10 @@ export function ReceiptFormView({
             <span className="eyebrow">{t.printed}</span>
             {diff === null ? (
               <span className="text-sm text-muted">{t.noDeclared}</span>
+            ) : check === "rounded" ? (
+              <span className="text-sm font-medium text-accent">
+                ✓ {t.rounded}
+              </span>
             ) : diff === 0 ? (
               <span className="text-sm font-medium text-accent">
                 ✓ {t.matches}

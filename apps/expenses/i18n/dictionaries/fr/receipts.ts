@@ -18,6 +18,7 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} en fin de mois à ce rythme",
   setBudget: "Fixer un budget",
+  rounded: "arrondi",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -33,6 +34,7 @@ export const receipt = {
   discount: "remise",
   matches: "Correspond",
   mismatch: "Ne correspond pas",
+  rounded: "arrondi aux 10 agorot",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -72,6 +74,8 @@ export const receiptForm = {
   reading: "Lecture…",
   photoRead:
     "{n} ligne(s) lue(s) sur la photo — vérifie chacune avant d'enregistrer.",
+  rounded: "Correspond (arrondi aux 10 agorot)",
+  gallery: "Galerie",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {
@@ -82,4 +86,5 @@ export const scanner = {
     "Caméra indisponible — autorise l'accès à la caméra dans le navigateur.",
   scanned: "{n} code(s) scanné(s)",
   done: "Terminé",
+  already: "{code} déjà dans le ticket — ajuste sa quantité",
 } as const satisfies ScannerTexts;

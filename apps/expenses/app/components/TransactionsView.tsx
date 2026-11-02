@@ -111,7 +111,7 @@ export function TransactionsView({
           aria-label={t.previous}
           onClick={() => setMonth(shiftMonth(month, -1))}
         >
-          <span className="inline-block rtl:rotate-180">‹</span>
+          <span aria-hidden>‹</span>
         </Button>
         <h1 className="text-2xl capitalize">{formatMonth(month, tag)}</h1>
         <Button
@@ -119,34 +119,57 @@ export function TransactionsView({
           aria-label={t.next}
           onClick={() => setMonth(shiftMonth(month, 1))}
         >
-          <span className="inline-block rtl:rotate-180">›</span>
+          <span aria-hidden>›</span>
         </Button>
       </div>
 
-      <section className="card mb-4 flex flex-wrap items-end justify-between gap-3 p-4">
-        <div>
+      <section className="card mb-4 overflow-hidden !p-0">
+        <div className="flex flex-col gap-2 p-5">
           <div className="eyebrow">{t.total}</div>
-          <div className="num text-3xl font-semibold">
+          <div className="num text-4xl leading-none font-semibold tracking-tight">
             {formatMoney(summary.total, tag)}
           </div>
           {projection !== null && (
-            <div className="num text-xs text-muted">
+            <span className="num w-fit rounded-full bg-sunken px-2.5 py-1 text-xs text-muted">
               {fill(t.projection, { amount: formatMoney(projection, tag) })}
-            </div>
+            </span>
           )}
+          {/* How the month splits between payment methods. */}
+          <div className="mt-2 flex h-1.5 w-full gap-0.5 overflow-hidden rounded-full bg-sunken">
+            {summary.total > 0 &&
+              METHODS.filter((m) => summary.byMethod[m] > 0).map((m) => (
+                <div
+                  key={m}
+                  className="h-full"
+                  style={{
+                    width: `${(summary.byMethod[m] / summary.total) * 100}%`,
+                    background: `var(--pay-${m})`,
+                  }}
+                />
+              ))}
+          </div>
         </div>
-        <div className="num flex gap-4 text-sm text-muted">
+        <ul className="grid grid-cols-3 divide-x divide-line border-t border-line rtl:divide-x-reverse">
           {METHODS.map((m) => (
-            <span key={m} className="flex flex-col items-end">
-              <span className="text-xs">
-                {METHOD_ICON[m]} {messages.methods[m]}
+            <li key={m} className="flex min-w-0 flex-col gap-0.5 px-5 py-3">
+              <span className="flex items-center gap-1.5 truncate text-xs text-muted">
+                <span
+                  aria-hidden
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ background: `var(--pay-${m})` }}
+                />
+                {messages.methods[m]}
               </span>
-              <span className="text-foreground">
+              <span
+                className={`num truncate font-semibold ${
+                  summary.byMethod[m] ? "" : "text-muted"
+                }`}
+              >
                 {formatMoney(summary.byMethod[m], tag)}
               </span>
-            </span>
+            </li>
           ))}
-        </div>
+        </ul>
       </section>
 
       {alerts.length > 0 && (

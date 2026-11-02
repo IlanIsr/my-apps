@@ -128,7 +128,7 @@ export function BilanView({
           aria-label={t.previous}
           onClick={() => setMonth(shiftMonth(month, -1))}
         >
-          <span className="inline-block rtl:rotate-180">‹</span>
+          <span aria-hidden>‹</span>
         </Button>
         <h1 className="text-2xl capitalize">
           {t.title} · {formatMonth(month, tag)}
@@ -138,7 +138,7 @@ export function BilanView({
           aria-label={t.next}
           onClick={() => setMonth(shiftMonth(month, 1))}
         >
-          <span className="inline-block rtl:rotate-180">›</span>
+          <span aria-hidden>›</span>
         </Button>
       </div>
 

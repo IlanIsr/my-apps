@@ -23,6 +23,10 @@
   --warn-soft: #f6e8cf;
   --danger: #b93a32;
   --danger-soft: #f7e0dd;
+  /* One colour per payment method (month card share bar). */
+  --pay-cash: #157a4a;
+  --pay-card: #3563c9;
+  --pay-cibus: #c27a12;
   --shadow:
     0 1px 2px rgba(27, 29, 31, 0.05), 0 8px 24px -14px rgba(27, 29, 31, 0.2);
 }
@@ -43,6 +47,9 @@
     --warn-soft: #3a2c14;
     --danger: #ef8c84;
     --danger-soft: #3a2220;
+    --pay-cash: #5fd39a;
+    --pay-card: #7ea6f5;
+    --pay-cibus: #eab35c;
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -14px rgba(0, 0, 0, 0.6);
     color-scheme: dark;
   }

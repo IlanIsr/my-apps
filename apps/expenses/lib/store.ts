@@ -25,6 +25,7 @@ import { StoreError } from "./store-error";
 import {
   normalizeName,
   pairKey,
+  paidTotal,
   receiptTotal,
   type LineInput,
   type PricePoint,
@@ -280,6 +281,7 @@ export async function listReceipts(ownerId: string): Promise<ReceiptSummary[]> {
       storeName: stores.name,
       date: receipts.date,
       declaredTotal: receipts.declaredTotal,
+      method: receipts.method,
       total: sql<string>`coalesce(sum(${LINE_TOTAL}), 0)`,
       lineCount: sql<number>`count(${receiptItems.id})::int`,
     })
@@ -318,6 +320,8 @@ export async function getReceipt(
       barcode: products.barcode,
       label: receiptItems.label,
       unit: products.unit,
+      contentMilli: products.contentMilli,
+      contentUnit: products.contentUnit,
       quantityMilli: receiptItems.quantityMilli,
       unitPrice: receiptItems.unitPrice,
       discount: receiptItems.discount,
@@ -357,7 +361,11 @@ export async function saveReceipt(
   // The receipt's total as an expense (same transaction as the receipt).
   const expense = {
     date: input.date,
-    amount: receiptTotal(input.lines),
+    amount: paidTotal(
+      receiptTotal(input.lines),
+      input.declaredTotal,
+      input.method,
+    ),
     merchant: input.storeName,
     method: input.method,
     categoryId,

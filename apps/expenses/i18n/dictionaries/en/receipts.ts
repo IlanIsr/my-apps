@@ -18,6 +18,7 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} by month end at this pace",
   setBudget: "Set a budget",
+  rounded: "rounded",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -33,6 +34,7 @@ export const receipt = {
   discount: "discount",
   matches: "Matches",
   mismatch: "Doesn't match",
+  rounded: "rounded to 10 agorot",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -71,6 +73,8 @@ export const receiptForm = {
   photo: "Receipt photo",
   reading: "Reading…",
   photoRead: "{n} line(s) read from the photo — check each one before saving.",
+  rounded: "Matches (rounded to 10 agorot)",
+  gallery: "Gallery",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {
@@ -80,4 +84,5 @@ export const scanner = {
   noCamera: "Camera unavailable — allow camera access in the browser.",
   scanned: "{n} code(s) scanned",
   done: "Done",
+  already: "{code} already on the receipt — set its quantity",
 } as const satisfies ScannerTexts;

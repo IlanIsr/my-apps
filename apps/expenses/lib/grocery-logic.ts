@@ -89,15 +89,80 @@ export type ProductInput = Pick<
  * divided by its content; `null` when unknown.
  */
 export function pricePerMeasure(
-  product: Pick<Product, "unit" | "contentMilli" | "contentUnit">,
+  product: MeasuredProduct,
   unitPrice: number,
 ): { price: number; unit: ContentUnit } | null {
   if (product.unit === "kg") return { price: unitPrice, unit: "kg" };
-  if (!product.contentMilli || !product.contentUnit) return null;
+  const content = contentOf(product);
+  if (!content) return null;
   return {
-    price: Math.round((unitPrice * 1000) / product.contentMilli),
-    unit: product.contentUnit,
+    price: Math.round((unitPrice * 1000) / content.milli),
+    unit: content.unit,
   };
+}
+
+export type MeasuredProduct = Pick<
+  Product,
+  "name" | "unit" | "contentMilli" | "contentUnit"
+>;
+
+/** The content set on the product, else the one written in its name. */
+export function contentOf(
+  product: MeasuredProduct,
+): { milli: number; unit: ContentUnit } | null {
+  if (product.contentMilli && product.contentUnit) {
+    return { milli: product.contentMilli, unit: product.contentUnit };
+  }
+  return guessContent(product.name);
+}
+
+/** `number + unit` in a product name: "1L", "1,5 ליטר", "500 מ\"ל", "140 גרם", "1 ק\"ג". */
+const CONTENT_PATTERNS: [RegExp, ContentUnit, number][] = [
+  [/(\d+(?:[.,]\d+)?)\s*(?:ml|מ["״']?ל)(?![\p{L}])/iu, "l", 1],
+  [/(\d+(?:[.,]\d+)?)\s*(?:l|lt|ltr|ליטר|ל['׳])(?![\p{L}])/iu, "l", 1000],
+  [/(\d+(?:[.,]\d+)?)\s*(?:kg|ק["״']?ג|קילו)(?![\p{L}])/iu, "kg", 1000],
+  [/(\d+(?:[.,]\d+)?)\s*(?:g|gr|גר['׳]?|גרם)(?![\p{L}])/iu, "kg", 1],
+];
+
+/** The content written in a product name, if any (`null` otherwise). */
+export function guessContent(
+  name: string,
+): { milli: number; unit: ContentUnit } | null {
+  for (const [pattern, unit, factor] of CONTENT_PATTERNS) {
+    const m = pattern.exec(name);
+    if (!m) continue;
+    const milli = Math.round(Number(m[1]!.replace(",", ".")) * factor);
+    if (milli > 0) return { milli, unit };
+  }
+  return null;
+}
+
+/**
+ * How the printed total compares with the sum. Cash in Israel is rounded to
+ * the nearest 10 agorot, so a cash receipt of 82.69 printed 82.70 is fine.
+ */
+export type TotalCheck = "none" | "match" | "rounded" | "mismatch";
+
+export function checkTotal(
+  sum: number,
+  declared: number | null,
+  method: Method,
+): TotalCheck {
+  if (declared === null) return "none";
+  if (sum === declared) return "match";
+  if (method === "cash" && Math.round(sum / 10) * 10 === declared) {
+    return "rounded";
+  }
+  return "mismatch";
+}
+
+/** What was actually paid: the printed total when it's the rounded sum. */
+export function paidTotal(
+  sum: number,
+  declared: number | null,
+  method: Method,
+) {
+  return checkTotal(sum, declared, method) === "rounded" ? declared! : sum;
 }
 
 /** A line as typed in the form / sent to the server. */
@@ -126,7 +191,12 @@ export type ReceiptInput = {
   lines: LineInput[];
 };
 
-export type ReceiptLine = LineInput & { productId: string };
+export type ReceiptLine = LineInput & {
+  productId: string;
+  /** The product's own content (for a price per L / kg). */
+  contentMilli: number | null;
+  contentUnit: ContentUnit | null;
+};
 
 export type Receipt = {
   id: string;
@@ -146,6 +216,7 @@ export type ReceiptSummary = {
   storeName: string;
   date: string;
   declaredTotal: number | null;
+  method: Method;
   total: number;
   lineCount: number;
 };

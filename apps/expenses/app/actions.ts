@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { DatabaseNotConfiguredError } from "@/db/client";
 import type { Category, Transaction } from "@/lib/expense-logic";
 import * as expenses from "@/lib/expense-store";
-import { LIMITS, type Product } from "@/lib/grocery-logic";
+import { LIMITS, type Product, type Receipt } from "@/lib/grocery-logic";
 import {
   readReceiptPhoto,
   ReaderError,
@@ -37,13 +37,14 @@ class NotSignedInError extends Error {}
 
 async function run<T>(
   fn: (ownerId: string) => Promise<T>,
+  { readOnly = false } = {},
 ): Promise<ActionResult<T>> {
   try {
     const ownerId = await currentOwnerId();
     if (!ownerId) throw new NotSignedInError();
     const data = await fn(ownerId);
     // Every page reads fresh data server-side.
-    revalidatePath("/", "layout");
+    if (!readOnly) revalidatePath("/", "layout");
     return { ok: true, data };
   } catch (error) {
     if (error instanceof NotSignedInError) {
@@ -222,4 +223,18 @@ export async function mergeProductsAction(
     );
     return null;
   });
+}
+
+/** One receipt with its lines (shown inside its expense). */
+export async function getReceiptAction(
+  id: string,
+): Promise<ActionResult<Receipt>> {
+  return run(
+    async (ownerId) => {
+      const receipt = await store.getReceipt(ownerId, v.id(id));
+      if (!receipt) throw new store.StoreError("not-found");
+      return receipt;
+    },
+    { readOnly: true },
+  );
 }
