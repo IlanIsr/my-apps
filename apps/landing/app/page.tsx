@@ -25,6 +25,12 @@ const apps = [
     description: "Question bank, generated exams and manual corrections.",
     url: isDev ? "http://localhost:3003" : "https://training.myappshub.dev/",
   },
+  {
+    name: "Courses",
+    description:
+      "Grocery receipts, price comparison and a cheapest-store shopping list.",
+    url: isDev ? "http://localhost:3004" : "https://groceries.myappshub.dev/",
+  },
 ];
 
 export default function Page() {
