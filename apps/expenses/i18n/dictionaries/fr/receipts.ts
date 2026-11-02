@@ -56,6 +56,7 @@ export const receiptForm = {
   mismatch: "Écart {diff}",
   noDeclared: "Saisis le total pour vérifier",
   method: "Payé en",
+  category: "Catégorie",
   save: "Enregistrer",
   cancel: "Annuler",
   needStore: "Indique le magasin.",

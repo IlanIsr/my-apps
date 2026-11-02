@@ -165,7 +165,7 @@ export async function updateCategory(
   return toCategory(row);
 }
 
-async function assertOwnCategory(ownerId: string, id: string | null) {
+export async function assertOwnCategory(ownerId: string, id: string | null) {
   if (!id) return;
   const [own] = await db()
     .select({ id: categories.id })

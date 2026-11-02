@@ -58,6 +58,8 @@ export type ReceiptInput = {
   note: string | null;
   /** How it was paid — copied onto its transaction. */
   method: Method;
+  /** Its transaction's category; `null` = groceries. */
+  categoryId: string | null;
   lines: LineInput[];
 };
 
@@ -71,6 +73,7 @@ export type Receipt = {
   declaredTotal: number | null;
   note: string | null;
   method: Method;
+  categoryId: string | null;
   lines: ReceiptLine[];
 };
 

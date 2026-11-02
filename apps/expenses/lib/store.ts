@@ -18,7 +18,7 @@ import {
   transactions,
 } from "@/db/schema";
 
-import { groceriesCategoryId } from "./expense-store";
+import { assertOwnCategory, groceriesCategoryId } from "./expense-store";
 import { StoreError } from "./store-error";
 
 import {
@@ -214,9 +214,11 @@ export async function getReceipt(
       declaredTotal: receipts.declaredTotal,
       note: receipts.note,
       method: receipts.method,
+      categoryId: transactions.categoryId,
     })
     .from(receipts)
     .innerJoin(stores, eq(stores.id, receipts.storeId))
+    .leftJoin(transactions, eq(transactions.receiptId, receipts.id))
     .where(and(eq(receipts.ownerId, ownerId), eq(receipts.id, id)));
   if (!row) return null;
   const lines = await db()
@@ -251,7 +253,8 @@ export async function saveReceipt(
   }
   const storeId = await resolveStore(ownerId, input.storeName);
   const productIds = await resolveProducts(ownerId, input.lines);
-  const categoryId = await groceriesCategoryId(ownerId);
+  await assertOwnCategory(ownerId, input.categoryId);
+  const categoryId = input.categoryId ?? (await groceriesCategoryId(ownerId));
   const receiptId = id ?? crypto.randomUUID();
   const fields = {
     storeId,
@@ -266,10 +269,11 @@ export async function saveReceipt(
     amount: receiptTotal(input.lines),
     merchant: input.storeName,
     method: input.method,
+    categoryId,
   };
   const syncExpense = db()
     .insert(transactions)
-    .values({ ownerId, receiptId, categoryId, ...expense })
+    .values({ ownerId, receiptId, ...expense })
     .onConflictDoUpdate({
       target: transactions.receiptId,
       targetWhere: sql`${transactions.receiptId} is not null`,

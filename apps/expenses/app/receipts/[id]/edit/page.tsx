@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { listCategories } from "@/lib/expense-store";
 import { lastListedPrices } from "@/lib/last-prices";
 import { requireOwner } from "@/lib/owner";
 import {
@@ -18,6 +19,7 @@ export default async function Page({
   const owner = await requireOwner();
   const { id } = await params;
   if (!isUuid(id)) notFound();
+  const categories = await listCategories(owner);
   const [receipt, stores, products, points] = await Promise.all([
     getReceipt(owner, id),
     listStores(owner),
@@ -31,6 +33,7 @@ export default async function Page({
       stores={stores}
       products={products}
       lastPrices={lastListedPrices(points)}
+      categories={categories}
     />
   );
 }

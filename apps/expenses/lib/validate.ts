@@ -129,6 +129,7 @@ export function receiptInput(value: unknown): ReceiptInput {
         : int(input.declaredTotal, "declaredTotal", 0, LIMITS.cents),
     note: optionalText(input.note, "note", LIMITS.note),
     method: method(input.method),
+    categoryId: optionalId(input.categoryId, "categoryId"),
     lines: input.lines.map(line),
   };
 }

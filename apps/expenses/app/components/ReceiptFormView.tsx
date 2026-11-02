@@ -5,13 +5,22 @@
  * row per line (barcode, label, piece / kg, quantity, unit price, discount).
  * The running sum is compared with the printed total as you type. A known
  * barcode or product name fills the rest of the line (last price at this store).
+ * Its expense goes in Groceries unless another category is picked (paper,
+ * tools… bought at a store but not food).
  */
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { saveReceiptAction } from "@/app/actions";
-import { METHOD_ICON, METHODS, type Method } from "@/lib/expense-logic";
+import {
+  categoryLabel,
+  GROCERIES_KEY,
+  METHOD_ICON,
+  METHODS,
+  type Category,
+  type Method,
+} from "@/lib/expense-logic";
 import {
   centsToInput,
   formatMoney,
@@ -33,6 +42,7 @@ import { Button } from "./Button";
 import { Combo } from "./Combo";
 import { ErrorLine, Field, PageHeader, fill, type ErrorTexts } from "./common";
 import { Segmented } from "./Segmented";
+import { Select } from "./Select";
 import { TextInput } from "./TextInput";
 
 export type ReceiptFormTexts = {
@@ -62,6 +72,7 @@ export type ReceiptFormTexts = {
   mismatch: string;
   noDeclared: string;
   method: string;
+  category: string;
   save: string;
   cancel: string;
   needStore: string;
@@ -117,11 +128,13 @@ export function ReceiptFormView({
   stores,
   products,
   lastPrices,
+  categories,
 }: {
   receipt: Receipt | null;
   stores: Store[];
   products: Product[];
   lastPrices: LastPrices;
+  categories: Category[];
 }) {
   const messages = useTranslations();
   const t = messages.receiptForm;
@@ -136,6 +149,11 @@ export function ReceiptFormView({
   );
   const [note, setNote] = useState(receipt?.note ?? "");
   const [method, setMethod] = useState<Method>(receipt?.method ?? "cash");
+  const [categoryId, setCategoryId] = useState(
+    receipt?.categoryId ??
+      categories.find((c) => c.key === GROCERIES_KEY)?.id ??
+      null,
+  );
   const [rows, setRows] = useState<Row[]>(() =>
     receipt
       ? [
@@ -205,6 +223,7 @@ export function ReceiptFormView({
       declaredTotal: declaredCents,
       note,
       method,
+      categoryId,
       lines,
     });
     setSaving(false);
@@ -367,17 +386,34 @@ export function ReceiptFormView({
         })}
       </ol>
 
-      <div className="mt-6 flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted">{t.method}</span>
-        <Segmented
-          aria-label={t.method}
-          options={METHODS.map((m) => ({
-            value: m,
-            label: `${METHOD_ICON[m]} ${messages.methods[m]}`,
-          }))}
-          value={method}
-          onChange={setMethod}
-        />
+      <div className="mt-6 flex flex-wrap items-end gap-4">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted">{t.method}</span>
+          <Segmented
+            aria-label={t.method}
+            options={METHODS.map((m) => ({
+              value: m,
+              label: `${METHOD_ICON[m]} ${messages.methods[m]}`,
+            }))}
+            value={method}
+            onChange={setMethod}
+          />
+        </div>
+        <div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-64">
+          <span className="text-xs font-medium text-muted">{t.category}</span>
+          <Select
+            aria-label={t.category}
+            className="w-full"
+            value={categoryId ?? ""}
+            onChange={setCategoryId}
+            options={categories
+              .filter((c) => !c.archived || c.id === categoryId)
+              .map((c) => ({
+                key: c.id,
+                label: `${c.icon} ${categoryLabel(c, messages.categoryNames)}`,
+              }))}
+          />
+        </div>
       </div>
 
       <Field label={t.note} className="mt-4">

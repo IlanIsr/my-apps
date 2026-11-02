@@ -2,7 +2,8 @@
 
 /**
  * The Bilan: one month (‹ month ›) by category against each budget, the
- * cash / card split, the last 12 months, then the groceries details.
+ * cash / card split, the last 12 months, then the groceries details (only
+ * the receipts whose expense is in Groceries).
  */
 
 import Link from "next/link";
@@ -12,6 +13,7 @@ import {
   budgetState,
   categoryLabel,
   formatMonth,
+  GROCERIES_KEY,
   METHOD_ICON,
   METHODS,
   monthlyTotals,
@@ -110,6 +112,12 @@ export function BilanView({
     ...rows.map((r) => Math.max(r.spent, r.budget ?? 0)),
   );
   const months = monthlyTotals(transactions, month, 12);
+  const groceries = categories.find((c) => c.key === GROCERIES_KEY)?.id;
+  const groceryReceipts = new Set(
+    transactions
+      .filter((x) => x.receiptId && x.categoryId === groceries)
+      .map((x) => x.receiptId),
+  );
   const monthMax = Math.max(1, ...months.map((m) => m.total));
 
   return (
@@ -231,8 +239,8 @@ export function BilanView({
       </div>
 
       <GroceryStats
-        receipts={receipts}
-        points={points}
+        receipts={receipts.filter((r) => groceryReceipts.has(r.id))}
+        points={points.filter((p) => groceryReceipts.has(p.receiptId))}
         stores={stores}
         products={products}
       />

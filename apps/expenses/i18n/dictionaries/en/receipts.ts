@@ -56,6 +56,7 @@ export const receiptForm = {
   mismatch: "Difference {diff}",
   noDeclared: "Enter the total to check",
   method: "Paid by",
+  category: "Category",
   save: "Save",
   cancel: "Cancel",
   needStore: "Enter the store.",

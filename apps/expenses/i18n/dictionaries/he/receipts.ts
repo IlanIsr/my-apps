@@ -56,6 +56,7 @@ export const receiptForm = {
   mismatch: "פער {diff}",
   noDeclared: "הזינו את הסה״כ לבדיקה",
   method: "אמצעי תשלום",
+  category: "קטגוריה",
   save: "שמירה",
   cancel: "ביטול",
   needStore: "יש לציין חנות.",
