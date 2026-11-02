@@ -5,6 +5,7 @@
 
 import {
   EXPENSE_LIMITS,
+  litersAmount,
   METHODS,
   type Method,
   type TransactionInput,
@@ -152,9 +153,27 @@ function optionalId(value: unknown, field: string): string | null {
 
 export function transactionInput(value: unknown): TransactionInput {
   const input = record(value, "transaction");
+  // By the litre: both or neither, and the amount follows from them.
+  const byLiter = input.litersMilli != null || input.pricePerLiter != null;
+  const litersMilli = byLiter
+    ? int(input.litersMilli, "litersMilli", 1, LIMITS.quantityMilli)
+    : null;
+  const pricePerLiter = byLiter
+    ? int(input.pricePerLiter, "pricePerLiter", 1, LIMITS.cents)
+    : null;
   return {
+    litersMilli,
+    pricePerLiter,
     date: day(input.date),
-    amount: int(input.amount, "amount", 1, LIMITS.cents),
+    amount:
+      litersMilli && pricePerLiter
+        ? int(
+            litersAmount(litersMilli, pricePerLiter),
+            "amount",
+            1,
+            LIMITS.cents,
+          )
+        : int(input.amount, "amount", 1, LIMITS.cents),
     categoryId: optionalId(input.categoryId, "categoryId"),
     merchant: optionalText(input.merchant, "merchant", EXPENSE_LIMITS.merchant),
     method: method(input.method),

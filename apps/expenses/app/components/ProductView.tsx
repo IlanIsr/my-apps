@@ -16,7 +16,6 @@ import {
   AISLE_ICON,
   AISLES,
   CONTENT_UNITS,
-  contentOf,
   formatDay,
   formatMoney,
   latestByStore,
@@ -24,7 +23,6 @@ import {
   pricePerMeasure,
   quantityToInput,
   type Aisle,
-  type MeasuredProduct,
   type ContentUnit,
   type PricePoint,
   type Product,
@@ -74,7 +72,7 @@ export type AisleTexts = Record<Aisle, string>;
 
 /** `"12,90 ₪/L"` — a price per L / kg, or `null`. */
 export function measureLabel(
-  product: MeasuredProduct,
+  product: Pick<Product, "unit" | "contentMilli" | "contentUnit">,
   unitPrice: number,
   tag: string,
   units: Record<ContentUnit, string>,
@@ -107,13 +105,11 @@ export function ProductView({
   const [barcode, setBarcode] = useState(product.barcode ?? "");
   const [unit, setUnit] = useState<Unit>(product.unit);
   const [aisle, setAisle] = useState<Aisle | "none">(product.aisle ?? "none");
-  // Not set yet: start from what the name says ("1.5 ליטר", "140 גרם").
-  const known = contentOf(product);
   const [content, setContent] = useState(
-    known ? quantityToInput(known.milli) : "",
+    product.contentMilli ? quantityToInput(product.contentMilli) : "",
   );
   const [contentUnit, setContentUnit] = useState<ContentUnit>(
-    known?.unit ?? "l",
+    product.contentUnit ?? "l",
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -158,9 +154,9 @@ export function ProductView({
           [
             product.aisle &&
               `${AISLE_ICON[product.aisle]} ${messages.aisles[product.aisle]}`,
-            product.unit === "unit" &&
-              known &&
-              `${quantityToInput(known.milli)} ${t.contentUnits[known.unit]}`,
+            product.contentMilli &&
+              product.contentUnit &&
+              `${quantityToInput(product.contentMilli)} ${t.contentUnits[product.contentUnit]}`,
             product.barcode,
           ]
             .filter(Boolean)

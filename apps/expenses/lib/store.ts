@@ -260,14 +260,13 @@ export async function listPricePoints(ownerId: string): Promise<PricePoint[]> {
     .innerJoin(receipts, eq(receipts.id, receiptItems.receiptId))
     .where(eq(receipts.ownerId, ownerId))
     .orderBy(asc(receipts.date));
-  return rows.map((row) => {
-    const paid = Number(row.paid);
-    return {
-      ...row,
-      paid,
-      unitPrice: Math.round((paid * 1000) / row.quantityMilli),
-    };
-  });
+  // A product's price is its listed one: a discount is a bonus of that
+  // purchase, not the product's price (it only lowers what was `paid`).
+  return rows.map((row) => ({
+    ...row,
+    paid: Number(row.paid),
+    unitPrice: row.listedPrice,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -324,8 +323,6 @@ export async function getReceipt(
       barcode: products.barcode,
       label: receiptItems.label,
       unit: products.unit,
-      contentMilli: products.contentMilli,
-      contentUnit: products.contentUnit,
       quantityMilli: receiptItems.quantityMilli,
       unitPrice: receiptItems.unitPrice,
       discount: receiptItems.discount,

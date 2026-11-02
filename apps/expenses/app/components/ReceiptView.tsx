@@ -27,7 +27,6 @@ import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
 import { ErrorLine, LinkButton, PageHeader, fill } from "./common";
-import { measureLabel } from "./ProductView";
 import { CheckBadge } from "./ReceiptsView";
 
 export type ReceiptTexts = {
@@ -48,7 +47,7 @@ export type ReceiptTexts = {
   rounding: string;
 };
 
-/** A receipt's lines: label, total, quantity × price (+ per L / kg). */
+/** A receipt's lines: label, total, quantity × price, discount. */
 export function ReceiptLines({
   lines,
   t,
@@ -56,17 +55,10 @@ export function ReceiptLines({
   lines: ReceiptLine[];
   t: { discount: string };
 }) {
-  const messages = useTranslations();
   const tag = LOCALE_TAG[useLanguage().locale];
   return (
     <ul className="flex flex-col gap-2">
       {lines.map((line, i) => {
-        const measure = measureLabel(
-          { ...line, name: line.label },
-          line.unitPrice,
-          tag,
-          messages.product.contentUnits,
-        );
         return (
           <li key={i} className="text-sm">
             <div className="flex justify-between gap-3">
@@ -84,7 +76,6 @@ export function ReceiptLines({
               {formatQuantity(line.quantityMilli, line.unit, tag)} ·{" "}
               {formatMoney(line.unitPrice, tag)}
               {line.unit === "kg" ? "/kg" : ""}
-              {measure && ` (${measure})`}
               {line.discount > 0 &&
                 ` · ${t.discount} −${formatMoney(line.discount, tag)}`}
               {line.barcode && ` · ${line.barcode}`}

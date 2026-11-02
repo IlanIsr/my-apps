@@ -89,52 +89,15 @@ export type ProductInput = Pick<
  * divided by its content; `null` when unknown.
  */
 export function pricePerMeasure(
-  product: MeasuredProduct,
+  product: Pick<Product, "unit" | "contentMilli" | "contentUnit">,
   unitPrice: number,
 ): { price: number; unit: ContentUnit } | null {
   if (product.unit === "kg") return { price: unitPrice, unit: "kg" };
-  const content = contentOf(product);
-  if (!content) return null;
+  if (!product.contentMilli || !product.contentUnit) return null;
   return {
-    price: Math.round((unitPrice * 1000) / content.milli),
-    unit: content.unit,
+    price: Math.round((unitPrice * 1000) / product.contentMilli),
+    unit: product.contentUnit,
   };
-}
-
-export type MeasuredProduct = Pick<
-  Product,
-  "name" | "unit" | "contentMilli" | "contentUnit"
->;
-
-/** The content set on the product, else the one written in its name. */
-export function contentOf(
-  product: MeasuredProduct,
-): { milli: number; unit: ContentUnit } | null {
-  if (product.contentMilli && product.contentUnit) {
-    return { milli: product.contentMilli, unit: product.contentUnit };
-  }
-  return guessContent(product.name);
-}
-
-/** `number + unit` in a product name: "1L", "1,5 ליטר", "500 מ\"ל", "140 גרם", "1 ק\"ג". */
-const CONTENT_PATTERNS: [RegExp, ContentUnit, number][] = [
-  [/(\d+(?:[.,]\d+)?)\s*(?:ml|מ["״']?ל)(?![\p{L}])/iu, "l", 1],
-  [/(\d+(?:[.,]\d+)?)\s*(?:l|lt|ltr|ליטר|ל['׳])(?![\p{L}])/iu, "l", 1000],
-  [/(\d+(?:[.,]\d+)?)\s*(?:kg|ק["״']?ג|קילו)(?![\p{L}])/iu, "kg", 1000],
-  [/(\d+(?:[.,]\d+)?)\s*(?:g|gr|גר['׳]?|גרם)(?![\p{L}])/iu, "kg", 1],
-];
-
-/** The content written in a product name, if any (`null` otherwise). */
-export function guessContent(
-  name: string,
-): { milli: number; unit: ContentUnit } | null {
-  for (const [pattern, unit, factor] of CONTENT_PATTERNS) {
-    const m = pattern.exec(name);
-    if (!m) continue;
-    const milli = Math.round(Number(m[1]!.replace(",", ".")) * factor);
-    if (milli > 0) return { milli, unit };
-  }
-  return null;
 }
 
 /**
@@ -179,12 +142,7 @@ export type ReceiptInput = {
   lines: LineInput[];
 };
 
-export type ReceiptLine = LineInput & {
-  productId: string;
-  /** The product's own content (for a price per L / kg). */
-  contentMilli: number | null;
-  contentUnit: ContentUnit | null;
-};
+export type ReceiptLine = LineInput & { productId: string };
 
 export type Receipt = {
   id: string;
@@ -216,9 +174,12 @@ export type PricePoint = {
   receiptId: string;
   date: string;
   quantityMilli: number;
-  /** Effective price per piece / kg, in cents (discount included). */
+  /**
+   * The product's price per piece / kg (cents) — the listed one: a discount
+   * only lowers what was `paid`.
+   */
   unitPrice: number;
-  /** The price per piece / kg printed on the line. */
+  /** The price per piece / kg printed on the line (= `unitPrice`). */
   listedPrice: number;
   /** What was paid for the line. */
   paid: number;

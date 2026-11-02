@@ -45,6 +45,7 @@ export const transactions = {
     "{category} : {spent} sur {budget} — le budget est presque atteint.",
   budgetOver: "{category} : {spent} sur {budget} — budget dépassé.",
   projection: "≈ {amount} en fin de mois à ce rythme",
+  perLiter: "{liters} L × {price}/L",
 } as const satisfies TransactionsTexts;
 
 export const transactionModal = {
@@ -63,6 +64,10 @@ export const transactionModal = {
   badAmount: "Indique un montant.",
   fromReceipt: "Cette dépense est le total d'un ticket de courses.",
   openReceipt: "Voir le ticket",
+  byAmount: "Montant",
+  byLiter: "Au litre",
+  liters: "Litres",
+  pricePerLiter: "Prix au litre",
 } as const satisfies TransactionModalTexts;
 
 export const categories = {

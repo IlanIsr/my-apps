@@ -68,16 +68,26 @@ export type Transaction = {
   receiptId: string | null;
   /** Set when it came from a statement import (dedup key). */
   importKey: string | null;
+  /** Bought by the litre (fuel…): litres × 1000, price per litre (cents). */
+  litersMilli: number | null;
+  pricePerLiter: number | null;
 };
 
 export type TransactionInput = {
   date: string;
+  /** With litres, always `litersAmount(litersMilli, pricePerLiter)`. */
   amount: number;
   categoryId: string | null;
   merchant: string | null;
   method: Method;
   note: string | null;
+  litersMilli: number | null;
+  pricePerLiter: number | null;
 };
+
+/** Litres × price per litre, in cents. */
+export const litersAmount = (litersMilli: number, pricePerLiter: number) =>
+  Math.round((litersMilli * pricePerLiter) / 1000);
 
 /** `merchant key → category id`, learned from what the user picked. */
 export type CategoryRules = Record<string, string>;

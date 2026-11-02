@@ -44,6 +44,7 @@ export const transactions = {
   budgetNear: "{category}: {spent} מתוך {budget} — קרוב לתקציב.",
   budgetOver: "{category}: {spent} מתוך {budget} — חריגה מהתקציב.",
   projection: "≈ {amount} בסוף החודש בקצב הזה",
+  perLiter: "{liters} ל׳ × {price} לליטר",
 } as const satisfies TransactionsTexts;
 
 export const transactionModal = {
@@ -62,6 +63,10 @@ export const transactionModal = {
   badAmount: "יש להזין סכום.",
   fromReceipt: "ההוצאה הזו היא הסכום של קבלת סופר.",
   openReceipt: "לקבלה",
+  byAmount: "סכום",
+  byLiter: "לפי ליטר",
+  liters: "ליטרים",
+  pricePerLiter: "מחיר לליטר",
 } as const satisfies TransactionModalTexts;
 
 export const categories = {

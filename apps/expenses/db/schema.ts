@@ -160,6 +160,9 @@ export const transactions = pgTable(
     }),
     /** Statement-import dedup key (see `importKeys`). */
     importKey: text("import_key"),
+    /** Bought by the litre (fuel…): litres × 1000 and the price per litre. */
+    litersMilli: integer("liters_milli"),
+    pricePerLiter: integer("price_per_liter"),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [

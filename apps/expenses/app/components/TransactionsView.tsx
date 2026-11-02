@@ -23,7 +23,12 @@ import {
   type Method,
   type Transaction,
 } from "@/lib/expense-logic";
-import { formatDay, formatMoney, today } from "@/lib/grocery-logic";
+import {
+  formatDay,
+  formatMoney,
+  quantityToInput,
+  today,
+} from "@/lib/grocery-logic";
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
@@ -48,6 +53,8 @@ export type TransactionsTexts = {
   /** `{category}`, `{spent}`, `{budget}`. */
   budgetNear: string;
   budgetOver: string;
+  /** `{liters}`, `{price}` = per litre. */
+  perLiter: string;
   /** `{amount}` = the month's total at the current pace. */
   projection: string;
 };
@@ -269,6 +276,12 @@ export function TransactionsView({
                           <span className="block truncate text-xs text-muted">
                             {c ? label(c) : t.uncategorized}
                             {x.receiptId && " · 🧾"}
+                            {x.litersMilli &&
+                              x.pricePerLiter &&
+                              ` · ${fill(t.perLiter, {
+                                liters: quantityToInput(x.litersMilli),
+                                price: formatMoney(x.pricePerLiter, tag),
+                              })}`}
                             {x.note && ` · ${x.note}`}
                           </span>
                         </span>
