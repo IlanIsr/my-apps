@@ -6,6 +6,7 @@ import type { ResultTexts } from "@/app/components/Results";
 export const appShell = {
   brand: "Training",
   language: "שפה",
+  menu: "תפריט",
   nav: {
     questions: "שאלות",
     newExam: "מבחן חדש",

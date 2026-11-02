@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * The header (brand, section links, language, account) around every page.
+ * The header (brand, section links, language, account) around every page —
+ * one row; below `md` the links and language move into a hamburger menu.
  * Sits at the root of the client tree, so it reads its own texts. Hidden when
  * printing.
  */
@@ -9,6 +10,7 @@
 import { Show } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 import { AuthControl } from "@repo/auth/nav";
 
@@ -20,11 +22,13 @@ import {
   type Locale,
 } from "@/i18n";
 
+import { Button } from "./Button";
 import { Select } from "./Select";
 
 export type AppShellTexts = {
   brand: string;
   language: string;
+  menu: string;
   nav: { questions: string; newExam: string; history: string; stats: string };
 };
 
@@ -46,6 +50,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations().appShell;
   const { locale, setLocale } = useLanguage();
   const pathname = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const links = (onNavigate?: () => void) =>
+    LINKS.map((link) => {
+      const active = isActive(pathname, link.href);
+      return (
+        <Link
+          key={link.href}
+          href={link.href}
+          onClick={onNavigate}
+          aria-current={active ? "page" : undefined}
+          className={`rounded-md px-3 py-1.5 whitespace-nowrap transition-colors ${
+            active
+              ? "bg-accent-soft font-medium text-accent"
+              : "text-muted hover:bg-sunken hover:text-foreground"
+          }`}
+        >
+          {t.nav[link.key]}
+        </Link>
+      );
+    });
+
+  const languageSelect = (className: string) => (
+    <Select
+      aria-label={t.language}
+      options={LOCALES.map((key) => ({ key, label: LOCALE_LABEL[key] }))}
+      value={locale}
+      onChange={(value) => setLocale(value as Locale)}
+      className={className}
+    />
+  );
 
   return (
     <>
@@ -65,40 +100,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <Show when="signed-in">
-            <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto text-sm">
-              {LINKS.map((link) => {
-                const active = isActive(pathname, link.href);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    aria-current={active ? "page" : undefined}
-                    className={`rounded-md px-3 py-1.5 whitespace-nowrap transition-colors ${
-                      active
-                        ? "bg-accent-soft font-medium text-accent"
-                        : "text-muted hover:bg-sunken hover:text-foreground"
-                    }`}
-                  >
-                    {t.nav[link.key]}
-                  </Link>
-                );
-              })}
+            <nav className="hidden min-w-0 flex-1 gap-1 text-sm md:flex">
+              {links()}
             </nav>
           </Show>
+
           <div className="ms-auto flex shrink-0 items-center gap-3">
-            <Select
-              aria-label={t.language}
-              options={LOCALES.map((key) => ({
-                key,
-                label: LOCALE_LABEL[key],
-              }))}
-              value={locale}
-              onChange={(value) => setLocale(value as Locale)}
-              className="w-32 text-sm"
-            />
+            {languageSelect("hidden w-32 text-sm md:block")}
             <AuthControl />
+            <Button
+              variant="ghost"
+              size="sm"
+              isIconOnly
+              aria-label={t.menu}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+              className="md:hidden"
+            >
+              <span aria-hidden className="text-lg leading-none">
+                {menuOpen ? "✕" : "☰"}
+              </span>
+            </Button>
           </div>
         </div>
+
+        {menuOpen && (
+          <div className="mx-auto flex max-w-3xl flex-col gap-3 border-t border-line px-4 py-3 md:hidden">
+            <Show when="signed-in">
+              <nav className="flex flex-col gap-1 text-sm">
+                {links(() => setMenuOpen(false))}
+              </nav>
+            </Show>
+            {languageSelect("w-full text-sm")}
+          </div>
+        )}
       </header>
       <main className="mx-auto max-w-3xl px-4 py-8 print:max-w-none print:p-0">
         {children}
