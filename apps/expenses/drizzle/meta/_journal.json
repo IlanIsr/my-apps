@@ -36,6 +36,13 @@
       "when": 1793657572673,
       "tag": "0004_glossy_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793689231993,
+      "tag": "0005_sweet_stellaris",
+      "breakpoints": true
     }
   ]
 }

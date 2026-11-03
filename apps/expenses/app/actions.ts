@@ -25,6 +25,8 @@ export type ActionErrorCode =
   | store.StoreErrorCode
   | "photo-unreadable"
   | "photo-ai-off"
+  | "photo-limit"
+  | "photo-busy"
   | "not-signed-in"
   | "invalid"
   | "db-not-configured"
@@ -194,7 +196,7 @@ export async function importTransactionsAction(
 export async function readReceiptPhotoAction(
   photo: unknown,
 ): Promise<ActionResult<ReceiptDraft>> {
-  return run(() => readReceiptPhoto(v.photo(photo)));
+  return run((ownerId) => readReceiptPhoto(ownerId, v.photo(photo)));
 }
 
 /** "These two are different products." */

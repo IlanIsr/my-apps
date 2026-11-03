@@ -233,3 +233,21 @@ export const goals = pgTable(
   },
   (t) => [index("goals_owner_month_idx").on(t.ownerId, t.month)],
 );
+
+/**
+ * Every AI call (receipt photo), logged BEFORE it's made — the guard rails
+ * (`lib/receipt-reader.ts`) count them, failures included.
+ */
+export const aiCalls = pgTable(
+  "ai_calls",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: text("owner_id").notNull(),
+    /** `pending` while running, then `ok` / `error`. */
+    status: text("status").$type<"pending" | "ok" | "error">().notNull(),
+    inputTokens: integer("input_tokens"),
+    outputTokens: integer("output_tokens"),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("ai_calls_owner_idx").on(t.ownerId, t.createdAt)],
+);

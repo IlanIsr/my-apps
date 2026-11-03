@@ -15,7 +15,10 @@
     "RESEND_API_KEY",
     "CONTACT_TO_EMAIL",
     "CONTACT_FROM",
-    "VERCEL_ENV"
+    "VERCEL_ENV",
+    "AI_PHOTO_ENABLED",
+    "AI_PHOTO_DAILY_LIMIT",
+    "AI_PHOTO_TOTAL_LIMIT"
   ],
   "tasks": {
     "build": {

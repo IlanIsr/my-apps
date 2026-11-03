@@ -28,6 +28,8 @@ export const errors = {
   "photo-unreadable":
     "לא הצלחנו לקרוא את התמונה. נסו תמונה חדה יותר, או הזינו את הקבלה ידנית.",
   "photo-ai-off": "קריאת תמונות עדיין לא הופעלה (Vercel AI Gateway).",
+  "photo-limit": "הגעת למגבלת קריאת התמונות לשלב הבדיקה.",
+  "photo-busy": "קריאת תמונה כבר מתבצעת.",
 } as const satisfies ErrorTexts;
 
 export const stores = {
