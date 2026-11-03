@@ -22,7 +22,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { aiCalls } from "@/db/schema";
 
-import { LIMITS, type LineInput } from "./grocery-logic";
+import { combineLines, LIMITS, type LineInput } from "./grocery-logic";
 
 const MODEL = "anthropic/claude-sonnet-5.5";
 
@@ -130,10 +130,13 @@ const schema = z.object({
 const INSTRUCTIONS = `You read photos of supermarket receipts (often Israeli, in Hebrew, prices in shekels).
 Extract the store name, the date (YYYY-MM-DD), the printed total and every purchased line in order.
 For each line: the barcode if printed (digits only), the label exactly as printed, whether it is sold by weight, the quantity (pieces, or kg with decimals), the unit price (per piece or per kg) and its discount.
-A discount printed on its own line right below an item belongs to that item (positive number). Ignore payment, change, VAT and loyalty lines.
+A discount printed on its own line right below an item is NOT an item: add it to that item's discount (positive number). The same item printed on several lines is ONE line with the quantities added up. Ignore payment, change, VAT and loyalty lines.
 Amounts are numbers with a dot as decimal separator. Use null for anything you cannot read.`;
 
 const cents = (n: number) => Math.max(0, Math.round(n * 100));
+
+/** Labels of a receipt's discount lines (Hebrew / English / French). */
+const DISCOUNT = /הנחה|מבצע|הטבה|discount|promo|remise|réduction/i;
 
 export async function readReceiptPhoto(
   ownerId: string,
@@ -169,26 +172,38 @@ export async function readReceiptPhoto(
   }
   const date =
     output.date && /^\d{4}-\d{2}-\d{2}$/.test(output.date) ? output.date : null;
-  const lines = output.lines
-    .slice(0, LIMITS.lines)
-    .map((line): LineInput | null => {
-      const quantityMilli = Math.round(line.quantity * 1000);
-      if (!line.label.trim() || quantityMilli <= 0) return null;
-      return {
-        barcode:
-          line.barcode?.replace(/\D/g, "").slice(0, LIMITS.barcode) || null,
-        label: line.label.trim().slice(0, LIMITS.label),
-        unit: line.byWeight ? "kg" : "unit",
-        quantityMilli: Math.min(quantityMilli, LIMITS.quantityMilli),
-        unitPrice: cents(line.unitPrice),
-        discount: cents(line.discount),
-      };
-    })
-    .filter((l): l is LineInput => l !== null);
+  // The model may still return a discount as its own line, or the same item
+  // several times: fixed here, not left to it.
+  const lines: LineInput[] = [];
+  for (const line of output.lines.slice(0, LIMITS.lines)) {
+    const label = line.label.trim();
+    const barcode =
+      line.barcode?.replace(/\D/g, "").slice(0, LIMITS.barcode) || null;
+    const prev = lines.at(-1);
+    if (line.unitPrice < 0 || (!barcode && DISCOUNT.test(label))) {
+      // A discount line: it lowers the item above.
+      const amount = Math.max(
+        cents(Math.abs(line.unitPrice * (line.quantity || 1))),
+        cents(line.discount),
+      );
+      if (prev) prev.discount += amount;
+      continue;
+    }
+    const quantityMilli = Math.round(line.quantity * 1000);
+    if (!label || quantityMilli <= 0) continue;
+    lines.push({
+      barcode,
+      label: label.slice(0, LIMITS.label),
+      unit: line.byWeight ? "kg" : "unit",
+      quantityMilli: Math.min(quantityMilli, LIMITS.quantityMilli),
+      unitPrice: cents(line.unitPrice),
+      discount: cents(line.discount),
+    });
+  }
   return {
     storeName: output.storeName?.trim().slice(0, LIMITS.storeName) || null,
     date,
     declaredTotal: output.total == null ? null : cents(output.total),
-    lines,
+    lines: combineLines(lines),
   };
 }

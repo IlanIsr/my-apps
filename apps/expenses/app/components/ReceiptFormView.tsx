@@ -26,6 +26,8 @@ import {
 } from "@/lib/expense-logic";
 import {
   centsToInput,
+  combineLines,
+  hasDuplicateLines,
   formatMoney,
   lineTotal,
   payable,
@@ -87,6 +89,8 @@ export type ReceiptFormTexts = {
   badLine: string;
   scan: string;
   scanContinuous: string;
+  /** Merge the lines that are the same item. */
+  combine: string;
   photo: string;
   gallery: string;
   reading: string;
@@ -306,6 +310,16 @@ export function ReceiptFormView({
 
   const filled = rows.filter((r) => !isBlank(r));
   const lines = filled.map(toLine);
+  const valid = lines.filter((l): l is LineInput => l !== null);
+  const duplicates = hasDuplicateLines(valid);
+
+  /** The same item on several lines → one line, quantities added up. */
+  const combine = () =>
+    setRows([
+      ...combineLines(valid).map(toRow),
+      ...filled.filter((r) => toLine(r) === null),
+      emptyRow(),
+    ]);
   const sum = lines.reduce((s, l) => s + (l ? lineTotal(l) : 0), 0);
   // What is paid: cash rounds to 10 agorot.
   const total = payable(sum, method);
@@ -400,9 +414,16 @@ export function ReceiptFormView({
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg">{t.lines}</h2>
-        <Button size="sm" onClick={() => setScanning("continuous")}>
-          📷 {t.scanContinuous}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {duplicates && (
+            <Button size="sm" onClick={combine}>
+              ⧉ {t.combine}
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setScanning("continuous")}>
+            📷 {t.scanContinuous}
+          </Button>
+        </div>
       </div>
       <ol className="flex flex-col gap-3">
         {rows.map((row, index) => {

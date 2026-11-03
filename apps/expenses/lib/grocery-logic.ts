@@ -529,3 +529,37 @@ export function duplicateSuggestions(
   }
   return out.sort((x, y) => y.score - x.score);
 }
+
+// ---------------------------------------------------------------------------
+// Combining lines
+
+/** Lines that are the same item: same barcode (else name), unit and price. */
+const lineKey = (line: LineInput) =>
+  [line.barcode ?? normalizeName(line.label), line.unit, line.unitPrice].join(
+    "|",
+  );
+
+/** Whether some lines are the same item printed several times. */
+export function hasDuplicateLines(lines: LineInput[]): boolean {
+  return new Set(lines.map(lineKey)).size < lines.length;
+}
+
+/**
+ * One line per item: the same item printed several times (3 × the tuna)
+ * becomes one line with the quantities and discounts added up, where it
+ * first appears.
+ */
+export function combineLines(lines: LineInput[]): LineInput[] {
+  const byKey = new Map<string, LineInput>();
+  for (const line of lines) {
+    const key = lineKey(line);
+    const first = byKey.get(key);
+    if (first) {
+      first.quantityMilli += line.quantityMilli;
+      first.discount += line.discount;
+    } else {
+      byKey.set(key, { ...line });
+    }
+  }
+  return [...byKey.values()];
+}

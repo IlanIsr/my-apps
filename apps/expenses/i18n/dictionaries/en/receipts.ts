@@ -75,6 +75,7 @@ export const receiptForm = {
   photoRead: "{n} line(s) read from the photo — check each one before saving.",
   gallery: "Gallery",
   rounding: "incl. rounding {amount}",
+  combine: "Combine identical lines",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

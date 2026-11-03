@@ -75,6 +75,7 @@ export const receiptForm = {
   photoRead: "{n} שורות נקראו מהתמונה — בדקו כל אחת לפני השמירה.",
   gallery: "גלריה",
   rounding: "כולל עיגול {amount}",
+  combine: "איחוד שורות זהות",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

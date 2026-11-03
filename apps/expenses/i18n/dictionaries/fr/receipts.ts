@@ -76,6 +76,7 @@ export const receiptForm = {
     "{n} ligne(s) lue(s) sur la photo — vérifie chacune avant d'enregistrer.",
   gallery: "Galerie",
   rounding: "dont arrondi {amount}",
+  combine: "Regrouper les lignes identiques",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {
