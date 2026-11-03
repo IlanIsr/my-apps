@@ -353,7 +353,7 @@ export function ReceiptFormView({
     });
     setSaving(false);
     if (!result.ok) return setError(errors[result.error]);
-    router.push(`/receipts/${result.data}`);
+    router.push("/receipts");
   }
 
   return (
