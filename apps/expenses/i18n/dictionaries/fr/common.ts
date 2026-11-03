@@ -29,7 +29,6 @@ export const errors = {
     "Impossible de lire la photo. Réessaie avec une photo plus nette, ou saisis le ticket à la main.",
   "photo-ai-off":
     "La lecture des photos n'est pas encore activée (Vercel AI Gateway).",
-  "photo-limit": "Limite de lecture de photos atteinte pour la phase de test.",
   "photo-busy": "Une lecture de photo est déjà en cours.",
 } as const satisfies ErrorTexts;
 

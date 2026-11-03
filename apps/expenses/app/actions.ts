@@ -25,7 +25,6 @@ export type ActionErrorCode =
   | store.StoreErrorCode
   | "photo-unreadable"
   | "photo-ai-off"
-  | "photo-limit"
   | "photo-busy"
   | "not-signed-in"
   | "invalid"

@@ -16,9 +16,7 @@
     "CONTACT_TO_EMAIL",
     "CONTACT_FROM",
     "VERCEL_ENV",
-    "AI_PHOTO_ENABLED",
-    "AI_PHOTO_DAILY_LIMIT",
-    "AI_PHOTO_TOTAL_LIMIT"
+    "AI_PHOTO_ENABLED"
   ],
   "tasks": {
     "build": {

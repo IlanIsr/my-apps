@@ -28,7 +28,6 @@ export const errors = {
   "photo-unreadable":
     "Couldn't read the photo. Try a sharper one, or enter the receipt by hand.",
   "photo-ai-off": "Photo reading isn't enabled yet (Vercel AI Gateway).",
-  "photo-limit": "Photo-reading limit reached for the test phase.",
   "photo-busy": "A photo is already being read.",
 } as const satisfies ErrorTexts;
 

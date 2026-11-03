@@ -4,12 +4,10 @@
  * Server-only. The photo is never stored: the result only pre-fills the
  * receipt form, which the user checks before saving.
  *
- * Guard rails (test phase — every one has to pass before a request leaves):
+ * Guard rails (every one has to pass before a request leaves):
  * - off unless `AI_PHOTO_ENABLED=1`;
- * - one call at a time per user (a `pending` call blocks the next);
- * - at most `AI_PHOTO_DAILY_LIMIT` (default 1) calls per 24 h and
- *   `AI_PHOTO_TOTAL_LIMIT` (default 5) ever, per user — failures count too,
- *   since each call is logged in `ai_calls` before it's made;
+ * - one call at a time per user (a `pending` call blocks the next); each
+ *   call is logged in `ai_calls` (status + tokens) before it's made;
  * - exactly one request: no SDK retry, a 60 s timeout, output capped.
  */
 
@@ -30,19 +28,13 @@ export class ReaderError extends Error {
   constructor(
     /**
      * `photo-ai-off` = switched off, or the AI Gateway refused (no billing);
-     * `photo-limit` = quota used up; `photo-busy` = a call is running.
+     * `photo-busy` = a call is running.
      */
-    readonly code:
-      "photo-unreadable" | "photo-ai-off" | "photo-limit" | "photo-busy",
+    readonly code: "photo-unreadable" | "photo-ai-off" | "photo-busy",
   ) {
     super(code);
   }
 }
-
-const limit = (name: string, fallback: number) => {
-  const n = Number(process.env[name]);
-  return Number.isInteger(n) && n >= 0 ? n : fallback;
-};
 
 /** A `pending` call older than this crashed: it no longer blocks. */
 const STALE_MS = 2 * 60_000;
@@ -51,27 +43,17 @@ const STALE_MS = 2 * 60_000;
 async function reserveCall(ownerId: string): Promise<string> {
   if (process.env.AI_PHOTO_ENABLED !== "1")
     throw new ReaderError("photo-ai-off");
-  const mine = eq(aiCalls.ownerId, ownerId);
-  const since = (ms: number) =>
-    gt(aiCalls.createdAt, new Date(Date.now() - ms));
-  const [[running], [today], [ever]] = await Promise.all([
-    db()
-      .select({ n: count() })
-      .from(aiCalls)
-      .where(and(mine, eq(aiCalls.status, "pending"), since(STALE_MS))),
-    db()
-      .select({ n: count() })
-      .from(aiCalls)
-      .where(and(mine, since(86_400_000))),
-    db().select({ n: count() }).from(aiCalls).where(mine),
-  ]);
+  const [running] = await db()
+    .select({ n: count() })
+    .from(aiCalls)
+    .where(
+      and(
+        eq(aiCalls.ownerId, ownerId),
+        eq(aiCalls.status, "pending"),
+        gt(aiCalls.createdAt, new Date(Date.now() - STALE_MS)),
+      ),
+    );
   if (running!.n > 0) throw new ReaderError("photo-busy");
-  if (
-    today!.n >= limit("AI_PHOTO_DAILY_LIMIT", 1) ||
-    ever!.n >= limit("AI_PHOTO_TOTAL_LIMIT", 5)
-  ) {
-    throw new ReaderError("photo-limit");
-  }
   const [row] = await db()
     .insert(aiCalls)
     .values({ ownerId, status: "pending" })
