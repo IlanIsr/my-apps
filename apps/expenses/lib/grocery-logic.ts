@@ -623,16 +623,25 @@ export function attachDeposits(lines: LineInput[]): LineInput[] {
 // ---------------------------------------------------------------------------
 // Pasted receipt text
 
-const BARCODE_QTY = /^(\d{3,14})\s+(\d+(?:[.,]\d+)?)$/;
+/**
+ * "barcode  quantity" — or, for a weighed item, "barcode  0.334 ק"ג 3.90x"
+ * (kilos, then the price per kg).
+ */
+const BARCODE_QTY =
+  /^(\d{3,14})\s+(\d+(?:[.,]\d+)?)(\s*(?:ק["״”']?ג|kg))?(?:\s+(\d+(?:[.,]\d+)?)\s*x)?$/i;
 const AMOUNT = /^(?:₪\s*)?(-?\d+(?:[.,]\d+)?)\s*(?:₪)?$/;
+
+const decimal = (text: string) => Number(text.replace(",", "."));
 
 /**
  * The lines of a receipt copied as text (the store's digital receipt): each
- * item is its label, then "barcode  quantity", then "₪ line total"; promo
- * lines ("וופל לואקר 2ב26") and headers are skipped. The same barcode on
- * several lines (a "3 for 20" split 13.34 + 6.66) is one line, and deposit
- * lines fold into the item above. A line total that isn't quantity × a whole
- * price keeps the rounded-up price with the gap as its discount.
+ * item is its label, then "barcode  quantity" (or "barcode  kilos ק"ג price
+ * per kg x" for produce, meat…), then "₪ line total"; promo lines
+ * ("וופל לואקר 2ב26") and headers are skipped. The same barcode on several
+ * lines (a "3 for 20" split 13.34 + 6.66) is one line, and deposit lines fold
+ * into the item above. A line total below quantity × price keeps that price
+ * with the gap as its discount (a piece's price, when not printed, is the
+ * total over the quantity, rounded up).
  */
 export function parseReceiptText(text: string): LineInput[] {
   const rows = text
@@ -642,8 +651,11 @@ export function parseReceiptText(text: string): LineInput[] {
   type Item = {
     barcode: string;
     label: string;
+    byWeight: boolean;
     quantity: number;
     total: number;
+    /** Printed price per kg (cents), when weighed. */
+    price: number | null;
   };
   const items: Item[] = [];
   for (let i = 0; i < rows.length; i++) {
@@ -651,15 +663,28 @@ export function parseReceiptText(text: string): LineInput[] {
     const label = rows[i - 1];
     const amount = AMOUNT.exec(rows[i + 1] ?? "");
     if (!match || !label || !amount) continue;
-    const quantity = Number(match[2]!.replace(",", "."));
-    const total = Math.round(Number(amount[1]!.replace(",", ".")) * 100);
+    const quantity = decimal(match[2]!);
+    const total = Math.round(decimal(amount[1]!) * 100);
     if (!(quantity > 0)) continue;
-    const same = items.find((item) => item.barcode === match[1]);
+    // Weighed: the kg mark or the price per kg, else a fractional quantity.
+    const byWeight =
+      Boolean(match[3] || match[4]) || !Number.isInteger(quantity);
+    const price = match[4] ? Math.round(decimal(match[4]) * 100) : null;
+    const same = items.find(
+      (item) => item.barcode === match[1] && item.byWeight === byWeight,
+    );
     if (same) {
       same.quantity += quantity;
       same.total += total;
     } else {
-      items.push({ barcode: match[1]!, label, quantity, total });
+      items.push({
+        barcode: match[1]!,
+        label,
+        byWeight,
+        quantity,
+        total,
+        price,
+      });
     }
     i++;
   }
@@ -667,17 +692,18 @@ export function parseReceiptText(text: string): LineInput[] {
     items
       .filter((item) => item.total > 0)
       .map((item) => {
-        // A whole number of pieces, else a weight in kg.
-        const byWeight = !Number.isInteger(item.quantity);
         const quantityMilli = Math.round(item.quantity * 1000);
-        const unitPrice = Math.ceil((item.total * 1000) / quantityMilli);
+        const unitPrice =
+          item.price ?? Math.ceil((item.total * 1000) / quantityMilli);
+        const listed = Math.round((quantityMilli * unitPrice) / 1000);
         return {
           barcode: item.barcode.slice(0, LIMITS.barcode),
           label: item.label.slice(0, LIMITS.label),
-          unit: byWeight ? "kg" : "unit",
+          unit: item.byWeight ? "kg" : "unit",
           quantityMilli: Math.min(quantityMilli, LIMITS.quantityMilli),
           unitPrice,
-          discount: Math.round((quantityMilli * unitPrice) / 1000) - item.total,
+          // Never negative: a total above quantity × price shows as a gap.
+          discount: Math.max(0, listed - item.total),
           deposit: 0,
         } satisfies LineInput;
       }),
