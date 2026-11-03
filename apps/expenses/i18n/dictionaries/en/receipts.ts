@@ -83,6 +83,13 @@ export const receiptForm = {
   fromFriend: "A friend's receipt — not my expense",
   fromFriendHint:
     "Its products and prices grow the database, without counting as an expense.",
+  pasteText: "Paste text",
+  pasteTitle: "Paste the receipt's text",
+  pasteHint:
+    "The digital receipt copied as is (name, barcode + quantity, ₪ total). Store, date and total are filled in afterwards.",
+  pasteFill: "Pre-fill",
+  pasteNothing: "No item found in this text.",
+  textRead: "{n} line(s) read from the text — check each one before saving.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

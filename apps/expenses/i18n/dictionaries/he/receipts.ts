@@ -82,6 +82,13 @@ export const receiptForm = {
   combine: "איחוד שורות (כפולות, מיחזור)",
   fromFriend: "קבלה של חבר — לא הוצאה שלי",
   fromFriendHint: "המוצרים והמחירים שלה מעשירים את המאגר, בלי להיחשב כהוצאה.",
+  pasteText: "הדבקת טקסט",
+  pasteTitle: "הדבקת הטקסט של הקבלה",
+  pasteHint:
+    "הקבלה הדיגיטלית כפי שהועתקה (שם, ברקוד + כמות, ₪ סכום). החנות, התאריך והסכום ממולאים אחר כך.",
+  pasteFill: "מילוי מוקדם",
+  pasteNothing: "לא נמצאו פריטים בטקסט הזה.",
+  textRead: "{n} שורות נקראו מהטקסט — בדקו כל אחת לפני השמירה.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

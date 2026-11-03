@@ -84,6 +84,14 @@ export const receiptForm = {
   fromFriend: "Ticket d'un ami — pas ma dépense",
   fromFriendHint:
     "Ses produits et ses prix enrichissent la base, sans compter comme une dépense.",
+  pasteText: "Coller le texte",
+  pasteTitle: "Coller le texte du ticket",
+  pasteHint:
+    "Le ticket numérique copié tel quel (nom, code-barres + quantité, ₪ total). Magasin, date et total sont à remplir ensuite.",
+  pasteFill: "Pré-remplir",
+  pasteNothing: "Aucun article reconnu dans ce texte.",
+  textRead:
+    "{n} ligne(s) lue(s) du texte — vérifie chacune avant d'enregistrer.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

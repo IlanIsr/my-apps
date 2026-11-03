@@ -619,3 +619,67 @@ export function attachDeposits(lines: LineInput[]): LineInput[] {
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// Pasted receipt text
+
+const BARCODE_QTY = /^(\d{3,14})\s+(\d+(?:[.,]\d+)?)$/;
+const AMOUNT = /^(?:₪\s*)?(-?\d+(?:[.,]\d+)?)\s*(?:₪)?$/;
+
+/**
+ * The lines of a receipt copied as text (the store's digital receipt): each
+ * item is its label, then "barcode  quantity", then "₪ line total"; promo
+ * lines ("וופל לואקר 2ב26") and headers are skipped. The same barcode on
+ * several lines (a "3 for 20" split 13.34 + 6.66) is one line, and deposit
+ * lines fold into the item above. A line total that isn't quantity × a whole
+ * price keeps the rounded-up price with the gap as its discount.
+ */
+export function parseReceiptText(text: string): LineInput[] {
+  const rows = text
+    .split(/\r?\n/)
+    .map((row) => row.trim())
+    .filter(Boolean);
+  type Item = {
+    barcode: string;
+    label: string;
+    quantity: number;
+    total: number;
+  };
+  const items: Item[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const match = BARCODE_QTY.exec(rows[i]!);
+    const label = rows[i - 1];
+    const amount = AMOUNT.exec(rows[i + 1] ?? "");
+    if (!match || !label || !amount) continue;
+    const quantity = Number(match[2]!.replace(",", "."));
+    const total = Math.round(Number(amount[1]!.replace(",", ".")) * 100);
+    if (!(quantity > 0)) continue;
+    const same = items.find((item) => item.barcode === match[1]);
+    if (same) {
+      same.quantity += quantity;
+      same.total += total;
+    } else {
+      items.push({ barcode: match[1]!, label, quantity, total });
+    }
+    i++;
+  }
+  return attachDeposits(
+    items
+      .filter((item) => item.total > 0)
+      .map((item) => {
+        // A whole number of pieces, else a weight in kg.
+        const byWeight = !Number.isInteger(item.quantity);
+        const quantityMilli = Math.round(item.quantity * 1000);
+        const unitPrice = Math.ceil((item.total * 1000) / quantityMilli);
+        return {
+          barcode: item.barcode.slice(0, LIMITS.barcode),
+          label: item.label.slice(0, LIMITS.label),
+          unit: byWeight ? "kg" : "unit",
+          quantityMilli: Math.min(quantityMilli, LIMITS.quantityMilli),
+          unitPrice,
+          discount: Math.round((quantityMilli * unitPrice) / 1000) - item.total,
+          deposit: 0,
+        } satisfies LineInput;
+      }),
+  );
+}

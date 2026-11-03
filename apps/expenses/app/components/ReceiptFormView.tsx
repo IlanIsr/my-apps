@@ -8,7 +8,8 @@
  * barcode or product name fills the rest of the line (last price at this store).
  * Barcodes can be scanned with the camera (one line, or one line per code in
  * a row), and a photo of the receipt can pre-fill the whole form (read by
- * Claude — always checked before saving).
+ * Claude — always checked before saving), as can the receipt's text pasted
+ * from the store's digital receipt (parsed here, no AI).
  * Its expense goes in Groceries unless another category is picked (paper,
  * tools… bought at a store but not food). A friend's receipt only adds its
  * products and prices: no expense (no category).
@@ -16,6 +17,8 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
+
+import { SimpleModal } from "@repo/ui/modal";
 
 import { readReceiptPhotoAction, saveReceiptAction } from "@/app/actions";
 import {
@@ -38,6 +41,7 @@ import {
   normalizeName,
   parseMoney,
   parseQuantity,
+  parseReceiptText,
   quantityToInput,
   today,
   type LineInput,
@@ -55,7 +59,7 @@ import { Combo } from "./Combo";
 import { ErrorLine, Field, PageHeader, fill, type ErrorTexts } from "./common";
 import { Segmented } from "./Segmented";
 import { Select } from "./Select";
-import { autoDir } from "./TextArea";
+import { autoDir, TextArea } from "./TextArea";
 import { TextInput } from "./TextInput";
 
 export type ReceiptFormTexts = {
@@ -104,6 +108,13 @@ export type ReceiptFormTexts = {
   reading: string;
   /** `{n}` lines read. */
   photoRead: string;
+  pasteText: string;
+  pasteTitle: string;
+  pasteHint: string;
+  pasteFill: string;
+  pasteNothing: string;
+  /** `{n}` lines read. */
+  textRead: string;
   fromFriend: string;
   fromFriendHint: string;
 };
@@ -227,6 +238,8 @@ export function ReceiptFormView({
   const [scanning, setScanning] = useState<number | "continuous" | null>(null);
   const [reading, setReading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  /** The pasted receipt text, while its dialog is open. */
+  const [pasted, setPasted] = useState<string | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
 
@@ -318,13 +331,23 @@ export function ReceiptFormView({
     if (draft.declaredTotal !== null && !declared.trim()) {
       setDeclared(centsToInput(draft.declaredTotal));
     }
-    setRows((current) =>
-      keepBlank([
-        ...current.filter((r) => !isBlank(r)),
-        ...draft.lines.map(toRow),
-      ]),
-    );
+    addLines(draft.lines);
     setNotice(fill(t.photoRead, { n: draft.lines.length }));
+  }
+
+  /** Read lines go after the ones already typed. */
+  const addLines = (read: LineInput[]) =>
+    setRows((current) =>
+      keepBlank([...current.filter((r) => !isBlank(r)), ...read.map(toRow)]),
+    );
+
+  function readText() {
+    const read = parseReceiptText(pasted ?? "");
+    if (read.length === 0) return setError(t.pasteNothing);
+    setError(null);
+    addLines(read);
+    setPasted(null);
+    setNotice(fill(t.textRead, { n: read.length }));
   }
 
   const filled = rows.filter((r) => !isBlank(r));
@@ -382,7 +405,39 @@ export function ReceiptFormView({
         >
           🖼️ {t.gallery}
         </Button>
+        <Button variant="ghost" onClick={() => setPasted("")}>
+          📋 {t.pasteText}
+        </Button>
       </PageHeader>
+      <SimpleModal
+        isOpen={pasted !== null}
+        onClose={() => setPasted(null)}
+        title={t.pasteTitle}
+        description={t.pasteHint}
+        footer={
+          <div className="flex w-full justify-end gap-2">
+            <Button onClick={() => setPasted(null)}>{t.cancel}</Button>
+            <Button
+              variant="primary"
+              onClick={readText}
+              disabled={!pasted?.trim()}
+            >
+              {t.pasteFill}
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-2">
+          <TextArea
+            autoFocus
+            rows={10}
+            className="num text-sm"
+            value={pasted ?? ""}
+            onChange={(e) => setPasted(e.target.value)}
+          />
+          <ErrorLine message={pasted !== null ? error : null} />
+        </div>
+      </SimpleModal>
       {/* The native pickers, driven by the buttons: the camera straight away,
           or an existing picture. */}
       <input
