@@ -20,6 +20,7 @@ import {
 } from "@/db/schema";
 
 import {
+  autoRepay,
   DEFAULT_CATEGORIES,
   GROCERIES_KEY,
   merchantKey,
@@ -39,6 +40,7 @@ const toCategory = (row: typeof categories.$inferSelect): Category => ({
   name: row.name,
   icon: row.icon,
   budget: row.budget,
+  cashEnvelope: row.cashEnvelope,
   archived: row.archived,
 });
 
@@ -55,6 +57,8 @@ const toTransaction = (row: typeof transactions.$inferSelect): Transaction => ({
   litersMilli: row.litersMilli,
   pricePerLiter: row.pricePerLiter,
   items: row.items,
+  toRepay: row.toRepay,
+  repaidOn: row.repaidOn,
 });
 
 // ---------------------------------------------------------------------------
@@ -80,6 +84,7 @@ export async function listCategories(ownerId: string): Promise<Category[]> {
         ownerId,
         key: c.key,
         icon: c.icon,
+        cashEnvelope: c.envelope,
         position,
       })),
     );
@@ -136,6 +141,8 @@ async function backfillReceipts(ownerId: string, categoryId: string) {
         method: r.method,
         merchant: r.merchant,
         amount: payable(Number(r.amount), r.method),
+        // Groceries is a cash envelope by default.
+        toRepay: r.method === "card",
       })),
     )
     .onConflictDoNothing();
@@ -143,7 +150,12 @@ async function backfillReceipts(ownerId: string, categoryId: string) {
 
 export async function createCategory(
   ownerId: string,
-  input: { name: string | null; icon: string; budget: number | null },
+  input: {
+    name: string | null;
+    icon: string;
+    budget: number | null;
+    cashEnvelope: boolean;
+  },
 ): Promise<Category> {
   const all = await listCategories(ownerId);
   const [row] = await db()
@@ -160,6 +172,7 @@ export async function updateCategory(
     name: string | null;
     icon: string;
     budget: number | null;
+    cashEnvelope: boolean;
     archived: boolean;
   },
 ): Promise<Category> {
@@ -179,6 +192,19 @@ export async function assertOwnCategory(ownerId: string, id: string | null) {
     .from(categories)
     .where(and(eq(categories.ownerId, ownerId), eq(categories.id, id)));
   if (!own) throw new StoreError("not-found");
+}
+
+/** Whether the category's budget is taken out in cash (`false` for none). */
+export async function isCashEnvelope(
+  ownerId: string,
+  id: string | null,
+): Promise<boolean> {
+  if (!id) return false;
+  const [row] = await db()
+    .select({ cashEnvelope: categories.cashEnvelope })
+    .from(categories)
+    .where(and(eq(categories.ownerId, ownerId), eq(categories.id, id)));
+  return row?.cashEnvelope ?? false;
 }
 
 // ---------------------------------------------------------------------------
@@ -234,8 +260,9 @@ export async function createTransaction(
 }
 
 /**
- * A receipt's transaction only takes a new category / note here — its date,
- * amount, merchant and method follow the receipt.
+ * A receipt's transaction only takes a new category / note / cash-back flag
+ * here — its date, amount, merchant and method follow the receipt. No longer
+ * owing cash back forgets when it was put back.
  */
 export async function updateTransaction(
   ownerId: string,
@@ -246,9 +273,12 @@ export async function updateTransaction(
   const own = and(eq(transactions.ownerId, ownerId), eq(transactions.id, id));
   const [current] = await db().select().from(transactions).where(own);
   if (!current) throw new StoreError("not-found");
+  const repay = input.toRepay
+    ? { toRepay: true }
+    : { toRepay: false, repaidOn: null };
   const set = current.receiptId
-    ? { categoryId: input.categoryId, note: input.note }
-    : input;
+    ? { categoryId: input.categoryId, note: input.note, ...repay }
+    : { ...input, ...repay };
   const [row] = await db().update(transactions).set(set).where(own).returning();
   const merchant = row!.merchant;
   if (merchant && input.categoryId) {
@@ -286,13 +316,20 @@ export async function importTransactions(
     importKey: string;
   }[],
 ): Promise<number> {
-  const own = new Set((await listCategories(ownerId)).map((c) => c.id));
+  const own = new Map((await listCategories(ownerId)).map((c) => [c.id, c]));
   if (rows.some((r) => r.categoryId && !own.has(r.categoryId))) {
     throw new StoreError("not-found");
   }
   const inserted = await db()
     .insert(transactions)
-    .values(rows.map((r) => ({ ownerId, method: "card" as const, ...r })))
+    .values(
+      rows.map((r) => ({
+        ownerId,
+        method: "card" as const,
+        ...r,
+        toRepay: autoRepay("card", r.categoryId ? own.get(r.categoryId) : null),
+      })),
+    )
     .onConflictDoNothing()
     .returning({ id: transactions.id });
   const learned = new Map<string, { merchant: string; categoryId: string }>();
@@ -304,6 +341,52 @@ export async function importTransactions(
     await learn(ownerId, merchant, categoryId);
   }
   return inserted.length;
+}
+
+// ---------------------------------------------------------------------------
+// Cash owed back to the account
+
+/** Marks one expense's cash as put back on `repaidOn` (`null` = not yet). */
+export async function setRepaid(
+  ownerId: string,
+  id: string,
+  repaidOn: string | null,
+): Promise<Transaction> {
+  const [row] = await db()
+    .update(transactions)
+    .set({ repaidOn })
+    .where(
+      and(
+        eq(transactions.ownerId, ownerId),
+        eq(transactions.id, id),
+        eq(transactions.toRepay, true),
+      ),
+    )
+    .returning();
+  if (!row) throw new StoreError("not-found");
+  return toTransaction(row);
+}
+
+/**
+ * "I put it all back": every expense still owing cash is repaid on
+ * `repaidOn`. Returns how many.
+ */
+export async function settleRepayments(
+  ownerId: string,
+  repaidOn: string,
+): Promise<number> {
+  const rows = await db()
+    .update(transactions)
+    .set({ repaidOn })
+    .where(
+      and(
+        eq(transactions.ownerId, ownerId),
+        eq(transactions.toRepay, true),
+        isNull(transactions.repaidOn),
+      ),
+    )
+    .returning({ id: transactions.id });
+  return rows.length;
 }
 
 // ---------------------------------------------------------------------------

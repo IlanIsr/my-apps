@@ -100,7 +100,7 @@ export function unit(value: unknown): Unit {
   return value as Unit;
 }
 
-function day(value: unknown): string {
+export function day(value: unknown): string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new InvalidInputError("date");
   }
@@ -193,6 +193,8 @@ export function transactionInput(value: unknown): TransactionInput {
     merchant: optionalText(input.merchant, "merchant", EXPENSE_LIMITS.merchant),
     method: paidWith,
     note: optionalMultiline(input.note, "note", EXPENSE_LIMITS.note),
+    // Cash back to the account: only a card payment can owe it.
+    toRepay: input.toRepay === true && paidWith === "card",
   };
 }
 
@@ -222,6 +224,7 @@ export function categoryInput(value: unknown) {
     name: optionalText(input.name, "name", EXPENSE_LIMITS.categoryName),
     icon: text(input.icon, "icon", EXPENSE_LIMITS.icon),
     budget,
+    cashEnvelope: input.cashEnvelope === true,
     archived: input.archived === true,
   };
 }

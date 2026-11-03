@@ -141,6 +141,8 @@ export const categories = pgTable(
     position: integer("position").notNull(),
     /** Monthly budget in cents. */
     budget: integer("budget"),
+    /** Its budget is taken out in cash (card payments owe it back). */
+    cashEnvelope: boolean("cash_envelope").notNull().default(false),
     archived: boolean("archived").notNull().default(false),
   },
   (t) => [index("categories_owner_idx").on(t.ownerId)],
@@ -171,6 +173,10 @@ export const transactions = pgTable(
     pricePerLiter: integer("price_per_liter"),
     /** Split into lines (label + cents); the amount is then their sum. */
     items: jsonb("items").$type<ExpenseItem[]>(),
+    /** Paid by card from a cash budget: that cash goes back to the account. */
+    toRepay: boolean("to_repay").notNull().default(false),
+    /** When it went back; `null` while still owed. */
+    repaidOn: date("repaid_on", { mode: "string" }),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [

@@ -19,7 +19,12 @@ import {
   transactions,
 } from "@/db/schema";
 
-import { assertOwnCategory, groceriesCategoryId } from "./expense-store";
+import { autoRepay } from "./expense-logic";
+import {
+  assertOwnCategory,
+  groceriesCategoryId,
+  isCashEnvelope,
+} from "./expense-store";
 import { StoreError } from "./store-error";
 
 import {
@@ -351,6 +356,10 @@ export async function saveReceipt(
   const productIds = await resolveProducts(ownerId, input.lines);
   await assertOwnCategory(ownerId, input.categoryId);
   const categoryId = input.categoryId ?? (await groceriesCategoryId(ownerId));
+  // Paid by card from a cash budget: that cash goes back to the account.
+  const toRepay = autoRepay(input.method, {
+    cashEnvelope: await isCashEnvelope(ownerId, categoryId),
+  });
   const receiptId = id ?? crypto.randomUUID();
   const fields = {
     storeId,
@@ -366,6 +375,7 @@ export async function saveReceipt(
     merchant: input.storeName,
     method: input.method,
     categoryId,
+    toRepay,
   };
   const syncExpense = db()
     .insert(transactions)
@@ -373,7 +383,8 @@ export async function saveReceipt(
     .onConflictDoUpdate({
       target: transactions.receiptId,
       targetWhere: sql`${transactions.receiptId} is not null`,
-      set: expense,
+      // No longer owing cash back forgets when it was put back.
+      set: toRepay ? expense : { ...expense, repaidOn: null },
     });
   const items = input.lines.map((line, position) => ({
     receiptId,

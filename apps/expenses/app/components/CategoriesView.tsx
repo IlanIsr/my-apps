@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * The categories: icon, name, monthly budget, hidden or not. A default
+ * The categories: icon, name, monthly budget, budget taken out in cash or not
+ * (an "envelope": card payments in it owe that cash back), hidden or not. A default
  * category keeps its translated name until renamed. New ones are added at the
  * end.
  */
@@ -26,18 +27,26 @@ export type CategoriesTexts = {
   name: string;
   budget: string;
   noBudget: string;
+  cashEnvelope: string;
   hidden: string;
   save: string;
   add: string;
   newName: string;
 };
 
-type Draft = { icon: string; name: string; budget: string; archived: boolean };
+type Draft = {
+  icon: string;
+  name: string;
+  budget: string;
+  cashEnvelope: boolean;
+  archived: boolean;
+};
 
 const toDraft = (c: Category): Draft => ({
   icon: c.icon,
   name: c.name ?? "",
   budget: c.budget === null ? "" : centsToInput(c.budget),
+  cashEnvelope: c.cashEnvelope,
   archived: c.archived,
 });
 
@@ -54,7 +63,13 @@ function CategoryRow({
 }) {
   const initial = category
     ? toDraft(category)
-    : { icon: "🏷️", name: "", budget: "", archived: false };
+    : {
+        icon: "🏷️",
+        name: "",
+        budget: "",
+        cashEnvelope: false,
+        archived: false,
+      };
   const [draft, setDraft] = useState<Draft>(initial);
   const [busy, setBusy] = useState(false);
   const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
@@ -62,7 +77,7 @@ function CategoryRow({
 
   return (
     <li
-      className={`grid grid-cols-[3.5rem_1fr] gap-2 p-3 sm:grid-cols-[3.5rem_1fr_8rem_auto_auto] sm:items-end ${
+      className={`grid grid-cols-[3.5rem_1fr] gap-2 p-3 sm:grid-cols-[3.5rem_1fr_8rem_auto_auto_auto] sm:items-end ${
         draft.archived ? "opacity-60" : ""
       }`}
     >
@@ -89,6 +104,13 @@ function CategoryRow({
           onChange={(e) => set({ budget: e.target.value })}
         />
       </Field>
+      <Checkbox
+        checked={draft.cashEnvelope}
+        onChange={(cashEnvelope) => set({ cashEnvelope })}
+        className="col-span-2 flex items-center gap-2 text-sm sm:col-span-1 sm:pb-2"
+      >
+        💵 {t.cashEnvelope}
+      </Checkbox>
       {category ? (
         <Checkbox
           checked={draft.archived}
@@ -135,6 +157,7 @@ export function CategoriesView({ categories }: { categories: Category[] }) {
       icon: draft.icon.trim() || "🏷️",
       name: draft.name.trim() || null,
       budget,
+      cashEnvelope: draft.cashEnvelope,
       archived: draft.archived,
     };
     const result = category
@@ -156,7 +179,7 @@ export function CategoriesView({ categories }: { categories: Category[] }) {
       <ul className="card mt-2 divide-y divide-line">
         {categories.map((c) => (
           <CategoryRow
-            key={`${c.id}-${c.name}-${c.budget}-${c.archived}-${c.icon}`}
+            key={`${c.id}-${c.name}-${c.budget}-${c.cashEnvelope}-${c.archived}-${c.icon}`}
             category={c}
             t={t}
             placeholder={

@@ -48,6 +48,11 @@ export const transactions = {
     "{category} : {spent} sur {budget} — le budget est presque atteint.",
   budgetOver: "{category} : {spent} sur {budget} — budget dépassé.",
   projection: "≈ {amount} en fin de mois à ce rythme",
+  repayTitle: "À remettre sur le compte",
+  repayHint:
+    "Payé par carte sur un budget sorti en espèces : remets ces montants sur le compte.",
+  repayAll: "J'ai tout déposé",
+  repayOne: "Déposé",
   perLiter: "{liters} L × {price}/L",
   goals: "Objectifs du mois",
   seeGoals: "Voir",
@@ -79,6 +84,8 @@ export const transactionModal = {
   addItem: "Ajouter une ligne",
   removeItem: "Retirer la ligne",
   badItems: "Chaque ligne a besoin d'un nom et d'un montant.",
+  toRepay: "À remettre sur le compte",
+  repaidOn: "Remis le {date}",
 } as const satisfies TransactionModalTexts;
 
 export const categories = {
@@ -89,6 +96,7 @@ export const categories = {
   name: "Nom",
   budget: "Budget / mois",
   noBudget: "Aucun",
+  cashEnvelope: "Sorti en espèces",
   hidden: "Masquée",
   save: "Enregistrer",
   add: "Ajouter",
@@ -152,6 +160,13 @@ export const goalCard = {
   projection: "≈ {amount} en fin de mois à ce rythme",
   projectionOver:
     "⚠ À ce rythme : {amount} en fin de mois, au-dessus de l'objectif",
+  savings: "Économie",
+  savedOf: "{amount} épargnés sur {target}",
+  savingsHow: "Espèces {cash} − objectifs catégories {planned}",
+  overPlanned:
+    "⚠ Les objectifs catégories dépassent l'objectif espèces de {amount}",
+  savingsShort: "{amount} en moins que prévu",
+  savingsRepay: "{amount} à remettre sur le compte (cartes), non comptés",
 } as const satisfies GoalCardTexts;
 
 export const goalModal = {

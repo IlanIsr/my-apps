@@ -7,6 +7,8 @@
  * Fuel & co. can be entered by the litre (litres × price per litre = the
  * amount); a restaurant bill can be split into lines (dish, bread, drink…),
  * the amount being their sum — just detail, the category stays the expense's.
+ * A card payment in a category whose budget was taken out in cash owes that
+ * cash back to the account ("to put back", pre-ticked, can be overridden).
  * A receipt's transaction only takes a category / note here.
  */
 
@@ -22,6 +24,7 @@ import {
   updateTransactionAction,
 } from "@/app/actions";
 import {
+  autoRepay,
   categoryLabel,
   itemsAmount,
   litersAmount,
@@ -37,6 +40,7 @@ import {
 } from "@/lib/expense-logic";
 import {
   centsToInput,
+  formatDay,
   formatMoney,
   parseMoney,
   parseQuantity,
@@ -48,6 +52,7 @@ import {
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
+import { Checkbox } from "./Checkbox";
 import { Combo } from "./Combo";
 import { ErrorLine, Field, LinkButton, fill } from "./common";
 import { ReceiptLines } from "./ReceiptView";
@@ -81,6 +86,9 @@ export type TransactionModalTexts = {
   addItem: string;
   removeItem: string;
   badItems: string;
+  toRepay: string;
+  /** `{date}`. */
+  repaidOn: string;
 };
 
 type Mode = "amount" | "split" | "liter";
@@ -153,6 +161,17 @@ export function TransactionModal({
     ? itemCents.reduce<number>((sum, c) => sum + (c ?? 0), 0)
     : null;
   const splitTotal = splitExact === null ? null : payable(splitExact, method);
+  // Cash to put back: follows the category / method until ticked by hand.
+  const [repayPicked, setRepayPicked] = useState<boolean | null>(
+    transaction ? transaction.toRepay : null,
+  );
+  const toRepay =
+    method === "card" &&
+    (repayPicked ??
+      autoRepay(
+        method,
+        categories.find((c) => c.id === categoryId),
+      ));
   const [date, setDate] = useState(transaction?.date ?? today());
   const [note, setNote] = useState(transaction?.note ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -228,6 +247,7 @@ export function TransactionModal({
       litersMilli: byLiter ? litersMilli : null,
       pricePerLiter: byLiter ? pricePerLiter : null,
       items: split,
+      toRepay,
     };
     const result = transaction
       ? await updateTransactionAction(transaction.id, input)
@@ -480,6 +500,25 @@ export function TransactionModal({
               </Field>
             </div>
           </>
+        )}
+
+        {method === "card" && (
+          <div className="flex flex-col gap-1">
+            <Checkbox
+              checked={toRepay}
+              onChange={setRepayPicked}
+              className="flex items-center gap-2 text-sm"
+            >
+              ↩︎ {t.toRepay}
+            </Checkbox>
+            {toRepay && transaction?.repaidOn && (
+              <span className="ps-7 text-xs text-muted">
+                {fill(t.repaidOn, {
+                  date: formatDay(transaction.repaidOn, tag),
+                })}
+              </span>
+            )}
+          </div>
         )}
 
         <Field label={t.note}>
