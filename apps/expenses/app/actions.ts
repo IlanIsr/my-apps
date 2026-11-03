@@ -91,6 +91,12 @@ export async function deleteReceiptAction(
   });
 }
 
+export async function createProductAction(
+  input: unknown,
+): Promise<ActionResult<Product>> {
+  return run((ownerId) => store.createProduct(ownerId, v.productInput(input)));
+}
+
 export async function updateProductAction(
   id: string,
   input: unknown,

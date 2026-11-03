@@ -1,5 +1,6 @@
 import type { AisleTexts } from "@/app/components/ProductView";
 import type { DuplicatesTexts } from "@/app/components/DuplicatesView";
+import type { ProductModalTexts } from "@/app/components/ProductModal";
 import type { ProductsTexts } from "@/app/components/ProductsView";
 import type { ProductTexts } from "@/app/components/ProductView";
 import type { ShoppingToggleTexts } from "@/app/components/ShoppingToggle";
@@ -52,6 +53,15 @@ export const product = {
   contentUnits: { l: "L", kg: "kg" },
   badContent: "Invalid content.",
 } as const satisfies ProductTexts;
+
+export const productModal = {
+  add: "Add a product",
+  title: "New product",
+  friendHint: "Many products with their prices?",
+  friendReceipt: "A friend's receipt",
+  create: "Create",
+  cancel: "Cancel",
+} as const satisfies ProductModalTexts;
 
 export const shoppingToggle = {
   add: "List",

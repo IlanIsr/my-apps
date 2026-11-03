@@ -18,6 +18,7 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} by month end at this pace",
   setBudget: "Set a budget",
+  friend: "Friend",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -35,6 +36,7 @@ export const receipt = {
   mismatch: "Doesn't match",
   subtotal: "Subtotal",
   rounding: "Rounding (cash)",
+  friend: "A friend's receipt",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -76,6 +78,9 @@ export const receiptForm = {
   gallery: "Gallery",
   rounding: "incl. rounding {amount}",
   combine: "Combine identical lines",
+  fromFriend: "A friend's receipt — not my expense",
+  fromFriendHint:
+    "Its products and prices grow the database, without counting as an expense.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

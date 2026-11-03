@@ -18,6 +18,7 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} en fin de mois à ce rythme",
   setBudget: "Fixer un budget",
+  friend: "Ami",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -35,6 +36,7 @@ export const receipt = {
   mismatch: "Ne correspond pas",
   subtotal: "Sous-total",
   rounding: "Arrondi (espèces)",
+  friend: "Ticket d'un ami",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -77,6 +79,9 @@ export const receiptForm = {
   gallery: "Galerie",
   rounding: "dont arrondi {amount}",
   combine: "Regrouper les lignes identiques",
+  fromFriend: "Ticket d'un ami — pas ma dépense",
+  fromFriendHint:
+    "Ses produits et ses prix enrichissent la base, sans compter comme une dépense.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

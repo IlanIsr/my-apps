@@ -9,7 +9,8 @@
  * a row), and a photo of the receipt can pre-fill the whole form (read by
  * Claude — always checked before saving).
  * Its expense goes in Groceries unless another category is picked (paper,
- * tools… bought at a store but not food).
+ * tools… bought at a store but not food). A friend's receipt only adds its
+ * products and prices: no expense (no category).
  */
 
 import { useRouter } from "next/navigation";
@@ -46,6 +47,7 @@ import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { BarcodeScanner } from "./BarcodeScanner";
 import { Button } from "./Button";
+import { Checkbox } from "./Checkbox";
 import { Combo } from "./Combo";
 import { ErrorLine, Field, PageHeader, fill, type ErrorTexts } from "./common";
 import { Segmented } from "./Segmented";
@@ -97,6 +99,8 @@ export type ReceiptFormTexts = {
   reading: string;
   /** `{n}` lines read. */
   photoRead: string;
+  fromFriend: string;
+  fromFriendHint: string;
 };
 
 type Row = {
@@ -175,12 +179,15 @@ export function ReceiptFormView({
   products,
   lastPrices,
   categories,
+  friend = false,
 }: {
   receipt: Receipt | null;
   stores: Store[];
   products: Product[];
   lastPrices: LastPrices;
   categories: Category[];
+  /** A new receipt starts as a friend's (from the Products page's "+"). */
+  friend?: boolean;
 }) {
   const messages = useTranslations();
   const t = messages.receiptForm;
@@ -195,6 +202,7 @@ export function ReceiptFormView({
   );
   const [note, setNote] = useState(receipt?.note ?? "");
   const [method, setMethod] = useState<Method>(receipt?.method ?? "cash");
+  const [fromFriend, setFromFriend] = useState(receipt?.fromFriend ?? friend);
   const [categoryId, setCategoryId] = useState(
     receipt?.categoryId ??
       categories.find((c) => c.key === GROCERIES_KEY)?.id ??
@@ -340,6 +348,7 @@ export function ReceiptFormView({
       note,
       method,
       categoryId,
+      fromFriend,
       lines,
     });
     setSaving(false);
@@ -383,6 +392,19 @@ export function ReceiptFormView({
           {notice}
         </p>
       )}
+
+      <div className="mb-4 flex flex-col gap-1">
+        <Checkbox
+          checked={fromFriend}
+          onChange={setFromFriend}
+          className="flex items-center gap-2 text-sm font-medium"
+        >
+          👥 {t.fromFriend}
+        </Checkbox>
+        {fromFriend && (
+          <span className="ps-7 text-xs text-muted">{t.fromFriendHint}</span>
+        )}
+      </div>
 
       <section className="card mb-6 grid gap-3 p-4 sm:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-1">
@@ -568,21 +590,23 @@ export function ReceiptFormView({
             onChange={setMethod}
           />
         </div>
-        <div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-64">
-          <span className="text-xs font-medium text-muted">{t.category}</span>
-          <Select
-            aria-label={t.category}
-            className="w-full"
-            value={categoryId ?? ""}
-            onChange={setCategoryId}
-            options={categories
-              .filter((c) => !c.archived || c.id === categoryId)
-              .map((c) => ({
-                key: c.id,
-                label: `${c.icon} ${categoryLabel(c, messages.categoryNames)}`,
-              }))}
-          />
-        </div>
+        {!fromFriend && (
+          <div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-64">
+            <span className="text-xs font-medium text-muted">{t.category}</span>
+            <Select
+              aria-label={t.category}
+              className="w-full"
+              value={categoryId ?? ""}
+              onChange={setCategoryId}
+              options={categories
+                .filter((c) => !c.archived || c.id === categoryId)
+                .map((c) => ({
+                  key: c.id,
+                  label: `${c.icon} ${categoryLabel(c, messages.categoryNames)}`,
+                }))}
+            />
+          </div>
+        )}
       </div>
 
       <Field label={t.note} className="mt-4">

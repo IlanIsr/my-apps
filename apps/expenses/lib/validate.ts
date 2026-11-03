@@ -142,6 +142,7 @@ export function receiptInput(value: unknown): ReceiptInput {
     note: optionalText(input.note, "note", LIMITS.note),
     method: method(input.method),
     categoryId: optionalId(input.categoryId, "categoryId"),
+    fromFriend: input.fromFriend === true,
     lines: input.lines.map(line),
   };
 }

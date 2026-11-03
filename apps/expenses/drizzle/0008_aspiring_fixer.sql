@@ -1,0 +1,1 @@
+ALTER TABLE "receipts" ADD COLUMN "from_friend" boolean DEFAULT false NOT NULL;

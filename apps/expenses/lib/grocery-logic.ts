@@ -139,6 +139,8 @@ export type ReceiptInput = {
   method: Method;
   /** Its transaction's category; `null` = groceries. */
   categoryId: string | null;
+  /** A friend's receipt: prices only, no expense (method / category unused). */
+  fromFriend: boolean;
   lines: LineInput[];
 };
 
@@ -153,6 +155,7 @@ export type Receipt = {
   note: string | null;
   method: Method;
   categoryId: string | null;
+  fromFriend: boolean;
   lines: ReceiptLine[];
 };
 
@@ -163,6 +166,7 @@ export type ReceiptSummary = {
   date: string;
   declaredTotal: number | null;
   method: Method;
+  fromFriend: boolean;
   total: number;
   lineCount: number;
 };

@@ -103,6 +103,31 @@ export async function listProducts(ownerId: string): Promise<Product[]> {
   return rows.map(toProduct);
 }
 
+/**
+ * A product added by hand (no purchase yet). A barcode already used is an
+ * error; without one, a product of the same name is returned instead of a
+ * duplicate.
+ */
+export async function createProduct(
+  ownerId: string,
+  input: ProductInput,
+): Promise<Product> {
+  const all = await listProducts(ownerId);
+  if (input.barcode && all.some((p) => p.barcode === input.barcode)) {
+    throw new StoreError("barcode-taken");
+  }
+  if (!input.barcode) {
+    const key = normalizeName(input.name);
+    const same = all.find((p) => normalizeName(p.name) === key);
+    if (same) return same;
+  }
+  const [row] = await db()
+    .insert(products)
+    .values({ ownerId, ...input })
+    .returning();
+  return toProduct(row!);
+}
+
 export async function updateProduct(
   ownerId: string,
   id: string,
@@ -286,6 +311,7 @@ export async function listReceipts(ownerId: string): Promise<ReceiptSummary[]> {
       date: receipts.date,
       declaredTotal: receipts.declaredTotal,
       method: receipts.method,
+      fromFriend: receipts.fromFriend,
       total: sql<string>`coalesce(sum(${LINE_TOTAL}), 0)`,
       lineCount: sql<number>`count(${receiptItems.id})::int`,
     })
@@ -316,6 +342,7 @@ export async function getReceipt(
       note: receipts.note,
       method: receipts.method,
       categoryId: transactions.categoryId,
+      fromFriend: receipts.fromFriend,
     })
     .from(receipts)
     .innerJoin(stores, eq(stores.id, receipts.storeId))
@@ -367,6 +394,7 @@ export async function saveReceipt(
     declaredTotal: input.declaredTotal,
     note: input.note,
     method: input.method,
+    fromFriend: input.fromFriend,
   };
   // The receipt's total as an expense (same transaction as the receipt).
   const expense = {
@@ -377,15 +405,18 @@ export async function saveReceipt(
     categoryId,
     toRepay,
   };
-  const syncExpense = db()
-    .insert(transactions)
-    .values({ ownerId, receiptId, ...expense })
-    .onConflictDoUpdate({
-      target: transactions.receiptId,
-      targetWhere: sql`${transactions.receiptId} is not null`,
-      // No longer owing cash back forgets when it was put back.
-      set: toRepay ? expense : { ...expense, repaidOn: null },
-    });
+  const syncExpense = input.fromFriend
+    ? // A friend's receipt is not an expense (it may have been one before).
+      db().delete(transactions).where(eq(transactions.receiptId, receiptId))
+    : db()
+        .insert(transactions)
+        .values({ ownerId, receiptId, ...expense })
+        .onConflictDoUpdate({
+          target: transactions.receiptId,
+          targetWhere: sql`${transactions.receiptId} is not null`,
+          // No longer owing cash back forgets when it was put back.
+          set: toRepay ? expense : { ...expense, repaidOn: null },
+        });
   const items = input.lines.map((line, position) => ({
     receiptId,
     productId: productIds[position]!,

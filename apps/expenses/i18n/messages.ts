@@ -19,6 +19,7 @@ import type {
 import type { TransactionsTexts } from "@/app/components/TransactionsView";
 import type { ErrorTexts } from "@/app/components/common";
 import type { ProductsTexts } from "@/app/components/ProductsView";
+import type { ProductModalTexts } from "@/app/components/ProductModal";
 import type { AisleTexts, ProductTexts } from "@/app/components/ProductView";
 import type { DuplicatesTexts } from "@/app/components/DuplicatesView";
 import type { ScannerTexts } from "@/app/components/BarcodeScanner";
@@ -46,6 +47,7 @@ export type Messages = {
   receiptForm: ReceiptFormTexts;
   products: ProductsTexts;
   product: ProductTexts;
+  productModal: ProductModalTexts;
   shoppingToggle: ShoppingToggleTexts;
   stores: StoresTexts;
   shopping: ShoppingTexts;

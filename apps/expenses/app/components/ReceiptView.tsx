@@ -45,6 +45,8 @@ export type ReceiptTexts = {
   mismatch: string;
   subtotal: string;
   rounding: string;
+  /** A friend's receipt: prices only, not an expense. */
+  friend: string;
 };
 
 /** A receipt's lines: label, total, quantity × price, discount. */
@@ -117,8 +119,10 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
       </Link>
       <PageHeader
         eyebrow={`${formatDay(receipt.date, tag)} · ${
-          METHOD_ICON[receipt.method]
-        } ${messages.methods[receipt.method]}`}
+          receipt.fromFriend
+            ? `👥 ${t.friend}`
+            : `${METHOD_ICON[receipt.method]} ${messages.methods[receipt.method]}`
+        }`}
         title={receipt.storeName}
       >
         <LinkButton href={`/receipts/${receipt.id}/edit`}>{t.edit}</LinkButton>

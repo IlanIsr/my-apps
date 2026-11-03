@@ -18,6 +18,7 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} בסוף החודש בקצב הזה",
   setBudget: "לקבוע תקציב",
+  friend: "חבר",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -35,6 +36,7 @@ export const receipt = {
   mismatch: "לא תואם",
   subtotal: "סכום ביניים",
   rounding: "עיגול (מזומן)",
+  friend: "קבלה של חבר",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -76,6 +78,8 @@ export const receiptForm = {
   gallery: "גלריה",
   rounding: "כולל עיגול {amount}",
   combine: "איחוד שורות זהות",
+  fromFriend: "קבלה של חבר — לא הוצאה שלי",
+  fromFriendHint: "המוצרים והמחירים שלה מעשירים את המאגר, בלי להיחשב כהוצאה.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

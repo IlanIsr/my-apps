@@ -85,6 +85,11 @@ export const receipts = pgTable(
     /** The total printed on the receipt (cents), to check the sum against. */
     declaredTotal: integer("declared_total"),
     note: text("note"),
+    /**
+     * A friend's receipt, entered for its prices: its products and prices
+     * count, but it is not an expense (no transaction).
+     */
+    fromFriend: boolean("from_friend").notNull().default(false),
     createdAt: ts("created_at").notNull().defaultNow(),
     updatedAt: ts("updated_at").notNull().defaultNow(),
   },

@@ -113,7 +113,7 @@ export async function groceriesCategoryId(ownerId: string): Promise<string> {
   return created!.id;
 }
 
-/** One transaction per receipt that has none yet. */
+/** One transaction per receipt that has none yet (a friend's has none). */
 async function backfillReceipts(ownerId: string, categoryId: string) {
   const totals = await db()
     .select({
@@ -127,7 +127,13 @@ async function backfillReceipts(ownerId: string, categoryId: string) {
     .innerJoin(stores, eq(stores.id, receipts.storeId))
     .leftJoin(receiptItems, eq(receiptItems.receiptId, receipts.id))
     .leftJoin(transactions, eq(transactions.receiptId, receipts.id))
-    .where(and(eq(receipts.ownerId, ownerId), isNull(transactions.id)))
+    .where(
+      and(
+        eq(receipts.ownerId, ownerId),
+        eq(receipts.fromFriend, false),
+        isNull(transactions.id),
+      ),
+    )
     .groupBy(receipts.id, stores.name);
   if (totals.length === 0) return;
   await db()
