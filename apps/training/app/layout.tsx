@@ -14,6 +14,7 @@ import {
   Newsreader,
   Noto_Serif_Hebrew,
 } from "next/font/google";
+import Script from "next/script";
 
 import { AuthProvider } from "@repo/auth/provider";
 
@@ -80,7 +81,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased">
-        <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
+        {/* `beforeInteractive`: inlined in the server HTML's <head>, run
+            before hydration — a bare <script> errors when React re-renders
+            the layout on the client. */}
+        <Script id="lang-init" strategy="beforeInteractive">
+          {LANG_INIT}
+        </Script>
         <AuthProvider>
           <Providers>
             <AppShell>{children}</AppShell>

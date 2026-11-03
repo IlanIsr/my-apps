@@ -8,6 +8,7 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 import { Figtree, Fraunces, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 
 import { AuthControl } from "@repo/auth/nav";
 import { AuthProvider } from "@repo/auth/provider";
@@ -65,7 +66,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased">
-        <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
+        {/* `beforeInteractive`: inlined in the server HTML's <head>, run
+            before hydration — a bare <script> errors when React re-renders
+            the layout on the client. */}
+        <Script id="lang-init" strategy="beforeInteractive">
+          {LANG_INIT}
+        </Script>
         <AuthProvider>
           <I18nProvider>
             {/* HeroUI / React Aria take their direction from this, not from
