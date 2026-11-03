@@ -124,6 +124,23 @@
     outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
+  /* Browsers lay a date field out LTR whatever the page direction: in Hebrew,
+     put the calendar icon at the start (left) and the date at the end (right),
+     like the other fields. The digits themselves stay dd/mm/yyyy. */
+  [dir="rtl"] input[type="date"]::-webkit-calendar-picker-indicator {
+    order: -1;
+  }
+  [dir="rtl"] input[type="date"]::-webkit-datetime-edit {
+    display: flex;
+    flex: 1;
+  }
+  [dir="rtl"] input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+    margin-left: auto;
+  }
+  /* iOS Safari */
+  [dir="rtl"] input[type="date"]::-webkit-date-and-time-value {
+    text-align: right;
+  }
 }
 
 @layer components {
