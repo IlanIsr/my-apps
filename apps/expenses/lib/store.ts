@@ -31,6 +31,7 @@ import {
   normalizeName,
   pairKey,
   payable,
+  priceWithDeposit,
   receiptTotal,
   type LineInput,
   type PricePoint,
@@ -55,8 +56,8 @@ const toProduct = (row: typeof products.$inferSelect): Product => ({
   contentUnit: row.contentUnit,
 });
 
-/** `round(quantity × unit price) − discount`, as in `lineTotal`. */
-const LINE_TOTAL = sql<number>`(round(${receiptItems.quantityMilli}::numeric * ${receiptItems.unitPrice} / 1000) - ${receiptItems.discount})`;
+/** `round(quantity × unit price) − discount + deposit`, as in `lineTotal`. */
+const LINE_TOTAL = sql<number>`(round(${receiptItems.quantityMilli}::numeric * ${receiptItems.unitPrice} / 1000) - ${receiptItems.discount} + ${receiptItems.deposit})`;
 
 // ---------------------------------------------------------------------------
 // Stores
@@ -284,18 +285,20 @@ export async function listPricePoints(ownerId: string): Promise<PricePoint[]> {
       date: receipts.date,
       quantityMilli: receiptItems.quantityMilli,
       listedPrice: receiptItems.unitPrice,
+      deposit: receiptItems.deposit,
       paid: LINE_TOTAL,
     })
     .from(receiptItems)
     .innerJoin(receipts, eq(receipts.id, receiptItems.receiptId))
     .where(eq(receipts.ownerId, ownerId))
     .orderBy(asc(receipts.date));
-  // A product's price is its listed one: a discount is a bonus of that
-  // purchase, not the product's price (it only lowers what was `paid`).
-  return rows.map((row) => ({
+  // A product's price is its listed one plus its deposit (paid every time):
+  // a discount is a bonus of that purchase, not the product's price (it only
+  // lowers what was `paid`).
+  return rows.map(({ deposit, ...row }) => ({
     ...row,
     paid: Number(row.paid),
-    unitPrice: row.listedPrice,
+    unitPrice: priceWithDeposit({ ...row, deposit }),
   }));
 }
 
@@ -358,6 +361,7 @@ export async function getReceipt(
       quantityMilli: receiptItems.quantityMilli,
       unitPrice: receiptItems.unitPrice,
       discount: receiptItems.discount,
+      deposit: receiptItems.deposit,
     })
     .from(receiptItems)
     .innerJoin(products, eq(products.id, receiptItems.productId))
@@ -425,6 +429,7 @@ export async function saveReceipt(
     quantityMilli: line.quantityMilli,
     unitPrice: line.unitPrice,
     discount: line.discount,
+    deposit: line.deposit,
   }));
 
   const head = id

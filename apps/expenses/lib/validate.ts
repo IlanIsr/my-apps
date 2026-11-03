@@ -124,6 +124,7 @@ function line(value: unknown): LineInput {
     ),
     unitPrice: int(input.unitPrice, "unitPrice", 0, LIMITS.cents),
     discount: int(input.discount, "discount", 0, LIMITS.cents),
+    deposit: int(input.deposit ?? 0, "deposit", 0, LIMITS.cents),
   };
 }
 

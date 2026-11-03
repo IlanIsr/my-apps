@@ -2,7 +2,8 @@
 
 /**
  * Entering / editing a receipt: store, date, the total printed on it, then one
- * row per line (barcode, label, piece / kg, quantity, unit price, discount).
+ * row per line (barcode, label, piece / kg, quantity, unit price, discount,
+ * bottle / can deposit — a deposit line typed below its item folds into it).
  * The running sum is compared with the printed total as you type. A known
  * barcode or product name fills the rest of the line (last price at this store).
  * Barcodes can be scanned with the camera (one line, or one line per code in
@@ -27,7 +28,9 @@ import {
 } from "@/lib/expense-logic";
 import {
   centsToInput,
+  attachDeposits,
   combineLines,
+  hasDepositLines,
   hasDuplicateLines,
   formatMoney,
   lineTotal,
@@ -72,6 +75,8 @@ export type ReceiptFormTexts = {
   unitPrice: string;
   pricePerKg: string;
   discount: string;
+  /** Bottle / can deposit charged with the item. */
+  deposit: string;
   lineTotal: string;
   removeLine: string;
   addLine: string;
@@ -92,7 +97,7 @@ export type ReceiptFormTexts = {
   badLine: string;
   scan: string;
   scanContinuous: string;
-  /** Merge the lines that are the same item. */
+  /** Merge the lines that are the same item, deposits into their item. */
   combine: string;
   photo: string;
   gallery: string;
@@ -111,6 +116,7 @@ type Row = {
   quantity: string;
   price: string;
   discount: string;
+  deposit: string;
 };
 
 /** `productId → storeId → listed unit price`. */
@@ -125,6 +131,7 @@ const emptyRow = (): Row => ({
   quantity: "1",
   price: "",
   discount: "",
+  deposit: "",
 });
 
 const isBlank = (row: Row) =>
@@ -142,6 +149,7 @@ const toRow = (line: LineInput): Row => ({
   quantity: quantityToInput(line.quantityMilli),
   price: centsToInput(line.unitPrice),
   discount: line.discount ? centsToInput(line.discount) : "",
+  deposit: line.deposit ? centsToInput(line.deposit) : "",
 });
 
 /** A photo → a JPEG data URL, at most 2000 px on its long side. */
@@ -161,8 +169,9 @@ function toLine(row: Row): LineInput | null {
   const quantityMilli = parseQuantity(row.quantity);
   const unitPrice = parseMoney(row.price);
   const discount = row.discount.trim() ? parseMoney(row.discount) : 0;
+  const deposit = row.deposit.trim() ? parseMoney(row.deposit) : 0;
   if (!row.label.trim() || !quantityMilli || unitPrice === null) return null;
-  if (discount === null) return null;
+  if (discount === null || deposit === null) return null;
   return {
     barcode: row.barcode.trim() || null,
     label: row.label.trim(),
@@ -170,6 +179,7 @@ function toLine(row: Row): LineInput | null {
     quantityMilli,
     unitPrice,
     discount,
+    deposit,
   };
 }
 
@@ -320,12 +330,15 @@ export function ReceiptFormView({
   const filled = rows.filter((r) => !isBlank(r));
   const lines = filled.map(toLine);
   const valid = lines.filter((l): l is LineInput => l !== null);
-  const duplicates = hasDuplicateLines(valid);
+  const duplicates = hasDuplicateLines(valid) || hasDepositLines(valid);
 
-  /** The same item on several lines → one line, quantities added up. */
+  /**
+   * Deposit lines folded into the item above, then the same item on several
+   * lines → one line, quantities added up.
+   */
   const combine = () =>
     setRows([
-      ...combineLines(valid).map(toRow),
+      ...combineLines(attachDeposits(valid)).map(toRow),
       ...filled.filter((r) => toLine(r) === null),
       emptyRow(),
     ]);
@@ -455,11 +468,11 @@ export function ReceiptFormView({
           return (
             <li
               key={row.key}
-              className={`card grid grid-cols-6 gap-2 p-3 ${
+              className={`card grid grid-cols-6 gap-2 p-3 sm:grid-cols-7 ${
                 invalid ? "border-danger" : ""
               } ${isBlank(row) ? "opacity-70" : ""}`}
             >
-              <div className="col-span-6 flex items-center gap-2 sm:col-span-2">
+              <div className="col-span-6 flex items-center gap-2 sm:col-span-3">
                 <span className="num w-6 shrink-0 text-xs text-muted">
                   {index + 1}
                 </span>
@@ -519,7 +532,7 @@ export function ReceiptFormView({
               </div>
               <Field
                 label={row.unit === "kg" ? t.weight : t.quantity}
-                className="col-span-2 sm:col-span-1"
+                className="col-span-3 sm:col-span-1"
               >
                 <TextInput
                   inputMode="decimal"
@@ -532,7 +545,7 @@ export function ReceiptFormView({
               </Field>
               <Field
                 label={row.unit === "kg" ? t.pricePerKg : t.unitPrice}
-                className="col-span-2 sm:col-span-1"
+                className="col-span-3 sm:col-span-1"
               >
                 <TextInput
                   inputMode="decimal"
@@ -542,7 +555,7 @@ export function ReceiptFormView({
                   onChange={(e) => update(row.key, { price: e.target.value })}
                 />
               </Field>
-              <Field label={t.discount} className="col-span-2 sm:col-span-1">
+              <Field label={t.discount} className="col-span-3 sm:col-span-1">
                 <TextInput
                   inputMode="decimal"
                   className="num"
@@ -551,6 +564,15 @@ export function ReceiptFormView({
                   onChange={(e) =>
                     update(row.key, { discount: e.target.value })
                   }
+                />
+              </Field>
+              <Field label={t.deposit} className="col-span-3 sm:col-span-1">
+                <TextInput
+                  inputMode="decimal"
+                  className="num"
+                  value={row.deposit}
+                  placeholder="0,00"
+                  onChange={(e) => update(row.key, { deposit: e.target.value })}
                 />
               </Field>
               <div className="col-span-6 flex items-end justify-between gap-2 sm:col-span-1 sm:flex-col sm:items-end">

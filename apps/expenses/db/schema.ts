@@ -113,6 +113,11 @@ export const receiptItems = pgTable(
     /** Per piece or per kg, cents. */
     unitPrice: integer("unit_price").notNull(),
     discount: integer("discount").notNull().default(0),
+    /**
+     * The bottle / can deposit charged with the item ("מיחזור", "פיקדון" lines
+     * printed below it), cents for the whole line. Part of the product's price.
+     */
+    deposit: integer("deposit").notNull().default(0),
   },
   (t) => [
     index("receipt_items_receipt_idx").on(t.receiptId),

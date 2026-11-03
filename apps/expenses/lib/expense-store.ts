@@ -121,7 +121,7 @@ async function backfillReceipts(ownerId: string, categoryId: string) {
       date: receipts.date,
       method: receipts.method,
       merchant: stores.name,
-      amount: sql<string>`coalesce(sum(round(${receiptItems.quantityMilli}::numeric * ${receiptItems.unitPrice} / 1000) - ${receiptItems.discount}), 0)`,
+      amount: sql<string>`coalesce(sum(round(${receiptItems.quantityMilli}::numeric * ${receiptItems.unitPrice} / 1000) - ${receiptItems.discount} + ${receiptItems.deposit}), 0)`,
     })
     .from(receipts)
     .innerJoin(stores, eq(stores.id, receipts.storeId))
