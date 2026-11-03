@@ -16,6 +16,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -26,6 +27,7 @@ import {
 
 import type {
   DefaultCategoryKey,
+  ExpenseItem,
   GoalScope,
   Method,
 } from "@/lib/expense-logic";
@@ -167,6 +169,8 @@ export const transactions = pgTable(
     /** Bought by the litre (fuel…): litres × 1000 and the price per litre. */
     litersMilli: integer("liters_milli"),
     pricePerLiter: integer("price_per_liter"),
+    /** Split into lines (label + cents); the amount is then their sum. */
+    items: jsonb("items").$type<ExpenseItem[]>(),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [

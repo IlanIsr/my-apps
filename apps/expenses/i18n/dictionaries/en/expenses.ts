@@ -72,6 +72,12 @@ export const transactionModal = {
   byLiter: "By the litre",
   liters: "Litres",
   pricePerLiter: "Price per litre",
+  bySplit: "Split",
+  itemLabel: "Item",
+  itemAmount: "Line amount",
+  addItem: "Add a line",
+  removeItem: "Remove the line",
+  badItems: "Each line needs a name and an amount.",
 } as const satisfies TransactionModalTexts;
 
 export const categories = {

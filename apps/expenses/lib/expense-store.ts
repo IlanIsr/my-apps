@@ -54,6 +54,7 @@ const toTransaction = (row: typeof transactions.$inferSelect): Transaction => ({
   importKey: row.importKey,
   litersMilli: row.litersMilli,
   pricePerLiter: row.pricePerLiter,
+  items: row.items,
 });
 
 // ---------------------------------------------------------------------------

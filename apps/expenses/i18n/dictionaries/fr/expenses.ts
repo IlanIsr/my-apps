@@ -73,6 +73,12 @@ export const transactionModal = {
   byLiter: "Au litre",
   liters: "Litres",
   pricePerLiter: "Prix au litre",
+  bySplit: "Détail",
+  itemLabel: "Article",
+  itemAmount: "Montant de la ligne",
+  addItem: "Ajouter une ligne",
+  removeItem: "Retirer la ligne",
+  badItems: "Chaque ligne a besoin d'un nom et d'un montant.",
 } as const satisfies TransactionModalTexts;
 
 export const categories = {

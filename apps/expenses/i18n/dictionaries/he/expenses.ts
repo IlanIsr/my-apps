@@ -72,6 +72,12 @@ export const transactionModal = {
   byLiter: "לפי ליטר",
   liters: "ליטרים",
   pricePerLiter: "מחיר לליטר",
+  bySplit: "פירוט",
+  itemLabel: "פריט",
+  itemAmount: "סכום השורה",
+  addItem: "הוספת שורה",
+  removeItem: "הסרת השורה",
+  badItems: "כל שורה צריכה שם וסכום.",
 } as const satisfies TransactionModalTexts;
 
 export const categories = {

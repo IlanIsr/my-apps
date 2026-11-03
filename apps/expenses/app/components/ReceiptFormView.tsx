@@ -50,6 +50,7 @@ import { Combo } from "./Combo";
 import { ErrorLine, Field, PageHeader, fill, type ErrorTexts } from "./common";
 import { Segmented } from "./Segmented";
 import { Select } from "./Select";
+import { autoDir } from "./TextArea";
 import { TextInput } from "./TextInput";
 
 export type ReceiptFormTexts = {
@@ -585,7 +586,11 @@ export function ReceiptFormView({
       </div>
 
       <Field label={t.note} className="mt-4">
-        <TextInput value={note} onChange={(e) => setNote(e.target.value)} />
+        <TextInput
+          dir={autoDir(note)}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
       </Field>
 
       {scanning !== null && (

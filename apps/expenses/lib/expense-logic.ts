@@ -41,6 +41,8 @@ export const EXPENSE_LIMITS = {
   icon: 8,
   categories: 50,
   importRows: 2000,
+  items: 30,
+  itemLabel: 60,
 } as const;
 
 export type Category = {
@@ -71,11 +73,23 @@ export type Transaction = {
   /** Bought by the litre (fuel…): litres × 1000, price per litre (cents). */
   litersMilli: number | null;
   pricePerLiter: number | null;
+  /** Split into lines (restaurant: dish, bread, drink…), or `null`. */
+  items: ExpenseItem[] | null;
+};
+
+/** One line of a split expense: just detail, the category stays the expense's. */
+export type ExpenseItem = {
+  label: string;
+  /** Cents, > 0. */
+  amount: number;
 };
 
 export type TransactionInput = {
   date: string;
-  /** With litres, always `litersAmount(litersMilli, pricePerLiter)`. */
+  /**
+   * With litres, always `litersAmount(litersMilli, pricePerLiter)`; with
+   * items, their sum — both rounded to 10 agorot when paid in cash.
+   */
   amount: number;
   categoryId: string | null;
   merchant: string | null;
@@ -83,11 +97,16 @@ export type TransactionInput = {
   note: string | null;
   litersMilli: number | null;
   pricePerLiter: number | null;
+  items: ExpenseItem[] | null;
 };
 
 /** Litres × price per litre, in cents. */
 export const litersAmount = (litersMilli: number, pricePerLiter: number) =>
   Math.round((litersMilli * pricePerLiter) / 1000);
+
+/** A split expense's lines, summed (cents). */
+export const itemsAmount = (items: ExpenseItem[]) =>
+  items.reduce((sum, item) => sum + item.amount, 0);
 
 /** `merchant key → category id`, learned from what the user picked. */
 export type CategoryRules = Record<string, string>;

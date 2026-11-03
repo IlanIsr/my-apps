@@ -310,6 +310,8 @@ export function TransactionsView({
                                 liters: quantityToInput(x.litersMilli),
                                 price: formatMoney(x.pricePerLiter, tag),
                               })}`}
+                            {x.items &&
+                              ` · ${x.items.map((i) => i.label).join(", ")}`}
                             {x.note && ` · ${x.note}`}
                           </span>
                         </span>
