@@ -501,6 +501,39 @@ export function ReceiptFormView({
             placeholder="0,00"
           />
         </Field>
+        <div className="flex flex-wrap items-end gap-4 sm:col-span-3">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted">{t.method}</span>
+            <Segmented
+              aria-label={t.method}
+              options={METHODS.map((m) => ({
+                value: m,
+                label: `${METHOD_ICON[m]} ${messages.methods[m]}`,
+              }))}
+              value={method}
+              onChange={setMethod}
+            />
+          </div>
+          {!fromFriend && (
+            <div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-64">
+              <span className="text-xs font-medium text-muted">
+                {t.category}
+              </span>
+              <Select
+                aria-label={t.category}
+                className="w-full"
+                value={categoryId ?? ""}
+                onChange={setCategoryId}
+                options={categories
+                  .filter((c) => !c.archived || c.id === categoryId)
+                  .map((c) => ({
+                    key: c.id,
+                    label: `${c.icon} ${categoryLabel(c, messages.categoryNames)}`,
+                  }))}
+              />
+            </div>
+          )}
+        </div>
       </section>
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -653,38 +686,6 @@ export function ReceiptFormView({
           );
         })}
       </ol>
-
-      <div className="mt-6 flex flex-wrap items-end gap-4">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted">{t.method}</span>
-          <Segmented
-            aria-label={t.method}
-            options={METHODS.map((m) => ({
-              value: m,
-              label: `${METHOD_ICON[m]} ${messages.methods[m]}`,
-            }))}
-            value={method}
-            onChange={setMethod}
-          />
-        </div>
-        {!fromFriend && (
-          <div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-64">
-            <span className="text-xs font-medium text-muted">{t.category}</span>
-            <Select
-              aria-label={t.category}
-              className="w-full"
-              value={categoryId ?? ""}
-              onChange={setCategoryId}
-              options={categories
-                .filter((c) => !c.archived || c.id === categoryId)
-                .map((c) => ({
-                  key: c.id,
-                  label: `${c.icon} ${categoryLabel(c, messages.categoryNames)}`,
-                }))}
-            />
-          </div>
-        )}
-      </div>
 
       <Field label={t.note} className="mt-4">
         <TextInput
