@@ -18,6 +18,7 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} en fin de mois à ce rythme",
   setBudget: "Fixer un budget",
+  friend: "Ami",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -31,10 +32,12 @@ export const receipt = {
   printed: "Total du ticket",
   difference: "Écart {diff}",
   discount: "remise",
+  deposit: "consigne",
   matches: "Correspond",
   mismatch: "Ne correspond pas",
   subtotal: "Sous-total",
   rounding: "Arrondi (espèces)",
+  friend: "Ticket d'un ami",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -54,6 +57,7 @@ export const receiptForm = {
   unitPrice: "Prix unitaire",
   pricePerKg: "Prix / kg",
   discount: "Remise",
+  deposit: "Consigne",
   lineTotal: "Total",
   removeLine: "Retirer la ligne",
   addLine: "Ajouter une ligne",
@@ -76,7 +80,18 @@ export const receiptForm = {
     "{n} ligne(s) lue(s) sur la photo — vérifie chacune avant d'enregistrer.",
   gallery: "Galerie",
   rounding: "dont arrondi {amount}",
-  combine: "Regrouper les lignes identiques",
+  combine: "Regrouper les lignes (doublons, consignes)",
+  fromFriend: "Ticket d'un ami — pas ma dépense",
+  fromFriendHint:
+    "Ses produits et ses prix enrichissent la base, sans compter comme une dépense.",
+  pasteText: "Coller le texte",
+  pasteTitle: "Coller le texte du ticket",
+  pasteHint:
+    "Le ticket numérique copié tel quel (nom, code-barres + quantité, ₪ total). Magasin, date et total sont à remplir ensuite.",
+  pasteFill: "Pré-remplir",
+  pasteNothing: "Aucun article reconnu dans ce texte.",
+  textRead:
+    "{n} ligne(s) lue(s) du texte — vérifie chacune avant d'enregistrer.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

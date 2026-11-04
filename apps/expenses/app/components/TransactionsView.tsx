@@ -2,13 +2,17 @@
 
 /**
  * The home page: one month of expenses (‹ month ›), its total and cash / card
- * split, budget alerts, filters, and the list grouped by day. The round "+"
+ * split, budget alerts, the cash still to put back on the account (card
+ * payments from a cash budget — "I put it back", all at once or one by one),
+ * filters, and the list grouped by day. The round "+"
  * opens the quick add; tapping a line edits it.
  */
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { setRepaidAction, settleRepaymentsAction } from "@/app/actions";
 import {
   budgetState,
   categoryLabel,
@@ -16,6 +20,7 @@ import {
   METHOD_ICON,
   METHODS,
   monthOf,
+  pendingRepayments,
   projectMonth,
   shiftMonth,
   summarize,
@@ -34,8 +39,8 @@ import {
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
-import { GoalCard } from "./GoalCard";
-import { EmptyState, LinkButton, fill } from "./common";
+import { GoalCard, SavingsCard } from "./GoalCard";
+import { EmptyState, ErrorLine, LinkButton, fill } from "./common";
 import { Select } from "./Select";
 import { TransactionModal } from "./TransactionModal";
 
@@ -62,6 +67,10 @@ export type TransactionsTexts = {
   perLiter: string;
   /** `{amount}` = the month's total at the current pace. */
   projection: string;
+  repayTitle: string;
+  repayHint: string;
+  repayAll: string;
+  repayOne: string;
 };
 
 export function TransactionsView({
@@ -83,6 +92,24 @@ export function TransactionsView({
   const [categoryId, setCategoryId] = useState("all");
   const [method, setMethod] = useState<"all" | Method>("all");
   const [editing, setEditing] = useState<Transaction | "new" | null>(null);
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Every month's, not just the one shown: cash owed is owed until put back.
+  const pending = pendingRepayments(transactions);
+  const pendingTotal = pending.reduce((sum, x) => sum + x.amount, 0);
+
+  /** Put back one expense's cash (`id`) or all of it, today. */
+  async function repay(id: string | null) {
+    setBusy(true);
+    setError(null);
+    const result = id
+      ? await setRepaidAction(id, today())
+      : await settleRepaymentsAction(today());
+    setBusy(false);
+    if (!result.ok) return setError(messages.errors[result.error]);
+    router.refresh();
+  }
 
   const byId = new Map(categories.map((c) => [c.id, c]));
   const merchants = useMemo(
@@ -209,6 +236,59 @@ export function TransactionsView({
         </ul>
       )}
 
+      {pending.length > 0 && (
+        <section className="card mb-4 flex flex-col gap-3 p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="eyebrow">↩︎ {t.repayTitle}</span>
+            <span className="num text-lg font-semibold">
+              {formatMoney(pendingTotal, tag)}
+            </span>
+          </div>
+          <p className="text-xs text-muted">{t.repayHint}</p>
+          <ul className="flex flex-col divide-y divide-line">
+            {pending.map((x) => {
+              const c = x.categoryId ? byId.get(x.categoryId) : null;
+              return (
+                <li key={x.id} className="flex items-center gap-3 py-2">
+                  <span aria-hidden>{c?.icon ?? "❔"}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm">
+                      {x.merchant ?? (c ? label(c) : t.uncategorized)}
+                    </span>
+                    <span className="block text-xs text-muted">
+                      {formatDay(x.date, tag)}
+                    </span>
+                  </span>
+                  <span className="num text-sm font-semibold">
+                    {formatMoney(x.amount, tag)}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => repay(x.id)}
+                  >
+                    {t.repayOne}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+          <ErrorLine message={error} />
+          {pending.length > 1 && (
+            <Button
+              size="sm"
+              variant="primary"
+              className="self-end"
+              disabled={busy}
+              onClick={() => repay(null)}
+            >
+              {t.repayAll}
+            </Button>
+          )}
+        </section>
+      )}
+
       {monthGoals.length > 0 && (
         <section className="card mb-4 flex flex-col gap-3 p-4">
           <div className="flex items-baseline justify-between gap-2">
@@ -226,6 +306,12 @@ export function TransactionsView({
               compact
             />
           ))}
+          <SavingsCard
+            month={month}
+            goals={goals}
+            transactions={transactions}
+            compact
+          />
         </section>
       )}
 
@@ -310,9 +396,20 @@ export function TransactionsView({
                                 liters: quantityToInput(x.litersMilli),
                                 price: formatMoney(x.pricePerLiter, tag),
                               })}`}
+                            {x.items &&
+                              ` · ${x.items.map((i) => i.label).join(", ")}`}
                             {x.note && ` · ${x.note}`}
                           </span>
                         </span>
+                        {x.toRepay && !x.repaidOn && (
+                          <span
+                            title={t.repayTitle}
+                            aria-label={t.repayTitle}
+                            className="text-sm text-warn"
+                          >
+                            ↩︎
+                          </span>
+                        )}
                         <span aria-hidden className="text-sm">
                           {METHOD_ICON[x.method]}
                         </span>

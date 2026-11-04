@@ -47,6 +47,11 @@ export const transactions = {
   budgetNear: "{category}: {spent} of {budget} — almost at the budget.",
   budgetOver: "{category}: {spent} of {budget} — over budget.",
   projection: "≈ {amount} by month end at this pace",
+  repayTitle: "To put back on the account",
+  repayHint:
+    "Paid by card from a budget taken out in cash: put these amounts back on the account.",
+  repayAll: "I put it all back",
+  repayOne: "Done",
   perLiter: "{liters} L × {price}/L",
   goals: "This month's goals",
   seeGoals: "See",
@@ -72,6 +77,14 @@ export const transactionModal = {
   byLiter: "By the litre",
   liters: "Litres",
   pricePerLiter: "Price per litre",
+  bySplit: "Split",
+  itemLabel: "Item",
+  itemAmount: "Line amount",
+  addItem: "Add a line",
+  removeItem: "Remove the line",
+  badItems: "Each line needs a name and an amount.",
+  toRepay: "Put back on the account",
+  repaidOn: "Put back on {date}",
 } as const satisfies TransactionModalTexts;
 
 export const categories = {
@@ -82,6 +95,7 @@ export const categories = {
   name: "Name",
   budget: "Budget / month",
   noBudget: "None",
+  cashEnvelope: "Taken out in cash",
   hidden: "Hidden",
   save: "Save",
   add: "Add",
@@ -144,6 +158,12 @@ export const goalCard = {
   perDay: "that's {amount} a day ({days} days left)",
   projection: "≈ {amount} by month end at this pace",
   projectionOver: "⚠ At this pace: {amount} by month end, above the goal",
+  savings: "Savings",
+  savedOf: "{amount} saved of {target}",
+  savingsHow: "Cash {cash} − category goals {planned}",
+  overPlanned: "⚠ The category goals go past the cash goal by {amount}",
+  savingsShort: "{amount} less than planned",
+  savingsRepay: "{amount} to put back on the account (card), not counted",
 } as const satisfies GoalCardTexts;
 
 export const goalModal = {

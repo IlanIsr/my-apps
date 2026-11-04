@@ -18,6 +18,7 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} בסוף החודש בקצב הזה",
   setBudget: "לקבוע תקציב",
+  friend: "חבר",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -31,10 +32,12 @@ export const receipt = {
   printed: "סה״כ בקבלה",
   difference: "פער {diff}",
   discount: "הנחה",
+  deposit: "מיחזור",
   matches: "תואם",
   mismatch: "לא תואם",
   subtotal: "סכום ביניים",
   rounding: "עיגול (מזומן)",
+  friend: "קבלה של חבר",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -54,6 +57,7 @@ export const receiptForm = {
   unitPrice: "מחיר ליחידה",
   pricePerKg: "מחיר לק״ג",
   discount: "הנחה",
+  deposit: "מיחזור/פיקדון",
   lineTotal: "סה״כ",
   removeLine: "הסרת שורה",
   addLine: "הוספת שורה",
@@ -75,7 +79,16 @@ export const receiptForm = {
   photoRead: "{n} שורות נקראו מהתמונה — בדקו כל אחת לפני השמירה.",
   gallery: "גלריה",
   rounding: "כולל עיגול {amount}",
-  combine: "איחוד שורות זהות",
+  combine: "איחוד שורות (כפולות, מיחזור)",
+  fromFriend: "קבלה של חבר — לא הוצאה שלי",
+  fromFriendHint: "המוצרים והמחירים שלה מעשירים את המאגר, בלי להיחשב כהוצאה.",
+  pasteText: "הדבקת טקסט",
+  pasteTitle: "הדבקת הטקסט של הקבלה",
+  pasteHint:
+    "הקבלה הדיגיטלית כפי שהועתקה (שם, ברקוד + כמות, ₪ סכום). החנות, התאריך והסכום ממולאים אחר כך.",
+  pasteFill: "מילוי מוקדם",
+  pasteNothing: "לא נמצאו פריטים בטקסט הזה.",
+  textRead: "{n} שורות נקראו מהטקסט — בדקו כל אחת לפני השמירה.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

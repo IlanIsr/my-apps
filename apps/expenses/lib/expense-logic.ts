@@ -16,18 +16,19 @@ export const METHOD_ICON: Record<Method, string> = {
 
 /**
  * The starting categories, created for every new user. `key` lets the UI
- * translate them until the user renames one (then `name` wins).
+ * translate them until the user renames one (then `name` wins). `envelope` =
+ * its budget is taken out in cash at the start of the month (see `autoRepay`).
  */
 export const DEFAULT_CATEGORIES = [
-  { key: "groceries", icon: "🛒" },
-  { key: "restaurant", icon: "🍽️" },
-  { key: "transport", icon: "🚌" },
-  { key: "housing", icon: "🏠" },
-  { key: "health", icon: "💊" },
-  { key: "clothing", icon: "👕" },
-  { key: "leisure", icon: "🎉" },
-  { key: "subscriptions", icon: "🔁" },
-  { key: "other", icon: "📦" },
+  { key: "groceries", icon: "🛒", envelope: true },
+  { key: "restaurant", icon: "🍽️", envelope: true },
+  { key: "transport", icon: "🚌", envelope: true },
+  { key: "housing", icon: "🏠", envelope: false },
+  { key: "health", icon: "💊", envelope: false },
+  { key: "clothing", icon: "👕", envelope: false },
+  { key: "leisure", icon: "🎉", envelope: false },
+  { key: "subscriptions", icon: "🔁", envelope: false },
+  { key: "other", icon: "📦", envelope: false },
 ] as const;
 export type DefaultCategoryKey = (typeof DEFAULT_CATEGORIES)[number]["key"];
 
@@ -41,6 +42,8 @@ export const EXPENSE_LIMITS = {
   icon: 8,
   categories: 50,
   importRows: 2000,
+  items: 30,
+  itemLabel: 60,
 } as const;
 
 export type Category = {
@@ -51,6 +54,8 @@ export type Category = {
   icon: string;
   /** Monthly budget in cents, or `null`. */
   budget: number | null;
+  /** Its budget is taken out in cash at the start of the month. */
+  cashEnvelope: boolean;
   archived: boolean;
 };
 
@@ -71,11 +76,30 @@ export type Transaction = {
   /** Bought by the litre (fuel…): litres × 1000, price per litre (cents). */
   litersMilli: number | null;
   pricePerLiter: number | null;
+  /** Split into lines (restaurant: dish, bread, drink…), or `null`. */
+  items: ExpenseItem[] | null;
+  /**
+   * Paid by card although its budget was taken out in cash: the same amount
+   * of cash goes back to the bank account (`repaidOn` = when it did).
+   */
+  toRepay: boolean;
+  /** `YYYY-MM-DD` the cash was put back, `null` while still owed. */
+  repaidOn: string | null;
+};
+
+/** One line of a split expense: just detail, the category stays the expense's. */
+export type ExpenseItem = {
+  label: string;
+  /** Cents, > 0. */
+  amount: number;
 };
 
 export type TransactionInput = {
   date: string;
-  /** With litres, always `litersAmount(litersMilli, pricePerLiter)`. */
+  /**
+   * With litres, always `litersAmount(litersMilli, pricePerLiter)`; with
+   * items, their sum — both rounded to 10 agorot when paid in cash.
+   */
   amount: number;
   categoryId: string | null;
   merchant: string | null;
@@ -83,11 +107,37 @@ export type TransactionInput = {
   note: string | null;
   litersMilli: number | null;
   pricePerLiter: number | null;
+  items: ExpenseItem[] | null;
+  /** Only ever `true` for a card payment. */
+  toRepay: boolean;
 };
 
 /** Litres × price per litre, in cents. */
 export const litersAmount = (litersMilli: number, pricePerLiter: number) =>
   Math.round((litersMilli * pricePerLiter) / 1000);
+
+/**
+ * Whether an expense owes cash back to the account by default: paid by card
+ * in a category whose budget was taken out in cash. (Cibus doesn't come out
+ * of the account, so nothing to put back.)
+ */
+export function autoRepay(
+  method: Method,
+  category: Pick<Category, "cashEnvelope"> | null | undefined,
+): boolean {
+  return method === "card" && Boolean(category?.cashEnvelope);
+}
+
+/** The expenses whose cash hasn't gone back to the account yet, oldest first. */
+export function pendingRepayments(transactions: Transaction[]): Transaction[] {
+  return transactions
+    .filter((t) => t.toRepay && !t.repaidOn)
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** A split expense's lines, summed (cents). */
+export const itemsAmount = (items: ExpenseItem[]) =>
+  items.reduce((sum, item) => sum + item.amount, 0);
 
 /** `merchant key → category id`, learned from what the user picked. */
 export type CategoryRules = Record<string, string>;
@@ -409,5 +459,66 @@ export function goalProgress(
       daysLeft === null ? null : Math.max(0, Math.floor(remaining / daysLeft)),
     projection: current ? projectMonth(spent, goal.month, day) : null,
     state: budgetState(spent, goal.amount),
+  };
+}
+
+/**
+ * The month's savings, derived (never stored): what the cash goal leaves once
+ * every category goal is funded. It appears with the month's cash goal, so
+ * it recurs every month that has one.
+ */
+export type SavingsGoal = {
+  /** The cash goal (cents). */
+  cash: number;
+  /** All the month's category goals, summed (cents). */
+  planned: number;
+  /** What should be saved: `cash − planned` (negative = over-planned). */
+  target: number;
+  /**
+   * What's saved so far: the cash goal minus the cash spent, minus what the
+   * category goals still leave to spend (current / future month only — a
+   * past month's unspent budget is saved), minus the cash put back (or to put
+   * back) on the account for card payments. Overspending a category or paying
+   * cash outside one eats into it.
+   */
+  saved: number;
+  /** The month's card payments whose cash goes back to the account (cents). */
+  toRepay: number;
+};
+
+export function savingsGoal(
+  month: string,
+  goals: Goal[],
+  transactions: Transaction[],
+  day: string,
+): SavingsGoal | null {
+  const inMonth = goals.filter((g) => g.month === month);
+  const cashGoal = inMonth.find(
+    (g) => g.scope === "method" && g.method === "cash",
+  );
+  if (!cashGoal) return null;
+  const categoryGoals = inMonth.filter((g) => g.scope === "category");
+  const planned = categoryGoals.reduce((sum, g) => sum + g.amount, 0);
+  const spent = (goal: Goal) =>
+    transactions
+      .filter((t) => goalMatches(goal, t))
+      .reduce((sum, t) => sum + t.amount, 0);
+  const past = month < monthOf(day);
+  const stillPlanned = past
+    ? 0
+    : categoryGoals.reduce(
+        (sum, g) => sum + Math.max(0, g.amount - spent(g)),
+        0,
+      );
+  // Not savings: that cash goes back to the account (put back or not yet).
+  const toRepay = transactions
+    .filter((t) => t.toRepay && monthOf(t.date) === month)
+    .reduce((sum, t) => sum + t.amount, 0);
+  return {
+    cash: cashGoal.amount,
+    planned,
+    target: cashGoal.amount - planned,
+    saved: cashGoal.amount - spent(cashGoal) - stillPlanned - toRepay,
+    toRepay,
   };
 }

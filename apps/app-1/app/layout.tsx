@@ -14,6 +14,7 @@ import {
   JetBrains_Mono,
   Spectral,
 } from "next/font/google";
+import Script from "next/script";
 
 import { AuthProvider } from "@repo/auth/provider";
 import { getCurrentUserEmail, getCurrentUserId } from "@repo/auth/user";
@@ -99,7 +100,12 @@ export default async function RootLayout({
   return (
     <html lang="en" className={fontVars} suppressHydrationWarning>
       <body className="antialiased">
-        <script dangerouslySetInnerHTML={{ __html: LANG_INIT }} />
+        {/* `beforeInteractive`: inlined in the server HTML's <head>, run
+            before hydration — a bare <script> errors when React re-renders
+            the layout on the client. */}
+        <Script id="lang-init" strategy="beforeInteractive">
+          {LANG_INIT}
+        </Script>
         <AuthProvider>
           <Providers minhag={minhag} location={profile?.location ?? null}>
             <Navbar isAdmin={isAdmin} />

@@ -1,5 +1,6 @@
 import type { AisleTexts } from "@/app/components/ProductView";
 import type { DuplicatesTexts } from "@/app/components/DuplicatesView";
+import type { ProductModalTexts } from "@/app/components/ProductModal";
 import type { ProductsTexts } from "@/app/components/ProductsView";
 import type { ProductTexts } from "@/app/components/ProductView";
 import type { ShoppingToggleTexts } from "@/app/components/ShoppingToggle";
@@ -52,6 +53,15 @@ export const product = {
   contentUnits: { l: "ל׳", kg: "ק״ג" },
   badContent: "תכולה לא תקינה.",
 } as const satisfies ProductTexts;
+
+export const productModal = {
+  add: "הוספת מוצר",
+  title: "מוצר חדש",
+  friendHint: "כמה מוצרים עם המחירים שלהם?",
+  friendReceipt: "קבלה של חבר",
+  create: "יצירה",
+  cancel: "ביטול",
+} as const satisfies ProductModalTexts;
 
 export const shoppingToggle = {
   add: "לרשימה",

@@ -19,13 +19,19 @@ import {
   transactions,
 } from "@/db/schema";
 
-import { assertOwnCategory, groceriesCategoryId } from "./expense-store";
+import { autoRepay } from "./expense-logic";
+import {
+  assertOwnCategory,
+  groceriesCategoryId,
+  isCashEnvelope,
+} from "./expense-store";
 import { StoreError } from "./store-error";
 
 import {
   normalizeName,
   pairKey,
   payable,
+  priceWithDeposit,
   receiptTotal,
   type LineInput,
   type PricePoint,
@@ -50,8 +56,8 @@ const toProduct = (row: typeof products.$inferSelect): Product => ({
   contentUnit: row.contentUnit,
 });
 
-/** `round(quantity × unit price) − discount`, as in `lineTotal`. */
-const LINE_TOTAL = sql<number>`(round(${receiptItems.quantityMilli}::numeric * ${receiptItems.unitPrice} / 1000) - ${receiptItems.discount})`;
+/** `round(quantity × unit price) − discount + deposit`, as in `lineTotal`. */
+const LINE_TOTAL = sql<number>`(round(${receiptItems.quantityMilli}::numeric * ${receiptItems.unitPrice} / 1000) - ${receiptItems.discount} + ${receiptItems.deposit})`;
 
 // ---------------------------------------------------------------------------
 // Stores
@@ -96,6 +102,31 @@ export async function listProducts(ownerId: string): Promise<Product[]> {
     .where(eq(products.ownerId, ownerId))
     .orderBy(asc(products.name));
   return rows.map(toProduct);
+}
+
+/**
+ * A product added by hand (no purchase yet). A barcode already used is an
+ * error; without one, a product of the same name is returned instead of a
+ * duplicate.
+ */
+export async function createProduct(
+  ownerId: string,
+  input: ProductInput,
+): Promise<Product> {
+  const all = await listProducts(ownerId);
+  if (input.barcode && all.some((p) => p.barcode === input.barcode)) {
+    throw new StoreError("barcode-taken");
+  }
+  if (!input.barcode) {
+    const key = normalizeName(input.name);
+    const same = all.find((p) => normalizeName(p.name) === key);
+    if (same) return same;
+  }
+  const [row] = await db()
+    .insert(products)
+    .values({ ownerId, ...input })
+    .returning();
+  return toProduct(row!);
 }
 
 export async function updateProduct(
@@ -254,18 +285,20 @@ export async function listPricePoints(ownerId: string): Promise<PricePoint[]> {
       date: receipts.date,
       quantityMilli: receiptItems.quantityMilli,
       listedPrice: receiptItems.unitPrice,
+      deposit: receiptItems.deposit,
       paid: LINE_TOTAL,
     })
     .from(receiptItems)
     .innerJoin(receipts, eq(receipts.id, receiptItems.receiptId))
     .where(eq(receipts.ownerId, ownerId))
     .orderBy(asc(receipts.date));
-  // A product's price is its listed one: a discount is a bonus of that
-  // purchase, not the product's price (it only lowers what was `paid`).
-  return rows.map((row) => ({
+  // A product's price is its listed one plus its deposit (paid every time):
+  // a discount is a bonus of that purchase, not the product's price (it only
+  // lowers what was `paid`).
+  return rows.map(({ deposit, ...row }) => ({
     ...row,
     paid: Number(row.paid),
-    unitPrice: row.listedPrice,
+    unitPrice: priceWithDeposit({ ...row, deposit }),
   }));
 }
 
@@ -281,6 +314,7 @@ export async function listReceipts(ownerId: string): Promise<ReceiptSummary[]> {
       date: receipts.date,
       declaredTotal: receipts.declaredTotal,
       method: receipts.method,
+      fromFriend: receipts.fromFriend,
       total: sql<string>`coalesce(sum(${LINE_TOTAL}), 0)`,
       lineCount: sql<number>`count(${receiptItems.id})::int`,
     })
@@ -311,6 +345,7 @@ export async function getReceipt(
       note: receipts.note,
       method: receipts.method,
       categoryId: transactions.categoryId,
+      fromFriend: receipts.fromFriend,
     })
     .from(receipts)
     .innerJoin(stores, eq(stores.id, receipts.storeId))
@@ -326,6 +361,7 @@ export async function getReceipt(
       quantityMilli: receiptItems.quantityMilli,
       unitPrice: receiptItems.unitPrice,
       discount: receiptItems.discount,
+      deposit: receiptItems.deposit,
     })
     .from(receiptItems)
     .innerJoin(products, eq(products.id, receiptItems.productId))
@@ -351,6 +387,10 @@ export async function saveReceipt(
   const productIds = await resolveProducts(ownerId, input.lines);
   await assertOwnCategory(ownerId, input.categoryId);
   const categoryId = input.categoryId ?? (await groceriesCategoryId(ownerId));
+  // Paid by card from a cash budget: that cash goes back to the account.
+  const toRepay = autoRepay(input.method, {
+    cashEnvelope: await isCashEnvelope(ownerId, categoryId),
+  });
   const receiptId = id ?? crypto.randomUUID();
   const fields = {
     storeId,
@@ -358,6 +398,7 @@ export async function saveReceipt(
     declaredTotal: input.declaredTotal,
     note: input.note,
     method: input.method,
+    fromFriend: input.fromFriend,
   };
   // The receipt's total as an expense (same transaction as the receipt).
   const expense = {
@@ -366,15 +407,20 @@ export async function saveReceipt(
     merchant: input.storeName,
     method: input.method,
     categoryId,
+    toRepay,
   };
-  const syncExpense = db()
-    .insert(transactions)
-    .values({ ownerId, receiptId, ...expense })
-    .onConflictDoUpdate({
-      target: transactions.receiptId,
-      targetWhere: sql`${transactions.receiptId} is not null`,
-      set: expense,
-    });
+  const syncExpense = input.fromFriend
+    ? // A friend's receipt is not an expense (it may have been one before).
+      db().delete(transactions).where(eq(transactions.receiptId, receiptId))
+    : db()
+        .insert(transactions)
+        .values({ ownerId, receiptId, ...expense })
+        .onConflictDoUpdate({
+          target: transactions.receiptId,
+          targetWhere: sql`${transactions.receiptId} is not null`,
+          // No longer owing cash back forgets when it was put back.
+          set: toRepay ? expense : { ...expense, repaidOn: null },
+        });
   const items = input.lines.map((line, position) => ({
     receiptId,
     productId: productIds[position]!,
@@ -383,6 +429,7 @@ export async function saveReceipt(
     quantityMilli: line.quantityMilli,
     unitPrice: line.unitPrice,
     discount: line.discount,
+    deposit: line.deposit,
   }));
 
   const head = id

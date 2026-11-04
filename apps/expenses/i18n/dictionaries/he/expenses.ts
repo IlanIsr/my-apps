@@ -47,6 +47,11 @@ export const transactions = {
   budgetNear: "{category}: {spent} מתוך {budget} — קרוב לתקציב.",
   budgetOver: "{category}: {spent} מתוך {budget} — חריגה מהתקציב.",
   projection: "≈ {amount} בסוף החודש בקצב הזה",
+  repayTitle: "להחזיר לחשבון",
+  repayHint:
+    "שולם בכרטיס מתקציב שנמשך במזומן: יש להחזיר את הסכומים האלה לחשבון.",
+  repayAll: "הפקדתי הכול",
+  repayOne: "הופקד",
   perLiter: "{liters} ל׳ × {price} לליטר",
   goals: "יעדי החודש",
   seeGoals: "לצפייה",
@@ -72,6 +77,14 @@ export const transactionModal = {
   byLiter: "לפי ליטר",
   liters: "ליטרים",
   pricePerLiter: "מחיר לליטר",
+  bySplit: "פירוט",
+  itemLabel: "פריט",
+  itemAmount: "סכום השורה",
+  addItem: "הוספת שורה",
+  removeItem: "הסרת השורה",
+  badItems: "כל שורה צריכה שם וסכום.",
+  toRepay: "להחזיר לחשבון",
+  repaidOn: "הוחזר ב־{date}",
 } as const satisfies TransactionModalTexts;
 
 export const categories = {
@@ -82,6 +95,7 @@ export const categories = {
   name: "שם",
   budget: "תקציב / חודש",
   noBudget: "ללא",
+  cashEnvelope: "נמשך במזומן",
   hidden: "מוסתרת",
   save: "שמירה",
   add: "הוספה",
@@ -143,6 +157,12 @@ export const goalCard = {
   perDay: "כלומר {amount} ליום ({days} ימים נותרו)",
   projection: "≈ {amount} בסוף החודש בקצב הזה",
   projectionOver: "⚠ בקצב הזה: {amount} בסוף החודש, מעל היעד",
+  savings: "חיסכון",
+  savedOf: "{amount} נחסכו מתוך {target}",
+  savingsHow: "מזומן {cash} − יעדי קטגוריות {planned}",
+  overPlanned: "⚠ יעדי הקטגוריות חורגים מיעד המזומן ב־{amount}",
+  savingsShort: "{amount} פחות מהמתוכנן",
+  savingsRepay: "{amount} להחזרה לחשבון (כרטיס), לא נספרים",
 } as const satisfies GoalCardTexts;
 
 export const goalModal = {

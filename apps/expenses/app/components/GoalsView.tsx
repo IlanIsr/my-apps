@@ -2,8 +2,9 @@
 
 /**
  * The month's goals (‹ month ›): for each, what's left to spend, per day,
- * and where the month ends at this pace. A month with none can take the
- * previous month's again in one tap.
+ * and where the month ends at this pace; with a cash goal, the savings it
+ * leaves after the category goals. A month with none can take the previous
+ * month's again in one tap.
  */
 
 import { useRouter } from "next/navigation";
@@ -13,6 +14,7 @@ import { copyGoalsAction } from "@/app/actions";
 import {
   formatMonth,
   monthOf,
+  savingsGoal,
   shiftMonth,
   type Category,
   type Goal,
@@ -23,7 +25,7 @@ import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
 import { EmptyState, ErrorLine, fill } from "./common";
-import { GoalCard } from "./GoalCard";
+import { GoalCard, SavingsCard } from "./GoalCard";
 import { GoalModal } from "./GoalModal";
 
 export type GoalsTexts = {
@@ -128,6 +130,15 @@ export function GoalsView({
               </Button>
             </li>
           ))}
+          {savingsGoal(month, goals, transactions, today()) && (
+            <li className="card p-4">
+              <SavingsCard
+                month={month}
+                goals={goals}
+                transactions={transactions}
+              />
+            </li>
+          )}
         </ul>
       )}
 

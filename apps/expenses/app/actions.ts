@@ -91,6 +91,12 @@ export async function deleteReceiptAction(
   });
 }
 
+export async function createProductAction(
+  input: unknown,
+): Promise<ActionResult<Product>> {
+  return run((ownerId) => store.createProduct(ownerId, v.productInput(input)));
+}
+
 export async function updateProductAction(
   id: string,
   input: unknown,
@@ -163,6 +169,23 @@ export async function deleteTransactionAction(
     await expenses.deleteTransaction(ownerId, v.id(id));
     return null;
   });
+}
+
+/** One expense's cash put back to the account on `on` (`null` = not yet). */
+export async function setRepaidAction(
+  id: string,
+  on: string | null,
+): Promise<ActionResult<Transaction>> {
+  return run((ownerId) =>
+    expenses.setRepaid(ownerId, v.id(id), on === null ? null : v.day(on)),
+  );
+}
+
+/** "I put it all back" on `on`: every expense still owing cash. */
+export async function settleRepaymentsAction(
+  on: string,
+): Promise<ActionResult<number>> {
+  return run((ownerId) => expenses.settleRepayments(ownerId, v.day(on)));
 }
 
 export async function createCategoryAction(

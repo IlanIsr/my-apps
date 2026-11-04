@@ -20,7 +20,12 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { aiCalls } from "@/db/schema";
 
-import { combineLines, LIMITS, type LineInput } from "./grocery-logic";
+import {
+  attachDeposits,
+  combineLines,
+  LIMITS,
+  type LineInput,
+} from "./grocery-logic";
 
 const MODEL = "anthropic/claude-sonnet-5.5";
 
@@ -112,7 +117,7 @@ const schema = z.object({
 const INSTRUCTIONS = `You read photos of supermarket receipts (often Israeli, in Hebrew, prices in shekels).
 Extract the store name, the date (YYYY-MM-DD), the printed total and every purchased line in order.
 For each line: the barcode if printed (digits only), the label exactly as printed, whether it is sold by weight, the quantity (pieces, or kg with decimals), the unit price (per piece or per kg) and its discount.
-A discount printed on its own line right below an item is NOT an item: add it to that item's discount (positive number). The same item printed on several lines is ONE line with the quantities added up. Ignore payment, change, VAT and loyalty lines.
+A discount printed on its own line right below an item is NOT an item: add it to that item's discount (positive number). The same item printed on several lines is ONE line with the quantities added up. A bottle / can deposit or recycling line (מיחזור, פיקדון) stays its own line, exactly as printed, right after its item. Ignore payment, change, VAT and loyalty lines.
 Amounts are numbers with a dot as decimal separator. Use null for anything you cannot read.`;
 
 const cents = (n: number) => Math.max(0, Math.round(n * 100));
@@ -180,12 +185,14 @@ export async function readReceiptPhoto(
       quantityMilli: Math.min(quantityMilli, LIMITS.quantityMilli),
       unitPrice: cents(line.unitPrice),
       discount: cents(line.discount),
+      deposit: 0,
     });
   }
   return {
     storeName: output.storeName?.trim().slice(0, LIMITS.storeName) || null,
     date,
     declaredTotal: output.total == null ? null : cents(output.total),
-    lines: combineLines(lines),
+    // A deposit line is a charge on the item above, not an item.
+    lines: combineLines(attachDeposits(lines)),
   };
 }

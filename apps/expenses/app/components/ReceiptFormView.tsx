@@ -2,18 +2,23 @@
 
 /**
  * Entering / editing a receipt: store, date, the total printed on it, then one
- * row per line (barcode, label, piece / kg, quantity, unit price, discount).
+ * row per line (barcode, label, piece / kg, quantity, unit price, discount,
+ * bottle / can deposit — a deposit line typed below its item folds into it).
  * The running sum is compared with the printed total as you type. A known
  * barcode or product name fills the rest of the line (last price at this store).
  * Barcodes can be scanned with the camera (one line, or one line per code in
  * a row), and a photo of the receipt can pre-fill the whole form (read by
- * Claude — always checked before saving).
+ * Claude — always checked before saving), as can the receipt's text pasted
+ * from the store's digital receipt (parsed here, no AI).
  * Its expense goes in Groceries unless another category is picked (paper,
- * tools… bought at a store but not food).
+ * tools… bought at a store but not food). A friend's receipt only adds its
+ * products and prices: no expense (no category).
  */
 
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
+
+import { SimpleModal } from "@repo/ui/modal";
 
 import { readReceiptPhotoAction, saveReceiptAction } from "@/app/actions";
 import {
@@ -26,7 +31,9 @@ import {
 } from "@/lib/expense-logic";
 import {
   centsToInput,
+  attachDeposits,
   combineLines,
+  hasDepositLines,
   hasDuplicateLines,
   formatMoney,
   lineTotal,
@@ -34,6 +41,7 @@ import {
   normalizeName,
   parseMoney,
   parseQuantity,
+  parseReceiptText,
   quantityToInput,
   today,
   type LineInput,
@@ -46,10 +54,12 @@ import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { BarcodeScanner } from "./BarcodeScanner";
 import { Button } from "./Button";
+import { Checkbox } from "./Checkbox";
 import { Combo } from "./Combo";
 import { ErrorLine, Field, PageHeader, fill, type ErrorTexts } from "./common";
 import { Segmented } from "./Segmented";
 import { Select } from "./Select";
+import { autoDir, TextArea } from "./TextArea";
 import { TextInput } from "./TextInput";
 
 export type ReceiptFormTexts = {
@@ -69,6 +79,8 @@ export type ReceiptFormTexts = {
   unitPrice: string;
   pricePerKg: string;
   discount: string;
+  /** Bottle / can deposit charged with the item. */
+  deposit: string;
   lineTotal: string;
   removeLine: string;
   addLine: string;
@@ -89,13 +101,22 @@ export type ReceiptFormTexts = {
   badLine: string;
   scan: string;
   scanContinuous: string;
-  /** Merge the lines that are the same item. */
+  /** Merge the lines that are the same item, deposits into their item. */
   combine: string;
   photo: string;
   gallery: string;
   reading: string;
   /** `{n}` lines read. */
   photoRead: string;
+  pasteText: string;
+  pasteTitle: string;
+  pasteHint: string;
+  pasteFill: string;
+  pasteNothing: string;
+  /** `{n}` lines read. */
+  textRead: string;
+  fromFriend: string;
+  fromFriendHint: string;
 };
 
 type Row = {
@@ -106,6 +127,7 @@ type Row = {
   quantity: string;
   price: string;
   discount: string;
+  deposit: string;
 };
 
 /** `productId → storeId → listed unit price`. */
@@ -120,6 +142,7 @@ const emptyRow = (): Row => ({
   quantity: "1",
   price: "",
   discount: "",
+  deposit: "",
 });
 
 const isBlank = (row: Row) =>
@@ -137,6 +160,7 @@ const toRow = (line: LineInput): Row => ({
   quantity: quantityToInput(line.quantityMilli),
   price: centsToInput(line.unitPrice),
   discount: line.discount ? centsToInput(line.discount) : "",
+  deposit: line.deposit ? centsToInput(line.deposit) : "",
 });
 
 /** A photo → a JPEG data URL, at most 2000 px on its long side. */
@@ -156,8 +180,9 @@ function toLine(row: Row): LineInput | null {
   const quantityMilli = parseQuantity(row.quantity);
   const unitPrice = parseMoney(row.price);
   const discount = row.discount.trim() ? parseMoney(row.discount) : 0;
+  const deposit = row.deposit.trim() ? parseMoney(row.deposit) : 0;
   if (!row.label.trim() || !quantityMilli || unitPrice === null) return null;
-  if (discount === null) return null;
+  if (discount === null || deposit === null) return null;
   return {
     barcode: row.barcode.trim() || null,
     label: row.label.trim(),
@@ -165,6 +190,7 @@ function toLine(row: Row): LineInput | null {
     quantityMilli,
     unitPrice,
     discount,
+    deposit,
   };
 }
 
@@ -174,12 +200,15 @@ export function ReceiptFormView({
   products,
   lastPrices,
   categories,
+  friend = false,
 }: {
   receipt: Receipt | null;
   stores: Store[];
   products: Product[];
   lastPrices: LastPrices;
   categories: Category[];
+  /** A new receipt starts as a friend's (from the Products page's "+"). */
+  friend?: boolean;
 }) {
   const messages = useTranslations();
   const t = messages.receiptForm;
@@ -194,6 +223,7 @@ export function ReceiptFormView({
   );
   const [note, setNote] = useState(receipt?.note ?? "");
   const [method, setMethod] = useState<Method>(receipt?.method ?? "cash");
+  const [fromFriend, setFromFriend] = useState(receipt?.fromFriend ?? friend);
   const [categoryId, setCategoryId] = useState(
     receipt?.categoryId ??
       categories.find((c) => c.key === GROCERIES_KEY)?.id ??
@@ -208,6 +238,8 @@ export function ReceiptFormView({
   const [scanning, setScanning] = useState<number | "continuous" | null>(null);
   const [reading, setReading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  /** The pasted receipt text, while its dialog is open. */
+  const [pasted, setPasted] = useState<string | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
 
@@ -299,24 +331,37 @@ export function ReceiptFormView({
     if (draft.declaredTotal !== null && !declared.trim()) {
       setDeclared(centsToInput(draft.declaredTotal));
     }
-    setRows((current) =>
-      keepBlank([
-        ...current.filter((r) => !isBlank(r)),
-        ...draft.lines.map(toRow),
-      ]),
-    );
+    addLines(draft.lines);
     setNotice(fill(t.photoRead, { n: draft.lines.length }));
+  }
+
+  /** Read lines go after the ones already typed. */
+  const addLines = (read: LineInput[]) =>
+    setRows((current) =>
+      keepBlank([...current.filter((r) => !isBlank(r)), ...read.map(toRow)]),
+    );
+
+  function readText() {
+    const read = parseReceiptText(pasted ?? "");
+    if (read.length === 0) return setError(t.pasteNothing);
+    setError(null);
+    addLines(read);
+    setPasted(null);
+    setNotice(fill(t.textRead, { n: read.length }));
   }
 
   const filled = rows.filter((r) => !isBlank(r));
   const lines = filled.map(toLine);
   const valid = lines.filter((l): l is LineInput => l !== null);
-  const duplicates = hasDuplicateLines(valid);
+  const duplicates = hasDuplicateLines(valid) || hasDepositLines(valid);
 
-  /** The same item on several lines → one line, quantities added up. */
+  /**
+   * Deposit lines folded into the item above, then the same item on several
+   * lines → one line, quantities added up.
+   */
   const combine = () =>
     setRows([
-      ...combineLines(valid).map(toRow),
+      ...combineLines(attachDeposits(valid)).map(toRow),
       ...filled.filter((r) => toLine(r) === null),
       emptyRow(),
     ]);
@@ -339,11 +384,12 @@ export function ReceiptFormView({
       note,
       method,
       categoryId,
+      fromFriend,
       lines,
     });
     setSaving(false);
     if (!result.ok) return setError(errors[result.error]);
-    router.push(`/receipts/${result.data}`);
+    router.push("/receipts");
   }
 
   return (
@@ -359,7 +405,39 @@ export function ReceiptFormView({
         >
           🖼️ {t.gallery}
         </Button>
+        <Button variant="ghost" onClick={() => setPasted("")}>
+          📋 {t.pasteText}
+        </Button>
       </PageHeader>
+      <SimpleModal
+        isOpen={pasted !== null}
+        onClose={() => setPasted(null)}
+        title={t.pasteTitle}
+        description={t.pasteHint}
+        footer={
+          <div className="flex w-full justify-end gap-2">
+            <Button onClick={() => setPasted(null)}>{t.cancel}</Button>
+            <Button
+              variant="primary"
+              onClick={readText}
+              disabled={!pasted?.trim()}
+            >
+              {t.pasteFill}
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-2">
+          <TextArea
+            autoFocus
+            rows={10}
+            className="num text-sm"
+            value={pasted ?? ""}
+            onChange={(e) => setPasted(e.target.value)}
+          />
+          <ErrorLine message={pasted !== null ? error : null} />
+        </div>
+      </SimpleModal>
       {/* The native pickers, driven by the buttons: the camera straight away,
           or an existing picture. */}
       <input
@@ -382,6 +460,19 @@ export function ReceiptFormView({
           {notice}
         </p>
       )}
+
+      <div className="mb-4 flex flex-col gap-1">
+        <Checkbox
+          checked={fromFriend}
+          onChange={setFromFriend}
+          className="flex items-center gap-2 text-sm font-medium"
+        >
+          👥 {t.fromFriend}
+        </Checkbox>
+        {fromFriend && (
+          <span className="ps-7 text-xs text-muted">{t.fromFriendHint}</span>
+        )}
+      </div>
 
       <section className="card mb-6 grid gap-3 p-4 sm:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-1">
@@ -432,11 +523,11 @@ export function ReceiptFormView({
           return (
             <li
               key={row.key}
-              className={`card grid grid-cols-6 gap-2 p-3 ${
+              className={`card grid grid-cols-6 gap-2 p-3 sm:grid-cols-7 ${
                 invalid ? "border-danger" : ""
               } ${isBlank(row) ? "opacity-70" : ""}`}
             >
-              <div className="col-span-6 flex items-center gap-2 sm:col-span-2">
+              <div className="col-span-6 flex items-center gap-2 sm:col-span-3">
                 <span className="num w-6 shrink-0 text-xs text-muted">
                   {index + 1}
                 </span>
@@ -496,7 +587,7 @@ export function ReceiptFormView({
               </div>
               <Field
                 label={row.unit === "kg" ? t.weight : t.quantity}
-                className="col-span-2 sm:col-span-1"
+                className="col-span-3 sm:col-span-1"
               >
                 <TextInput
                   inputMode="decimal"
@@ -509,7 +600,7 @@ export function ReceiptFormView({
               </Field>
               <Field
                 label={row.unit === "kg" ? t.pricePerKg : t.unitPrice}
-                className="col-span-2 sm:col-span-1"
+                className="col-span-3 sm:col-span-1"
               >
                 <TextInput
                   inputMode="decimal"
@@ -519,7 +610,7 @@ export function ReceiptFormView({
                   onChange={(e) => update(row.key, { price: e.target.value })}
                 />
               </Field>
-              <Field label={t.discount} className="col-span-2 sm:col-span-1">
+              <Field label={t.discount} className="col-span-3 sm:col-span-1">
                 <TextInput
                   inputMode="decimal"
                   className="num"
@@ -528,6 +619,15 @@ export function ReceiptFormView({
                   onChange={(e) =>
                     update(row.key, { discount: e.target.value })
                   }
+                />
+              </Field>
+              <Field label={t.deposit} className="col-span-3 sm:col-span-1">
+                <TextInput
+                  inputMode="decimal"
+                  className="num"
+                  value={row.deposit}
+                  placeholder="0,00"
+                  onChange={(e) => update(row.key, { deposit: e.target.value })}
                 />
               </Field>
               <div className="col-span-6 flex items-end justify-between gap-2 sm:col-span-1 sm:flex-col sm:items-end">
@@ -567,25 +667,31 @@ export function ReceiptFormView({
             onChange={setMethod}
           />
         </div>
-        <div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-64">
-          <span className="text-xs font-medium text-muted">{t.category}</span>
-          <Select
-            aria-label={t.category}
-            className="w-full"
-            value={categoryId ?? ""}
-            onChange={setCategoryId}
-            options={categories
-              .filter((c) => !c.archived || c.id === categoryId)
-              .map((c) => ({
-                key: c.id,
-                label: `${c.icon} ${categoryLabel(c, messages.categoryNames)}`,
-              }))}
-          />
-        </div>
+        {!fromFriend && (
+          <div className="flex min-w-48 flex-1 flex-col gap-1 sm:max-w-64">
+            <span className="text-xs font-medium text-muted">{t.category}</span>
+            <Select
+              aria-label={t.category}
+              className="w-full"
+              value={categoryId ?? ""}
+              onChange={setCategoryId}
+              options={categories
+                .filter((c) => !c.archived || c.id === categoryId)
+                .map((c) => ({
+                  key: c.id,
+                  label: `${c.icon} ${categoryLabel(c, messages.categoryNames)}`,
+                }))}
+            />
+          </div>
+        )}
       </div>
 
       <Field label={t.note} className="mt-4">
-        <TextInput value={note} onChange={(e) => setNote(e.target.value)} />
+        <TextInput
+          dir={autoDir(note)}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
       </Field>
 
       {scanning !== null && (

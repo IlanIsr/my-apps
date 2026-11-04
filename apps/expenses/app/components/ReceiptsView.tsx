@@ -4,7 +4,8 @@
  * The receipt list, newest first, grouped by month (with each month's total),
  * filterable by store, under this month's groceries spending (against its
  * budget, with the month-end projection). Each row says whether the computed
- * sum matches the total printed on the receipt.
+ * sum matches the total printed on the receipt. A friend's receipt (prices
+ * only, not an expense) is marked and left out of the month totals.
  */
 
 import Link from "next/link";
@@ -40,6 +41,8 @@ export type ReceiptsTexts = {
   /** `{amount}`. */
   projection: string;
   setBudget: string;
+  /** A friend's receipt (not an expense). */
+  friend: string;
 };
 
 /** This month's spending in Groceries. */
@@ -180,7 +183,10 @@ export function ReceiptsView({
                   </h2>
                   <span className="num text-sm text-muted">
                     {formatMoney(
-                      list.reduce((s, r) => s + r.total, 0),
+                      list.reduce(
+                        (s, r) => s + (r.fromFriend ? 0 : r.total),
+                        0,
+                      ),
                       tag,
                     )}
                   </span>
@@ -201,8 +207,17 @@ export function ReceiptsView({
                             {fill(t.lineCount, { n: r.lineCount })}
                           </span>
                         </span>
+                        {r.fromFriend && (
+                          <span className="rounded-full bg-sunken px-2 py-0.5 text-xs text-muted">
+                            👥 {t.friend}
+                          </span>
+                        )}
                         <CheckBadge receipt={r} t={t} />
-                        <span className="num font-semibold">
+                        <span
+                          className={`num font-semibold ${
+                            r.fromFriend ? "text-muted" : ""
+                          }`}
+                        >
                           {formatMoney(r.total, tag)}
                         </span>
                       </Link>

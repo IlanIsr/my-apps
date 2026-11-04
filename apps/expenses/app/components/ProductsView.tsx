@@ -5,7 +5,8 @@
  * shelf. Filtered on one store, it lists what was bought there with its last
  * price; otherwise each product shows its cheapest store. Sorting by price
  * per L / kg compares different formats (all the milks…). Links to the
- * Duplicates page when there are suggestions.
+ * Duplicates page when there are suggestions. The round "+" adds a product by
+ * hand or a friend's receipt.
  */
 
 import Link from "next/link";
@@ -29,6 +30,7 @@ import {
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { EmptyState, LinkButton, PageHeader, fill } from "./common";
+import { AddProduct } from "./ProductModal";
 import { measureLabel } from "./ProductView";
 import { Select } from "./Select";
 import { ShoppingToggle } from "./ShoppingToggle";
@@ -116,6 +118,7 @@ export function ProductsView({
       <>
         <PageHeader title={t.title} />
         <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
+        <AddProduct />
       </>
     );
   }
@@ -244,6 +247,7 @@ export function ProductsView({
           })}
         </ul>
       )}
+      <AddProduct />
     </>
   );
 }

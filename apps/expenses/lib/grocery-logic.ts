@@ -4,7 +4,7 @@
  * Money is integer **cents** (agorot) everywhere; quantities are integer
  * **milli-units** (1 piece = 1000, 452 g of a per-kg product = 452), so no
  * float ever reaches the database. A line's total is
- * `round(quantity × unitPrice) − discount`.
+ * `round(quantity × unitPrice) − discount + deposit`.
  */
 
 import type { Method } from "./expense-logic";
@@ -126,6 +126,8 @@ export type LineInput = {
   /** Per piece, or per kg. */
   unitPrice: number;
   discount: number;
+  /** Bottle / can deposit charged with it (whole line, cents). */
+  deposit: number;
 };
 
 export type ReceiptInput = {
@@ -139,6 +141,8 @@ export type ReceiptInput = {
   method: Method;
   /** Its transaction's category; `null` = groceries. */
   categoryId: string | null;
+  /** A friend's receipt: prices only, no expense (method / category unused). */
+  fromFriend: boolean;
   lines: LineInput[];
 };
 
@@ -153,6 +157,7 @@ export type Receipt = {
   note: string | null;
   method: Method;
   categoryId: string | null;
+  fromFriend: boolean;
   lines: ReceiptLine[];
 };
 
@@ -163,6 +168,7 @@ export type ReceiptSummary = {
   date: string;
   declaredTotal: number | null;
   method: Method;
+  fromFriend: boolean;
   total: number;
   lineCount: number;
 };
@@ -175,11 +181,11 @@ export type PricePoint = {
   date: string;
   quantityMilli: number;
   /**
-   * The product's price per piece / kg (cents) — the listed one: a discount
-   * only lowers what was `paid`.
+   * The product's price per piece / kg (cents) — the listed one plus its
+   * deposit (paid every time); a discount only lowers what was `paid`.
    */
   unitPrice: number;
-  /** The price per piece / kg printed on the line (= `unitPrice`). */
+  /** The price per piece / kg printed on the line (deposit not included). */
   listedPrice: number;
   /** What was paid for the line. */
   paid: number;
@@ -194,9 +200,24 @@ export function lineTotal(line: {
   quantityMilli: number;
   unitPrice: number;
   discount: number;
+  deposit: number;
 }): number {
   return (
-    Math.round((line.quantityMilli * line.unitPrice) / 1000) - line.discount
+    Math.round((line.quantityMilli * line.unitPrice) / 1000) -
+    line.discount +
+    line.deposit
+  );
+}
+
+/** A product's price per piece / kg: the listed one plus its deposit share. */
+export function priceWithDeposit(line: {
+  quantityMilli: number;
+  listedPrice: number;
+  deposit: number;
+}): number {
+  if (!line.deposit || line.quantityMilli <= 0) return line.listedPrice;
+  return (
+    line.listedPrice + Math.round((line.deposit * 1000) / line.quantityMilli)
   );
 }
 
@@ -204,7 +225,7 @@ export function receiptTotal(lines: Parameters<typeof lineTotal>[0][]): number {
   return lines.reduce((sum, line) => sum + lineTotal(line), 0);
 }
 
-/** Effective price per piece / kg, discount included. */
+/** Effective price per piece / kg, discount and deposit included. */
 export function effectiveUnitPrice(line: Parameters<typeof lineTotal>[0]) {
   if (line.quantityMilli <= 0) return line.unitPrice;
   return Math.round((lineTotal(line) * 1000) / line.quantityMilli);
@@ -546,8 +567,8 @@ export function hasDuplicateLines(lines: LineInput[]): boolean {
 
 /**
  * One line per item: the same item printed several times (3 × the tuna)
- * becomes one line with the quantities and discounts added up, where it
- * first appears.
+ * becomes one line with the quantities, discounts and deposits added up,
+ * where it first appears.
  */
 export function combineLines(lines: LineInput[]): LineInput[] {
   const byKey = new Map<string, LineInput>();
@@ -557,9 +578,134 @@ export function combineLines(lines: LineInput[]): LineInput[] {
     if (first) {
       first.quantityMilli += line.quantityMilli;
       first.discount += line.discount;
+      first.deposit += line.deposit;
     } else {
       byKey.set(key, { ...line });
     }
   }
   return [...byKey.values()];
+}
+
+// ---------------------------------------------------------------------------
+// Deposits
+
+/**
+ * Labels of a receipt's bottle / can deposit lines ("מיחזור אריזה פחית",
+ * "פיקדון"…): not items — a charge on the item printed above.
+ */
+const DEPOSIT = /מיחזור|פיקדון|פקדון|deposit|consigne/i;
+
+export const isDepositLine = (line: Pick<LineInput, "label">) =>
+  DEPOSIT.test(line.label);
+
+/** Whether some lines are deposits still standing as their own items. */
+export function hasDepositLines(lines: LineInput[]): boolean {
+  return lines.some((line, i) => i > 0 && isDepositLine(line));
+}
+
+/**
+ * Each deposit line folded into the item above it (its whole total becomes
+ * that item's `deposit`). A deposit line with nothing above is kept.
+ */
+export function attachDeposits(lines: LineInput[]): LineInput[] {
+  const out: LineInput[] = [];
+  for (const line of lines) {
+    const prev = out.at(-1);
+    if (prev && isDepositLine(line) && !isDepositLine(prev)) {
+      prev.deposit += Math.max(0, lineTotal(line));
+    } else {
+      out.push({ ...line });
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Pasted receipt text
+
+/**
+ * "barcode  quantity" — or, for a weighed item, "barcode  0.334 ק"ג 3.90x"
+ * (kilos, then the price per kg).
+ */
+const BARCODE_QTY =
+  /^(\d{3,14})\s+(\d+(?:[.,]\d+)?)(\s*(?:ק["״”']?ג|kg))?(?:\s+(\d+(?:[.,]\d+)?)\s*x)?$/i;
+const AMOUNT = /^(?:₪\s*)?(-?\d+(?:[.,]\d+)?)\s*(?:₪)?$/;
+
+const decimal = (text: string) => Number(text.replace(",", "."));
+
+/**
+ * The lines of a receipt copied as text (the store's digital receipt): each
+ * item is its label, then "barcode  quantity" (or "barcode  kilos ק"ג price
+ * per kg x" for produce, meat…), then "₪ line total"; promo lines
+ * ("וופל לואקר 2ב26") and headers are skipped. The same barcode on several
+ * lines (a "3 for 20" split 13.34 + 6.66) is one line, and deposit lines fold
+ * into the item above. A line total below quantity × price keeps that price
+ * with the gap as its discount (a piece's price, when not printed, is the
+ * total over the quantity, rounded up).
+ */
+export function parseReceiptText(text: string): LineInput[] {
+  const rows = text
+    .split(/\r?\n/)
+    .map((row) => row.trim())
+    .filter(Boolean);
+  type Item = {
+    barcode: string;
+    label: string;
+    byWeight: boolean;
+    quantity: number;
+    total: number;
+    /** Printed price per kg (cents), when weighed. */
+    price: number | null;
+  };
+  const items: Item[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const match = BARCODE_QTY.exec(rows[i]!);
+    const label = rows[i - 1];
+    const amount = AMOUNT.exec(rows[i + 1] ?? "");
+    if (!match || !label || !amount) continue;
+    const quantity = decimal(match[2]!);
+    const total = Math.round(decimal(amount[1]!) * 100);
+    if (!(quantity > 0)) continue;
+    // Weighed: the kg mark or the price per kg, else a fractional quantity.
+    const byWeight =
+      Boolean(match[3] || match[4]) || !Number.isInteger(quantity);
+    const price = match[4] ? Math.round(decimal(match[4]) * 100) : null;
+    const same = items.find(
+      (item) => item.barcode === match[1] && item.byWeight === byWeight,
+    );
+    if (same) {
+      same.quantity += quantity;
+      same.total += total;
+    } else {
+      items.push({
+        barcode: match[1]!,
+        label,
+        byWeight,
+        quantity,
+        total,
+        price,
+      });
+    }
+    i++;
+  }
+  return attachDeposits(
+    items
+      .filter((item) => item.total > 0)
+      .map((item) => {
+        const quantityMilli = Math.round(item.quantity * 1000);
+        const unitPrice =
+          item.price ?? Math.ceil((item.total * 1000) / quantityMilli);
+        const listed = Math.round((quantityMilli * unitPrice) / 1000);
+        return {
+          barcode: item.barcode.slice(0, LIMITS.barcode),
+          label: item.label.slice(0, LIMITS.label),
+          unit: item.byWeight ? "kg" : "unit",
+          quantityMilli: Math.min(quantityMilli, LIMITS.quantityMilli),
+          unitPrice,
+          // Never negative: a total above quantity × price shows as a gap.
+          discount: Math.max(0, listed - item.total),
+          deposit: 0,
+        } satisfies LineInput;
+      }),
+  );
 }

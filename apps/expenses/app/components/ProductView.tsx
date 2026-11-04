@@ -14,12 +14,9 @@ import { useState } from "react";
 import { updateProductAction } from "@/app/actions";
 import {
   AISLE_ICON,
-  AISLES,
-  CONTENT_UNITS,
   formatDay,
   formatMoney,
   latestByStore,
-  parseQuantity,
   pricePerMeasure,
   quantityToInput,
   type Aisle,
@@ -27,16 +24,18 @@ import {
   type PricePoint,
   type Product,
   type Store,
-  type Unit,
 } from "@/lib/grocery-logic";
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
 import { Button } from "./Button";
-import { ErrorLine, Field, PageHeader, fill } from "./common";
-import { Segmented } from "./Segmented";
-import { Select } from "./Select";
+import { ErrorLine, PageHeader, fill } from "./common";
+import {
+  draftToInput,
+  ProductFields,
+  toProductDraft,
+  type ProductDraft,
+} from "./ProductFields";
 import { ShoppingToggle } from "./ShoppingToggle";
-import { TextInput } from "./TextInput";
 
 export type ProductTexts = {
   back: string;
@@ -101,15 +100,8 @@ export function ProductView({
   const router = useRouter();
 
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(product.name);
-  const [barcode, setBarcode] = useState(product.barcode ?? "");
-  const [unit, setUnit] = useState<Unit>(product.unit);
-  const [aisle, setAisle] = useState<Aisle | "none">(product.aisle ?? "none");
-  const [content, setContent] = useState(
-    product.contentMilli ? quantityToInput(product.contentMilli) : "",
-  );
-  const [contentUnit, setContentUnit] = useState<ContentUnit>(
-    product.contentUnit ?? "l",
+  const [draft, setDraft] = useState<ProductDraft>(() =>
+    toProductDraft(product),
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -126,18 +118,11 @@ export function ProductView({
     measureLabel(product, price, tag, t.contentUnits);
 
   async function save() {
-    const contentMilli = content.trim() ? parseQuantity(content) : null;
-    if (content.trim() && !contentMilli) return setError(t.badContent);
+    const input = draftToInput(draft);
+    if (!input) return setError(t.badContent);
     setBusy(true);
     setError(null);
-    const result = await updateProductAction(product.id, {
-      name,
-      barcode,
-      unit,
-      aisle: aisle === "none" ? null : aisle,
-      contentMilli: unit === "unit" ? contentMilli : null,
-      contentUnit,
-    });
+    const result = await updateProductAction(product.id, input);
     setBusy(false);
     if (!result.ok) return setError(messages.errors[result.error]);
     setEditing(false);
@@ -269,72 +254,7 @@ export function ProductView({
         </div>
         {editing && (
           <div className="card flex flex-col gap-3 p-4">
-            <Field label={t.name}>
-              <TextInput
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </Field>
-            <Field label={t.barcode}>
-              <TextInput
-                className="num"
-                inputMode="numeric"
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-              />
-            </Field>
-            <Segmented
-              aria-label={t.unit.unit}
-              options={[
-                { value: "unit", label: t.unit.unit },
-                { value: "kg", label: t.unit.kg },
-              ]}
-              value={unit}
-              onChange={setUnit}
-            />
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted">{t.aisle}</span>
-              <Select
-                aria-label={t.aisle}
-                className="w-full sm:w-64"
-                value={aisle}
-                onChange={(v) => setAisle(v as Aisle | "none")}
-                options={[
-                  { key: "none", label: t.noAisle },
-                  ...AISLES.map((a) => ({
-                    key: a,
-                    label: `${AISLE_ICON[a]} ${messages.aisles[a]}`,
-                  })),
-                ]}
-              />
-            </div>
-            {unit === "unit" && (
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium text-muted">
-                  {t.content}
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <TextInput
-                    aria-label={t.content}
-                    inputMode="decimal"
-                    className="num w-28"
-                    placeholder="1,5"
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                  />
-                  <Segmented
-                    aria-label={t.content}
-                    options={CONTENT_UNITS.map((u) => ({
-                      value: u,
-                      label: t.contentUnits[u],
-                    }))}
-                    value={contentUnit}
-                    onChange={setContentUnit}
-                  />
-                </div>
-                <span className="text-xs text-muted">{t.contentHint}</span>
-              </div>
-            )}
+            <ProductFields draft={draft} onChange={setDraft} />
             <ErrorLine message={error} />
             <div className="flex gap-2">
               <Button onClick={() => setEditing(false)} disabled={busy}>

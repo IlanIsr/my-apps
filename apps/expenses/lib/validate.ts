@@ -5,9 +5,11 @@
 
 import {
   EXPENSE_LIMITS,
+  type ExpenseItem,
   GOAL_SCOPES,
   type GoalInput,
   type GoalScope,
+  itemsAmount,
   litersAmount,
   METHODS,
   type Method,
@@ -98,7 +100,7 @@ export function unit(value: unknown): Unit {
   return value as Unit;
 }
 
-function day(value: unknown): string {
+export function day(value: unknown): string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new InvalidInputError("date");
   }
@@ -122,6 +124,7 @@ function line(value: unknown): LineInput {
     ),
     unitPrice: int(input.unitPrice, "unitPrice", 0, LIMITS.cents),
     discount: int(input.discount, "discount", 0, LIMITS.cents),
+    deposit: int(input.deposit ?? 0, "deposit", 0, LIMITS.cents),
   };
 }
 
@@ -140,6 +143,7 @@ export function receiptInput(value: unknown): ReceiptInput {
     note: optionalText(input.note, "note", LIMITS.note),
     method: method(input.method),
     categoryId: optionalId(input.categoryId, "categoryId"),
+    fromFriend: input.fromFriend === true,
     lines: input.lines.map(line),
   };
 }
@@ -157,6 +161,7 @@ function optionalId(value: unknown, field: string): string | null {
 
 export function transactionInput(value: unknown): TransactionInput {
   const input = record(value, "transaction");
+  const paidWith = method(input.method);
   // By the litre: both or neither, and the amount follows from them.
   const byLiter = input.litersMilli != null || input.pricePerLiter != null;
   const litersMilli = byLiter
@@ -165,28 +170,50 @@ export function transactionInput(value: unknown): TransactionInput {
   const pricePerLiter = byLiter
     ? int(input.pricePerLiter, "pricePerLiter", 1, LIMITS.cents)
     : null;
+  // Split into lines: the amount is their sum. Not both ways at once.
+  const items = expenseItems(input.items);
+  if (items && byLiter) throw new InvalidInputError("items");
+  const computed =
+    litersMilli && pricePerLiter
+      ? litersAmount(litersMilli, pricePerLiter)
+      : items
+        ? itemsAmount(items)
+        : null;
   return {
     litersMilli,
     pricePerLiter,
+    items,
     date: day(input.date),
-    amount:
-      litersMilli && pricePerLiter
-        ? int(
-            // Paid in cash: rounded to 10 agorot, like a receipt.
-            payable(
-              litersAmount(litersMilli, pricePerLiter),
-              method(input.method),
-            ),
-            "amount",
-            1,
-            LIMITS.cents,
-          )
-        : int(input.amount, "amount", 1, LIMITS.cents),
+    amount: int(
+      // Paid in cash: rounded to 10 agorot, like a receipt.
+      computed === null ? input.amount : payable(computed, paidWith),
+      "amount",
+      1,
+      LIMITS.cents,
+    ),
     categoryId: optionalId(input.categoryId, "categoryId"),
     merchant: optionalText(input.merchant, "merchant", EXPENSE_LIMITS.merchant),
-    method: method(input.method),
+    method: paidWith,
     note: optionalMultiline(input.note, "note", EXPENSE_LIMITS.note),
+    // Cash back to the account: only a card payment can owe it.
+    toRepay: input.toRepay === true && paidWith === "card",
   };
+}
+
+/** A split expense's lines, or `null` when not split (none / empty list). */
+function expenseItems(value: unknown): ExpenseItem[] | null {
+  if (value === null || value === undefined) return null;
+  if (!Array.isArray(value) || value.length > EXPENSE_LIMITS.items) {
+    throw new InvalidInputError("items");
+  }
+  if (value.length === 0) return null;
+  return value.map((item) => {
+    const line = record(item, "items");
+    return {
+      label: text(line.label, "items", EXPENSE_LIMITS.itemLabel),
+      amount: int(line.amount, "items", 1, LIMITS.cents),
+    };
+  });
 }
 
 export function categoryInput(value: unknown) {
@@ -199,6 +226,7 @@ export function categoryInput(value: unknown) {
     name: optionalText(input.name, "name", EXPENSE_LIMITS.categoryName),
     icon: text(input.icon, "icon", EXPENSE_LIMITS.icon),
     budget,
+    cashEnvelope: input.cashEnvelope === true,
     archived: input.archived === true,
   };
 }

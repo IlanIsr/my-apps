@@ -18,6 +18,7 @@ export const receipts = {
   ofBudget: "/ {budget}",
   projection: "≈ {amount} by month end at this pace",
   setBudget: "Set a budget",
+  friend: "Friend",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -31,10 +32,12 @@ export const receipt = {
   printed: "Receipt total",
   difference: "Difference {diff}",
   discount: "discount",
+  deposit: "deposit",
   matches: "Matches",
   mismatch: "Doesn't match",
   subtotal: "Subtotal",
   rounding: "Rounding (cash)",
+  friend: "A friend's receipt",
 } as const satisfies ReceiptTexts;
 
 export const receiptForm = {
@@ -54,6 +57,7 @@ export const receiptForm = {
   unitPrice: "Unit price",
   pricePerKg: "Price / kg",
   discount: "Discount",
+  deposit: "Deposit",
   lineTotal: "Total",
   removeLine: "Remove line",
   addLine: "Add a line",
@@ -75,7 +79,17 @@ export const receiptForm = {
   photoRead: "{n} line(s) read from the photo — check each one before saving.",
   gallery: "Gallery",
   rounding: "incl. rounding {amount}",
-  combine: "Combine identical lines",
+  combine: "Combine lines (duplicates, deposits)",
+  fromFriend: "A friend's receipt — not my expense",
+  fromFriendHint:
+    "Its products and prices grow the database, without counting as an expense.",
+  pasteText: "Paste text",
+  pasteTitle: "Paste the receipt's text",
+  pasteHint:
+    "The digital receipt copied as is (name, barcode + quantity, ₪ total). Store, date and total are filled in afterwards.",
+  pasteFill: "Pre-fill",
+  pasteNothing: "No item found in this text.",
+  textRead: "{n} line(s) read from the text — check each one before saving.",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

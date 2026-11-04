@@ -16,6 +16,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -26,6 +27,7 @@ import {
 
 import type {
   DefaultCategoryKey,
+  ExpenseItem,
   GoalScope,
   Method,
 } from "@/lib/expense-logic";
@@ -83,6 +85,11 @@ export const receipts = pgTable(
     /** The total printed on the receipt (cents), to check the sum against. */
     declaredTotal: integer("declared_total"),
     note: text("note"),
+    /**
+     * A friend's receipt, entered for its prices: its products and prices
+     * count, but it is not an expense (no transaction).
+     */
+    fromFriend: boolean("from_friend").notNull().default(false),
     createdAt: ts("created_at").notNull().defaultNow(),
     updatedAt: ts("updated_at").notNull().defaultNow(),
   },
@@ -106,6 +113,11 @@ export const receiptItems = pgTable(
     /** Per piece or per kg, cents. */
     unitPrice: integer("unit_price").notNull(),
     discount: integer("discount").notNull().default(0),
+    /**
+     * The bottle / can deposit charged with the item ("מיחזור", "פיקדון" lines
+     * printed below it), cents for the whole line. Part of the product's price.
+     */
+    deposit: integer("deposit").notNull().default(0),
   },
   (t) => [
     index("receipt_items_receipt_idx").on(t.receiptId),
@@ -139,6 +151,8 @@ export const categories = pgTable(
     position: integer("position").notNull(),
     /** Monthly budget in cents. */
     budget: integer("budget"),
+    /** Its budget is taken out in cash (card payments owe it back). */
+    cashEnvelope: boolean("cash_envelope").notNull().default(false),
     archived: boolean("archived").notNull().default(false),
   },
   (t) => [index("categories_owner_idx").on(t.ownerId)],
@@ -167,6 +181,12 @@ export const transactions = pgTable(
     /** Bought by the litre (fuel…): litres × 1000 and the price per litre. */
     litersMilli: integer("liters_milli"),
     pricePerLiter: integer("price_per_liter"),
+    /** Split into lines (label + cents); the amount is then their sum. */
+    items: jsonb("items").$type<ExpenseItem[]>(),
+    /** Paid by card from a cash budget: that cash goes back to the account. */
+    toRepay: boolean("to_repay").notNull().default(false),
+    /** When it went back; `null` while still owed. */
+    repaidOn: date("repaid_on", { mode: "string" }),
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [

@@ -41,19 +41,23 @@ export type ReceiptTexts = {
   /** `{diff}`. */
   difference: string;
   discount: string;
+  /** Bottle / can deposit. */
+  deposit: string;
   matches: string;
   mismatch: string;
   subtotal: string;
   rounding: string;
+  /** A friend's receipt: prices only, not an expense. */
+  friend: string;
 };
 
-/** A receipt's lines: label, total, quantity × price, discount. */
+/** A receipt's lines: label, total, quantity × price, discount, deposit. */
 export function ReceiptLines({
   lines,
   t,
 }: {
   lines: ReceiptLine[];
-  t: { discount: string };
+  t: { discount: string; deposit: string };
 }) {
   const tag = LOCALE_TAG[useLanguage().locale];
   return (
@@ -78,6 +82,8 @@ export function ReceiptLines({
               {line.unit === "kg" ? "/kg" : ""}
               {line.discount > 0 &&
                 ` · ${t.discount} −${formatMoney(line.discount, tag)}`}
+              {line.deposit > 0 &&
+                ` · ${t.deposit} +${formatMoney(line.deposit, tag)}`}
               {line.barcode && ` · ${line.barcode}`}
             </div>
           </li>
@@ -117,8 +123,10 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
       </Link>
       <PageHeader
         eyebrow={`${formatDay(receipt.date, tag)} · ${
-          METHOD_ICON[receipt.method]
-        } ${messages.methods[receipt.method]}`}
+          receipt.fromFriend
+            ? `👥 ${t.friend}`
+            : `${METHOD_ICON[receipt.method]} ${messages.methods[receipt.method]}`
+        }`}
         title={receipt.storeName}
       >
         <LinkButton href={`/receipts/${receipt.id}/edit`}>{t.edit}</LinkButton>

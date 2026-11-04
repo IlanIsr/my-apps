@@ -5,7 +5,13 @@ import { listPricePoints, listProducts, listStores } from "@/lib/store";
 
 import { ReceiptFormView } from "../../components/ReceiptFormView";
 
-export default async function Page() {
+/** `?friend=1`: a friend's receipt (from the Products page's "+"). */
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ friend?: string }>;
+}) {
+  const { friend } = await searchParams;
   const owner = await requireOwner();
   const categories = await listCategories(owner);
   const [stores, products, points] = await Promise.all([
@@ -20,6 +26,7 @@ export default async function Page() {
       products={products}
       lastPrices={lastListedPrices(points)}
       categories={categories}
+      friend={friend === "1"}
     />
   );
 }
