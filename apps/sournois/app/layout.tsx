@@ -1,6 +1,6 @@
 /**
- * Root layout for Sournois (French only). Loads the fonts and wraps the tree
- * in `<AuthProvider>` (Clerk) → React Aria's locale (`fr-FR`) → `<AppShell>`.
+ * Root layout for Sournois (French only, public — no sign-in). Loads the
+ * fonts and wraps the tree in React Aria's locale (`fr-FR`) → `<AppShell>`.
  */
 
 import "./globals.css";
@@ -8,7 +8,6 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
 
-import { AuthProvider } from "@repo/auth/provider";
 import { I18nProvider } from "@repo/ui/i18n-provider";
 
 import { AppShell } from "./components/AppShell";
@@ -44,11 +43,9 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${bricolage.variable} ${figtree.variable}`}>
       <body className="antialiased">
-        <AuthProvider>
-          <I18nProvider locale="fr-FR">
-            <AppShell>{children}</AppShell>
-          </I18nProvider>
-        </AuthProvider>
+        <I18nProvider locale="fr-FR">
+          <AppShell>{children}</AppShell>
+        </I18nProvider>
       </body>
     </html>
   );

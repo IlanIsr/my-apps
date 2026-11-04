@@ -1,15 +1,13 @@
 "use client";
 
 /**
- * The page frame: the shared `AppHeader` (brand, section links, account — one
- * row, hamburger menu on mobile) above the content column.
+ * The page frame: the shared `AppHeader` (brand, section links — one row,
+ * hamburger menu on mobile) above the content column.
  */
 
-import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { AuthControl } from "@repo/auth/nav";
 import { AppHeader } from "@repo/ui/app-header";
 
 const LINKS = [
@@ -20,7 +18,6 @@ const LINKS = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isSignedIn } = useAuth();
 
   return (
     <>
@@ -39,16 +36,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Sournois
           </Link>
         }
-        links={
-          isSignedIn
-            ? LINKS.map((link) => ({
-                ...link,
-                active: pathname === link.href,
-              }))
-            : []
-        }
+        links={LINKS.map((link) => ({
+          ...link,
+          active: pathname === link.href,
+        }))}
         linkComponent={Link}
-        account={<AuthControl />}
         menuLabel="Menu"
       />
       <main className="mx-auto max-w-xl px-4 py-6">{children}</main>

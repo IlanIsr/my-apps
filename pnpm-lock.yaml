@@ -309,12 +309,6 @@ importers:
 
   apps/sournois:
     dependencies:
-      '@clerk/nextjs':
-        specifier: ^7.9.0
-        version: 7.9.0(next@16.3.2(@babel/core@7.29.7(supports-color@7.2.0))(@opentelemetry/api@1.9.1)(@types/node@26.3.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      '@repo/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
