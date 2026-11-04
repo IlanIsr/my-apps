@@ -16,7 +16,8 @@
     "CONTACT_TO_EMAIL",
     "CONTACT_FROM",
     "VERCEL_ENV",
-    "AI_PHOTO_ENABLED"
+    "AI_PHOTO_ENABLED",
+    "ANTHROPIC_API_KEY"
   ],
   "tasks": {
     "build": {
