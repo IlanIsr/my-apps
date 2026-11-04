@@ -19,6 +19,7 @@ export const receipts = {
   projection: "≈ {amount} בסוף החודש בקצב הזה",
   setBudget: "לקבוע תקציב",
   friend: "חבר",
+  showFriends: "הצגת קבלות של חברים ({n})",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -89,6 +90,8 @@ export const receiptForm = {
   pasteFill: "מילוי מוקדם",
   pasteNothing: "לא נמצאו פריטים בטקסט הזה.",
   textRead: "{n} שורות נקראו מהטקסט — בדקו כל אחת לפני השמירה.",
+  checked: "השורה נבדקה",
+  checkedCount: "{n}/{total} נבדקו",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

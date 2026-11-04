@@ -3,7 +3,8 @@
 /**
  * Quick add / edit of one expense: amount first (big, decimal keypad),
  * category chips, merchant (suggested from past ones — picking one also picks
- * its usual category), cash / card (cash by default), date (today), note.
+ * its usual category), cash / card / Cibus (card by default — most people
+ * pay by card), date (today), note.
  * Fuel & co. can be entered by the litre (litres × price per litre = the
  * amount); a restaurant bill can be split into lines (dish, bread, drink…),
  * the amount being their sum — just detail, the category stays the expense's.
@@ -148,7 +149,7 @@ export function TransactionModal({
   const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? null);
   const [picked, setPicked] = useState(Boolean(transaction));
   const [merchant, setMerchant] = useState(transaction?.merchant ?? "");
-  const [method, setMethod] = useState<Method>(transaction?.method ?? "cash");
+  const [method, setMethod] = useState<Method>(transaction?.method ?? "card");
   const literExact =
     litersMilli && pricePerLiter
       ? litersAmount(litersMilli, pricePerLiter)

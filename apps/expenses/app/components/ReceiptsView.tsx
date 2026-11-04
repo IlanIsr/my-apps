@@ -5,7 +5,8 @@
  * filterable by store, under this month's groceries spending (against its
  * budget, with the month-end projection). Each row says whether the computed
  * sum matches the total printed on the receipt. A friend's receipt (prices
- * only, not an expense) is marked and left out of the month totals.
+ * only, not an expense) is hidden unless asked for, marked, and left out of
+ * the month totals.
  */
 
 import Link from "next/link";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/grocery-logic";
 import { LOCALE_TAG, useLanguage, useTranslations } from "@/i18n";
 
+import { Checkbox } from "./Checkbox";
 import { EmptyState, LinkButton, PageHeader, fill } from "./common";
 import { Bar } from "./GroceryStats";
 import { Select } from "./Select";
@@ -43,6 +45,8 @@ export type ReceiptsTexts = {
   setBudget: string;
   /** A friend's receipt (not an expense). */
   friend: string;
+  /** `{n}` friends' receipts. */
+  showFriends: string;
 };
 
 /** This month's spending in Groceries. */
@@ -86,11 +90,14 @@ export function ReceiptsView({
   const t = useTranslations().receipts;
   const tag = LOCALE_TAG[useLanguage().locale];
   const [storeId, setStoreId] = useState("all");
+  const [showFriends, setShowFriends] = useState(false);
+  const friends = receipts.filter((r) => r.fromFriend).length;
 
-  const shown =
-    storeId === "all"
-      ? receipts
-      : receipts.filter((r) => r.storeId === storeId);
+  const shown = receipts.filter(
+    (r) =>
+      (storeId === "all" || r.storeId === storeId) &&
+      (showFriends || !r.fromFriend),
+  );
   const months = new Map<string, ReceiptSummary[]>();
   for (const r of shown) {
     const key = r.date.slice(0, 7);
@@ -159,18 +166,29 @@ export function ReceiptsView({
               )}
             </div>
           </section>
-          {stores.length > 1 && (
-            <Select
-              aria-label={t.store}
-              className="mb-4 w-56"
-              value={storeId}
-              onChange={setStoreId}
-              options={[
-                { key: "all", label: t.allStores },
-                ...stores.map((s) => ({ key: s.id, label: s.name })),
-              ]}
-            />
-          )}
+          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+            {stores.length > 1 && (
+              <Select
+                aria-label={t.store}
+                className="w-56"
+                value={storeId}
+                onChange={setStoreId}
+                options={[
+                  { key: "all", label: t.allStores },
+                  ...stores.map((s) => ({ key: s.id, label: s.name })),
+                ]}
+              />
+            )}
+            {friends > 0 && (
+              <Checkbox
+                checked={showFriends}
+                onChange={setShowFriends}
+                className="flex items-center gap-2 text-sm"
+              >
+                👥 {fill(t.showFriends, { n: friends })}
+              </Checkbox>
+            )}
+          </div>
           <div className="flex flex-col gap-6">
             {[...months].map(([month, list]) => (
               <section key={month}>

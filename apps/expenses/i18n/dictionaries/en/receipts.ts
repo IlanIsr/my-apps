@@ -19,6 +19,7 @@ export const receipts = {
   projection: "≈ {amount} by month end at this pace",
   setBudget: "Set a budget",
   friend: "Friend",
+  showFriends: "Show friends' receipts ({n})",
 } as const satisfies ReceiptsTexts;
 
 export const receipt = {
@@ -90,6 +91,8 @@ export const receiptForm = {
   pasteFill: "Pre-fill",
   pasteNothing: "No item found in this text.",
   textRead: "{n} line(s) read from the text — check each one before saving.",
+  checked: "Line checked",
+  checkedCount: "{n}/{total} checked",
 } as const satisfies ReceiptFormTexts;
 
 export const scanner = {

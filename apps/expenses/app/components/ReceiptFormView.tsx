@@ -9,7 +9,9 @@
  * Barcodes can be scanned with the camera (one line, or one line per code in
  * a row), and a photo of the receipt can pre-fill the whole form (read by
  * Claude — always checked before saving), as can the receipt's text pasted
- * from the store's digital receipt (parsed here, no AI).
+ * from the store's digital receipt (parsed here, no AI). Each line can be
+ * ticked as checked while proofreading — it moves to the bottom (display
+ * only, not saved; editing the line unticks it).
  * Its expense goes in Groceries unless another category is picked (paper,
  * tools… bought at a store but not food). A friend's receipt only adds its
  * products and prices: no expense (no category).
@@ -115,6 +117,10 @@ export type ReceiptFormTexts = {
   pasteNothing: string;
   /** `{n}` lines read. */
   textRead: string;
+  /** A line ticked while proofreading. */
+  checked: string;
+  /** `{n}` of `{total}` lines checked. */
+  checkedCount: string;
   fromFriend: string;
   fromFriendHint: string;
 };
@@ -128,6 +134,8 @@ type Row = {
   price: string;
   discount: string;
   deposit: string;
+  /** Ticked while proofreading — display only, never saved. */
+  checked: boolean;
 };
 
 /** `productId → storeId → listed unit price`. */
@@ -143,6 +151,7 @@ const emptyRow = (): Row => ({
   price: "",
   discount: "",
   deposit: "",
+  checked: false,
 });
 
 const isBlank = (row: Row) =>
@@ -161,6 +170,7 @@ const toRow = (line: LineInput): Row => ({
   price: centsToInput(line.unitPrice),
   discount: line.discount ? centsToInput(line.discount) : "",
   deposit: line.deposit ? centsToInput(line.deposit) : "",
+  checked: false,
 });
 
 /** A photo → a JPEG data URL, at most 2000 px on its long side. */
@@ -222,7 +232,7 @@ export function ReceiptFormView({
     receipt?.declaredTotal != null ? centsToInput(receipt.declaredTotal) : "",
   );
   const [note, setNote] = useState(receipt?.note ?? "");
-  const [method, setMethod] = useState<Method>(receipt?.method ?? "cash");
+  const [method, setMethod] = useState<Method>(receipt?.method ?? "card");
   const [fromFriend, setFromFriend] = useState(receipt?.fromFriend ?? friend);
   const [categoryId, setCategoryId] = useState(
     receipt?.categoryId ??
@@ -256,9 +266,16 @@ export function ReceiptFormView({
     [products],
   );
 
+  /** Any change to a line unticks it: it needs checking again. */
   const update = (key: number, patch: Partial<Row>) =>
     setRows((current) =>
-      keepBlank(current.map((r) => (r.key === key ? { ...r, ...patch } : r))),
+      keepBlank(
+        current.map((r) =>
+          r.key === key
+            ? { ...r, ...patch, checked: patch.checked ?? false }
+            : r,
+        ),
+      ),
     );
 
   /** What a known product fills in a row (keeps what was already typed). */
@@ -351,6 +368,13 @@ export function ReceiptFormView({
   }
 
   const filled = rows.filter((r) => !isBlank(r));
+  // Checked lines go to the bottom — on screen only: saved in the receipt's
+  // order, each keeping its number on the receipt.
+  const numbered = rows.map((row, index) => ({ row, index }));
+  const shownRows = [
+    ...numbered.filter((x) => !x.row.checked),
+    ...numbered.filter((x) => x.row.checked),
+  ];
   const lines = filled.map(toLine);
   const valid = lines.filter((l): l is LineInput => l !== null);
   const duplicates = hasDuplicateLines(valid) || hasDepositLines(valid);
@@ -537,7 +561,22 @@ export function ReceiptFormView({
       </section>
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg">{t.lines}</h2>
+        <h2 className="flex items-baseline gap-2 text-lg">
+          {t.lines}
+          {filled.length > 0 && (
+            <span
+              className={`num text-xs font-normal ${
+                filled.every((r) => r.checked) ? "text-accent" : "text-muted"
+              }`}
+            >
+              ✓{" "}
+              {fill(t.checkedCount, {
+                n: filled.filter((r) => r.checked).length,
+                total: filled.length,
+              })}
+            </span>
+          )}
+        </h2>
         <div className="flex flex-wrap gap-2">
           {duplicates && (
             <Button size="sm" onClick={combine}>
@@ -550,17 +589,30 @@ export function ReceiptFormView({
         </div>
       </div>
       <ol className="flex flex-col gap-3">
-        {rows.map((row, index) => {
+        {shownRows.map(({ row, index }) => {
           const line = isBlank(row) ? null : toLine(row);
           const invalid = !isBlank(row) && line === null;
           return (
             <li
               key={row.key}
               className={`card grid grid-cols-6 gap-2 p-3 sm:grid-cols-7 ${
-                invalid ? "border-danger" : ""
+                invalid
+                  ? "border-danger"
+                  : row.checked
+                    ? "border-accent bg-accent-soft"
+                    : ""
               } ${isBlank(row) ? "opacity-70" : ""}`}
             >
               <div className="col-span-6 flex items-center gap-2 sm:col-span-3">
+                {!isBlank(row) && (
+                  <Checkbox
+                    checked={row.checked}
+                    onChange={(checked) => update(row.key, { checked })}
+                    className="flex shrink-0 items-center"
+                  >
+                    <span className="sr-only">{t.checked}</span>
+                  </Checkbox>
+                )}
                 <span className="num w-6 shrink-0 text-xs text-muted">
                   {index + 1}
                 </span>
