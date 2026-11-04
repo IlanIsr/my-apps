@@ -62,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         brand={
           <Link
             href="/"
-            className="flex items-center gap-2 font-display text-xl font-semibold"
+            className="flex items-center gap-2 font-display text-lg font-semibold whitespace-nowrap sm:text-xl"
           >
             <span
               aria-hidden

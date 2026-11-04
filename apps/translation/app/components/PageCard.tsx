@@ -212,7 +212,7 @@ export function PageCard({
 
       <div className="grid lg:grid-cols-2">
         <figure className="m-0 min-w-0 border-b border-line bg-sunken p-4 lg:border-e lg:border-b-0">
-          <div className="lg:sticky lg:top-24">
+          <div className="lg:sticky lg:top-36">
             {scanUrl ? (
               <Button
                 variant="ghost"

@@ -416,6 +416,14 @@ export function WorkbenchView({
     return () => clearTimeout(timer);
   }, [search, router, doc.id]);
 
+  // Warn before closing the tab while pages are being processed.
+  useEffect(() => {
+    if (!active) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [active]);
+
   // Stop in-flight requests when leaving.
   useEffect(() => {
     const set = controllers.current;
@@ -663,7 +671,7 @@ export function WorkbenchView({
       </details>
 
       {/* Summary + actions, sticky under the header. */}
-      <div className="sheet sticky top-2 z-10 flex flex-col gap-3 px-4 py-3">
+      <div className="sheet z-10 flex flex-col gap-3 px-4 py-3 lg:sticky lg:top-2">
         <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2">
           <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
             {stat(stats.pages, t.stats.pages)}
