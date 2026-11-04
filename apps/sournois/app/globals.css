@@ -1,0 +1,181 @@
+@import "@repo/tailwind-config";
+/* HeroUI v3 prebuilt component styles — must come after tailwindcss. Components
+ * are consumed via `@repo/ui/*`, never `@heroui/react` directly. */
+@import "@heroui/styles/css";
+
+/*
+ * Sournois palette — "renard au crépuscule": cool slate ground, a fox-orange
+ * accent. `--hit` / `--near` / `--miss` are the three tile colours (green /
+ * yellow / grey), `--key` an untried keyboard key. Follows the OS colour scheme (no toggle).
+ */
+:root {
+  --background: #eef0f3;
+  --foreground: #1b1d27;
+  --surface: #ffffff;
+  --sunken: #e2e5ea;
+  --muted: #5f6476;
+  --line: #d6dae2;
+  --line-strong: #b9bfcb;
+  --accent: #d9541e;
+  --accent-ink: #ffffff;
+  --accent-soft: #fbe3d8;
+  --hit: #2f8a5b;
+  --near: #d3a019;
+  --miss: #7c8194;
+  --key: #d3d7df;
+  --tile-ink: #ffffff;
+  --danger: #c23a2b;
+  --shadow:
+    0 1px 1px rgba(27, 29, 39, 0.05), 0 8px 24px -16px rgba(27, 29, 39, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #12141c;
+    --foreground: #e8e9ef;
+    --surface: #1b1e29;
+    --sunken: #161923;
+    --muted: #9a9fb1;
+    --line: #2a2e3c;
+    --line-strong: #3a3f50;
+    --accent: #f07a45;
+    --accent-ink: #1b0c05;
+    --accent-soft: #3b2117;
+    --hit: #3f9e6b;
+    --near: #c99a22;
+    --miss: #2c2f3b;
+    --key: #50566a;
+    --danger: #f08877;
+    --shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 8px 24px -16px rgba(0, 0, 0, 0.8);
+    color-scheme: dark;
+  }
+}
+
+/* HeroUI's theme variables, pointed at the palette above (unlayered, so they
+ * win over HeroUI's layered defaults). */
+:root {
+  --accent-foreground: var(--accent-ink);
+  --danger-foreground: #ffffff;
+  --focus: var(--accent);
+  --border: var(--line);
+  --separator: var(--line);
+  --overlay: var(--surface);
+  --overlay-foreground: var(--foreground);
+  --surface-foreground: var(--foreground);
+  --default: var(--sunken);
+  --default-foreground: var(--foreground);
+  --field-background: var(--surface);
+  --field-foreground: var(--foreground);
+  --field-placeholder: var(--muted);
+  --field-border: var(--line-strong);
+  --field-border-width: 1px;
+  --field-radius: 0.5rem;
+  --radius: 0.5rem;
+  --segment: var(--surface);
+  --segment-foreground: var(--foreground);
+}
+
+.switch {
+  --switch-control-bg: var(--line-strong);
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-hit: var(--hit);
+  --color-near: var(--near);
+  --color-miss: var(--miss);
+  --color-key: var(--key);
+  --color-tile-ink: var(--tile-ink);
+  --color-danger: var(--danger);
+  --shadow-card: var(--shadow);
+
+  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-sans: var(--font-figtree), system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    overflow-x: clip;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+  button {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface shadow-card;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold tracking-[0.12em] text-muted uppercase;
+  }
+  /* One letter square; its size follows the word length (`--n`). */
+  .tile {
+    @apply grid aspect-square place-items-center rounded-md font-display font-bold uppercase select-none;
+    font-size: min(1.6rem, calc((100vw - 2rem) / var(--n) * 0.5));
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* A refused guess wobbles once. */
+@keyframes wobble {
+  0%,
+  100% {
+    translate: 0;
+  }
+  20%,
+  60% {
+    translate: -6px;
+  }
+  40%,
+  80% {
+    translate: 6px;
+  }
+}
+.wobble {
+  animation: wobble 0.35s ease;
+}
+/* A revealed row flips in letter by letter. */
+@keyframes reveal {
+  from {
+    transform: rotateX(90deg);
+  }
+  to {
+    transform: rotateX(0);
+  }
+}
+.reveal {
+  animation: reveal 0.3s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wobble,
+  .reveal {
+    animation: none;
+  }
+}
