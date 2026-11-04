@@ -30,6 +30,11 @@ const apps = [
     description: "Every expense — cash, card, grocery receipts — with budgets.",
     url: isDev ? "http://localhost:3004" : "https://expenses.myappshub.dev/",
   },
+  {
+    name: "Sournois",
+    description: "Jeu de mots : l'adversaire change de mot pour vous échapper.",
+    url: isDev ? "http://localhost:3005" : "https://sournois.myappshub.dev/",
+  },
 ];
 
 export default function Page() {

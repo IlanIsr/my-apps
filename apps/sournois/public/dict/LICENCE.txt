@@ -1,0 +1,11 @@
+Listes de mots de Sournois (public/dict/*/*.json)
+
+Dérivées de Lexique 3.83 — Boris New, Christophe Pallier et al.
+http://www.lexique.org — licence Creative Commons BY-SA 4.0
+https://creativecommons.org/licenses/by-sa/4.0/deed.fr
+
+Modifications : mots normalisés (majuscules, sans accents, Œ → OE, Æ → AE),
+mots composés exclus, regroupés par longueur ; les réponses possibles sont
+les lemmes (noms, adjectifs, verbes, adverbes) de fréquence ≥ 2 par million
+de mots. Ces listes sont diffusées sous la même licence CC BY-SA 4.0.
+Script : scripts/build-dictionary.ts
