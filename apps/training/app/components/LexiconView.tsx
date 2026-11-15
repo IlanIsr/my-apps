@@ -32,6 +32,7 @@ import {
 import { SHASS } from "@/lib/shass";
 
 import { Button } from "./Button";
+import { Checkbox } from "./Checkbox";
 import { EmptyState, ErrorLine, fill, PageHeader } from "./common";
 import { Select } from "./Select";
 import { TextArea } from "./TextArea";
@@ -50,6 +51,14 @@ export type LexiconTexts = {
   delete: string;
   emptyAmud: string;
   noMatch: string;
+  abbreviation: string;
+  abbreviationsOnly: string;
+  abbreviations: {
+    link: string;
+    title: string;
+    description: string;
+    empty: string;
+  };
   empty: { title: string; description: string };
   form: {
     newTitle: string;
@@ -58,6 +67,7 @@ export type LexiconTexts = {
     termPlaceholder: string;
     translation: string;
     note: string;
+    isAbbreviation: string;
     save: string;
     saveAndNext: string;
     cancel: string;
@@ -71,8 +81,11 @@ export type LexiconTexts = {
 
 export function LexiconIndexView({
   counts,
+  abbreviations,
 }: {
   counts: Record<string, number>;
+  /** How many abbreviations, all masekhtot together. */
+  abbreviations: number;
 }) {
   const t = useTranslations().lexicon;
   const { locale } = useLanguage();
@@ -81,6 +94,15 @@ export function LexiconIndexView({
   return (
     <>
       <PageHeader eyebrow={t.eyebrow} title={t.title} />
+      <Link
+        href="/lexicon/abbreviations"
+        className="sheet ruled mb-4 flex items-baseline justify-between gap-3 px-4 py-3 hover:border-line-strong"
+      >
+        <span className="font-medium">{t.abbreviations.link}</span>
+        <span className="font-mono text-xs text-accent">
+          {fill(t.terms, { count: abbreviations })}
+        </span>
+      </Link>
       <ul className="grid gap-2 sm:grid-cols-2">
         {SHASS.map((m) => (
           <li key={m.key}>
@@ -127,6 +149,7 @@ export function LexiconView({
   const [entries, setEntries] = useState(initial);
   const [amud, setAmud] = useState<number | null>(initialAmud);
   const [query, setQuery] = useState("");
+  const [onlyAbbreviations, setOnlyAbbreviations] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   // Bumped on "save and add another": remounts the fields, so focus goes
   // back to the term.
@@ -144,14 +167,17 @@ export function LexiconView({
   const groups = useMemo(() => {
     const shown = entries
       .filter(
-        (e) => (amud === null || e.amud === amud) && matchesLexicon(e, query),
+        (e) =>
+          (amud === null || e.amud === amud) &&
+          (!onlyAbbreviations || e.isAbbreviation) &&
+          matchesLexicon(e, query),
       )
       .sort((a, b) => a.amud - b.amud);
     const byAmud = new Map<number, LexiconEntry[]>();
     for (const e of shown)
       byAmud.set(e.amud, [...(byAmud.get(e.amud) ?? []), e]);
     return [...byAmud];
-  }, [entries, amud, query]);
+  }, [entries, amud, query, onlyAbbreviations]);
 
   function pickAmud(value: number | null) {
     setAmud(value);
@@ -168,6 +194,7 @@ export function LexiconView({
     term: "",
     translation: "",
     note: "",
+    isAbbreviation: false,
   });
 
   async function save(next: boolean) {
@@ -245,6 +272,13 @@ export function LexiconView({
           aria-label={t.search}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <Checkbox
+          checked={onlyAbbreviations}
+          onChange={setOnlyAbbreviations}
+          className="gap-2 text-sm sm:col-span-2"
+        >
+          {t.abbreviationsOnly}
+        </Checkbox>
       </div>
 
       <ErrorLine message={error} />
@@ -292,6 +326,9 @@ export function LexiconView({
                         >
                           {e.term}
                         </span>
+                        {e.isAbbreviation && (
+                          <AbbreviationBadge label={t.abbreviation} />
+                        )}
                         <span dir="auto">{e.translation}</span>
                       </div>
                       {e.note && (
@@ -400,6 +437,13 @@ export function LexiconView({
                 onChange={(e) => setDraft({ ...draft, note: e.target.value })}
               />
             </label>
+            <Checkbox
+              checked={draft.isAbbreviation}
+              onChange={(on) => setDraft({ ...draft, isAbbreviation: on })}
+              className="gap-2 text-sm"
+            >
+              {t.form.isAbbreviation}
+            </Checkbox>
           </div>
         </SimpleModal>
       )}
@@ -423,6 +467,109 @@ export function LexiconView({
           </>
         }
       />
+    </>
+  );
+}
+
+export function AbbreviationBadge({ label }: { label: string }) {
+  return (
+    <span className="rounded-full bg-pencil-soft px-2 py-0.5 text-xs font-medium text-pencil">
+      {label}
+    </span>
+  );
+}
+
+/** Sort / group key: no niqqud, no geresh / gershayim / quotes / dots. */
+const termKey = (term: string) =>
+  term
+    .normalize("NFD")
+    .replace(/[\u0591-\u05C7\u0300-\u036f'"’`.״׳]/g, "")
+    .trim()
+    .toLowerCase();
+
+/**
+ * `/lexicon/abbreviations` — every abbreviation, all masekhtot together:
+ * one row per abbreviation (same letters = same row), its translations and
+ * where it was noted. Route boundary: reads its texts.
+ */
+export function AbbreviationsView({ entries }: { entries: LexiconEntry[] }) {
+  const t = useTranslations().lexicon;
+  const { locale } = useLanguage();
+  const hebrew = locale === "he";
+  const [query, setQuery] = useState("");
+
+  const rows = useMemo(() => {
+    const byKey = new Map<string, LexiconEntry[]>();
+    for (const e of entries) {
+      if (!matchesLexicon(e, query)) continue;
+      const key = termKey(e.term);
+      byKey.set(key, [...(byKey.get(key) ?? []), e]);
+    }
+    const order = new Map(SHASS.map((m, i) => [m.key, i]));
+    return [...byKey]
+      .sort(([a], [b]) => a.localeCompare(b, "he"))
+      .map(([key, list]) => ({
+        key,
+        term: list[0]!.term,
+        translations: [...new Set(list.map((e) => e.translation))],
+        places: list.sort(
+          (a, b) =>
+            (order.get(a.book) ?? 99) - (order.get(b.book) ?? 99) ||
+            a.amud - b.amud,
+        ),
+      }));
+  }, [entries, query]);
+
+  return (
+    <>
+      <PageHeader eyebrow={t.eyebrow} title={t.abbreviations.title} />
+      <p className="mb-4 text-sm text-muted">{t.abbreviations.description}</p>
+
+      {entries.length === 0 ? (
+        <EmptyState title={t.abbreviations.empty} />
+      ) : (
+        <div className="space-y-4">
+          <TextInput
+            type="search"
+            dir="auto"
+            value={query}
+            placeholder={t.search}
+            aria-label={t.search}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {rows.length === 0 ? (
+            <p className="text-muted">{t.noMatch}</p>
+          ) : (
+            <ul className="sheet divide-y divide-line">
+              {rows.map((row) => (
+                <li key={row.key} className="space-y-1 px-4 py-2.5">
+                  <div className="flex flex-wrap items-baseline gap-x-3">
+                    <span
+                      className="font-display text-lg font-semibold"
+                      dir="auto"
+                    >
+                      {row.term}
+                    </span>
+                    <span dir="auto">{row.translations.join(" · ")}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                    {row.places.map((e) => (
+                      <Link
+                        key={e.id}
+                        href={`/lexicon/${encodeURIComponent(e.book)}?amud=${e.amud}`}
+                        className="text-accent hover:underline"
+                      >
+                        {masekhetName(e.book, hebrew)}{" "}
+                        {amudLabel(e.amud, hebrew)}
+                      </Link>
+                    ))}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </>
   );
 }

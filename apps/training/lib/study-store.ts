@@ -206,6 +206,7 @@ function toEntry(row: LexiconRow): LexiconEntry {
     term: row.term,
     translation: row.translation,
     note: row.note,
+    isAbbreviation: row.isAbbreviation,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -225,6 +226,22 @@ export async function listLexicon(
       and(eq(lexiconEntries.ownerId, ownerId), eq(lexiconEntries.book, book)),
     )
     .orderBy(lexiconEntries.amud, lexiconEntries.createdAt);
+  return rows.map(toEntry);
+}
+
+/** Every abbreviation, all masekhtot together. */
+export async function listAbbreviations(
+  ownerId: string,
+): Promise<LexiconEntry[]> {
+  const rows = await db()
+    .select()
+    .from(lexiconEntries)
+    .where(
+      and(
+        eq(lexiconEntries.ownerId, ownerId),
+        eq(lexiconEntries.isAbbreviation, true),
+      ),
+    );
   return rows.map(toEntry);
 }
 

@@ -1,9 +1,15 @@
 import { requireOwner } from "@/lib/owner";
-import { lexiconCounts } from "@/lib/study-store";
+import { lexiconCounts, listAbbreviations } from "@/lib/study-store";
 
 import { LexiconIndexView } from "../components/LexiconView";
 
 export default async function Page() {
-  const counts = await lexiconCounts(await requireOwner());
-  return <LexiconIndexView counts={counts} />;
+  const owner = await requireOwner();
+  const [counts, abbreviations] = await Promise.all([
+    lexiconCounts(owner),
+    listAbbreviations(owner),
+  ]);
+  return (
+    <LexiconIndexView counts={counts} abbreviations={abbreviations.length} />
+  );
 }

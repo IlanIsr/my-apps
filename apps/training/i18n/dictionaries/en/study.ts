@@ -159,6 +159,16 @@ export const lexicon = {
   delete: "Delete",
   emptyAmud: "No term on {amud}.",
   noMatch: "No term matches.",
+  abbreviation: "Abbreviation",
+  abbreviationsOnly: "Abbreviations only",
+  abbreviations: {
+    link: "All abbreviations",
+    title: "Abbreviations",
+    description:
+      "Every abbreviation in your lexicon, all masekhtot together, in alphabetical order.",
+    empty:
+      "No abbreviation yet — tick “It’s an abbreviation” when adding a term.",
+  },
   empty: {
     title: "Empty lexicon",
     description:
@@ -171,6 +181,7 @@ export const lexicon = {
     termPlaceholder: "E.g. תיובתא",
     translation: "My translation",
     note: "Note (optional)",
+    isAbbreviation: "It’s an abbreviation (ר״ת)",
     save: "Save",
     saveAndNext: "Save and add another",
     cancel: "Cancel",

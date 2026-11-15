@@ -259,5 +259,6 @@ export function lexiconInput(value: unknown): LexiconInput {
     term,
     translation,
     note: text(input.note ?? "", "note", STUDY_LIMITS.translation),
+    isAbbreviation: input.isAbbreviation === true,
   };
 }

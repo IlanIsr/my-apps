@@ -345,12 +345,13 @@ export type LexiconEntry = {
   term: string;
   translation: string;
   note: string;
+  isAbbreviation: boolean;
   createdAt: string;
 };
 
 export type LexiconInput = Pick<
   LexiconEntry,
-  "book" | "amud" | "term" | "translation" | "note"
+  "book" | "amud" | "term" | "translation" | "note" | "isAbbreviation"
 >;
 
 /** Search over term, translation and note, ignoring niqqud and case. */

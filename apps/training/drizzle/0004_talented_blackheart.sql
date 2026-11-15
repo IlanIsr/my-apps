@@ -1,0 +1,1 @@
+ALTER TABLE "lexicon_entries" ADD COLUMN "is_abbreviation" boolean DEFAULT false NOT NULL;

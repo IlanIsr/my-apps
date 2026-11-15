@@ -142,6 +142,8 @@ export const lexiconEntries = pgTable(
     term: text("term").notNull(),
     translation: text("translation").notNull(),
     note: text("note").notNull().default(""),
+    /** A ר״ת / abbreviation — also listed on `/lexicon/abbreviations`. */
+    isAbbreviation: boolean("is_abbreviation").notNull().default(false),
     createdAt: ts("created_at").notNull().defaultNow(),
     updatedAt: ts("updated_at").notNull().defaultNow(),
   },

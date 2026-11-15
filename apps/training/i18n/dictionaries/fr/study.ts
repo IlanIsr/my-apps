@@ -164,6 +164,16 @@ export const lexicon = {
   delete: "Supprimer",
   emptyAmud: "Aucun terme sur {amud}.",
   noMatch: "Aucun terme ne correspond.",
+  abbreviation: "Abréviation",
+  abbreviationsOnly: "Abréviations seulement",
+  abbreviations: {
+    link: "Toutes les abréviations",
+    title: "Abréviations",
+    description:
+      "Toutes les abréviations de ton lexique, toutes massekhtot confondues, par ordre alphabétique.",
+    empty:
+      "Aucune abréviation — coche « C’est une abréviation » en ajoutant un terme.",
+  },
   empty: {
     title: "Lexique vide",
     description:
@@ -176,6 +186,7 @@ export const lexicon = {
     termPlaceholder: "Ex. תיובתא",
     translation: "Ma traduction",
     note: "Note (facultatif)",
+    isAbbreviation: "C’est une abréviation (ר״ת)",
     save: "Enregistrer",
     saveAndNext: "Enregistrer et ajouter un autre",
     cancel: "Annuler",

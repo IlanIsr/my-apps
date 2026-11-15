@@ -156,6 +156,14 @@ export const lexicon = {
   delete: "מחיקה",
   emptyAmud: "אין מונחים ב־{amud}.",
   noMatch: "אין מונח מתאים.",
+  abbreviation: "ר״ת",
+  abbreviationsOnly: "ראשי תיבות בלבד",
+  abbreviations: {
+    link: "כל ראשי התיבות",
+    title: "ראשי תיבות",
+    description: "כל ראשי התיבות במילון שלך, מכל המסכתות, לפי סדר האלף־בית.",
+    empty: "אין עדיין ראשי תיבות — סמן „ראשי תיבות” בעת הוספת מונח.",
+  },
   empty: {
     title: "המילון ריק",
     description: "רשום את המילים והביטויים של כל עמוד עם התרגום שלך.",
@@ -167,6 +175,7 @@ export const lexicon = {
     termPlaceholder: "למשל: תיובתא",
     translation: "התרגום שלי",
     note: "הערה (לא חובה)",
+    isAbbreviation: "ראשי תיבות",
     save: "שמירה",
     saveAndNext: "שמירה והוספת עוד",
     cancel: "ביטול",
