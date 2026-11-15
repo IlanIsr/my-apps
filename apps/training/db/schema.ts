@@ -8,6 +8,7 @@
 
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -18,9 +19,11 @@ import {
 } from "drizzle-orm/pg-core";
 
 import type { Question, ResultStatus, Sources } from "@/lib/exam-logic";
+import type { RichDoc } from "@/lib/study-logic";
 
 const ts = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
+const day = (name: string) => date(name, { mode: "string" });
 
 export const questions = pgTable(
   "questions",
@@ -71,4 +74,58 @@ export const exams = pgTable(
     reviewedAt: ts("reviewed_at"),
   },
   (t) => [index("exams_owner_idx").on(t.ownerId)],
+);
+
+/**
+ * A study plan ("cursus"): a range of amudim of one book, studied on chosen
+ * weekdays until `end_date`. The programme itself is computed
+ * (`lib/study-logic.ts`); only what was studied is stored.
+ */
+export const studyPlans = pgTable(
+  "study_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: text("owner_id").notNull(),
+    /** `"gemara"` for now. */
+    subject: text("subject").notNull(),
+    /** Masekhet key (Sefaria title). */
+    book: text("book").notNull(),
+    startAmud: integer("start_amud").notNull(),
+    endAmud: integer("end_amud").notNull(),
+    /** Amudim per session, or `null` when the plan was set by end date. */
+    pace: integer("pace"),
+    /** 0 = Sunday … 6 = Saturday. */
+    weekdays: jsonb("weekdays").$type<number[]>().notNull(),
+    startDate: day("start_date").notNull(),
+    endDate: day("end_date").notNull(),
+    /** Amud (as text) → the day it was studied. Atomic jsonb merges. */
+    studied: jsonb("studied")
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("study_plans_owner_idx").on(t.ownerId)],
+);
+
+/** A note ("fiche") on a passage — rich text (TipTap JSON) + its plain text. */
+export const notes = pgTable(
+  "notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: text("owner_id").notNull(),
+    subject: text("subject").notNull(),
+    book: text("book").notNull(),
+    startAmud: integer("start_amud").notNull(),
+    endAmud: integer("end_amud").notNull(),
+    /** The plan it was written from, if any (kept when the plan is deleted). */
+    planId: uuid("plan_id"),
+    title: text("title").notNull().default(""),
+    content: jsonb("content").$type<RichDoc>().notNull(),
+    text: text("text").notNull().default(""),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("notes_owner_idx").on(t.ownerId)],
 );

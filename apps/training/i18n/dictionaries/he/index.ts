@@ -3,6 +3,7 @@ import { appShell, errors, questionBody, results } from "./common";
 import { exam, print } from "./exam";
 import { generate, history, stats } from "./exams";
 import { questionForm, questions } from "./questions";
+import { noteForm, notes, plan, planForm, study } from "./study";
 
 /** The assembled message tree for this locale. */
 export const he = {
@@ -17,4 +18,9 @@ export const he = {
   print,
   history,
   stats,
+  study,
+  planForm,
+  plan,
+  notes,
+  noteForm,
 } as const satisfies Messages;

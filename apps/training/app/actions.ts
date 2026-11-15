@@ -12,6 +12,8 @@ import { DatabaseNotConfiguredError } from "@/db/client";
 import { currentOwnerId } from "@/lib/owner";
 import { LIMITS, type Exam, type Question } from "@/lib/exam-logic";
 import * as store from "@/lib/store";
+import type { Note, StudyPlan } from "@/lib/study-logic";
+import * as study from "@/lib/study-store";
 import * as v from "@/lib/validate";
 
 export type ActionErrorCode =
@@ -135,6 +137,73 @@ export async function deleteExamAction(
 ): Promise<ActionResult<null>> {
   return run(async (ownerId) => {
     await store.deleteExam(ownerId, v.id(examId));
+    return null;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Study plans + notes
+
+export async function createPlanAction(
+  input: unknown,
+): Promise<ActionResult<StudyPlan>> {
+  return run((ownerId) => study.createPlan(ownerId, v.planInput(input)));
+}
+
+export async function updatePlanRhythmAction(
+  id: string,
+  input: unknown,
+): Promise<ActionResult<StudyPlan>> {
+  return run((ownerId) =>
+    study.updatePlanRhythm(ownerId, v.id(id), v.rhythmInput(input)),
+  );
+}
+
+/** `day: null` un-marks the amudim. */
+export async function setStudiedAction(
+  id: string,
+  amudim: unknown,
+  day: unknown,
+): Promise<ActionResult<StudyPlan>> {
+  return run((ownerId) =>
+    study.setStudied(
+      ownerId,
+      v.id(id),
+      v.amudList(amudim),
+      day === null ? null : v.isoDay(day),
+    ),
+  );
+}
+
+export async function deletePlanAction(
+  id: string,
+): Promise<ActionResult<null>> {
+  return run(async (ownerId) => {
+    await study.deletePlan(ownerId, v.id(id));
+    return null;
+  });
+}
+
+export async function createNoteAction(
+  input: unknown,
+): Promise<ActionResult<Note>> {
+  return run((ownerId) => study.createNote(ownerId, v.noteInput(input)));
+}
+
+export async function updateNoteAction(
+  id: string,
+  input: unknown,
+): Promise<ActionResult<Note>> {
+  return run((ownerId) =>
+    study.updateNote(ownerId, v.id(id), v.noteInput(input)),
+  );
+}
+
+export async function deleteNoteAction(
+  id: string,
+): Promise<ActionResult<null>> {
+  return run(async (ownerId) => {
+    await study.deleteNote(ownerId, v.id(id));
     return null;
   });
 }

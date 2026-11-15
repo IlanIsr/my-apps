@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** The home page is exam generation. */
+/** The home page is the study plans. */
 export default function Page() {
-  redirect("/exams/new");
+  redirect("/study");
 }

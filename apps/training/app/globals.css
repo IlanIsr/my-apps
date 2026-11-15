@@ -181,3 +181,42 @@
     font-size: 12pt;
   }
 }
+
+/* Notes (TipTap). Each block takes the direction of its own text, so Hebrew
+ * and French paragraphs mix. */
+.rich-text > * + * {
+  margin-top: 0.6em;
+}
+.rich-text :is(p, h2, h3, li) {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+.rich-text h2 {
+  font-family: var(--font-display);
+  font-size: 1.5em;
+  font-weight: 600;
+}
+.rich-text h3 {
+  font-family: var(--font-display);
+  font-size: 1.2em;
+  font-weight: 600;
+}
+.rich-text ul {
+  list-style: disc;
+  padding-inline-start: 1.5em;
+}
+.rich-text ol {
+  list-style: decimal;
+  padding-inline-start: 1.5em;
+}
+.rich-text blockquote {
+  border-inline-start: 3px solid var(--line-strong);
+  padding-inline-start: 0.8em;
+  color: var(--muted);
+}
+/* Highlights are light colours: keep the ink dark on them in dark mode too. */
+.rich-text mark {
+  color: #172031;
+  border-radius: 2px;
+  padding: 0 1px;
+}

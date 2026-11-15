@@ -28,10 +28,19 @@ export type AppShellTexts = {
   brand: string;
   language: string;
   menu: string;
-  nav: { questions: string; newExam: string; history: string; stats: string };
+  nav: {
+    study: string;
+    notes: string;
+    questions: string;
+    newExam: string;
+    history: string;
+    stats: string;
+  };
 };
 
 const LINKS = [
+  { href: "/study", key: "study" },
+  { href: "/notes", key: "notes" },
   { href: "/exams/new", key: "newExam" },
   { href: "/questions", key: "questions" },
   { href: "/exams", key: "history" },
@@ -56,7 +65,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <AppHeader
         brand={
           <Link
-            href="/exams/new"
+            href="/study"
             className="flex items-center gap-2 font-display text-xl font-semibold"
           >
             <span
