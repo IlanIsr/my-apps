@@ -1,3 +1,4 @@
+import type { LexiconTexts } from "@/app/components/LexiconView";
 import type { NoteFormTexts } from "@/app/components/NoteFormView";
 import type { NotesTexts } from "@/app/components/NotesView";
 import type { PlanFormTexts } from "@/app/components/PlanFormView";
@@ -63,6 +64,7 @@ export const plan = {
   nothingToday: "Plus rien à étudier dans ce cursus.",
   markAll: "Tout marquer comme étudié",
   writeNote: "Écrire une fiche",
+  lexicon: "Lexique",
   endsOn: "Fin prévue le {date}",
   catchUp:
     "Tu as du retard : le reste est réparti sur les séances jusqu’à la date de fin.",
@@ -148,3 +150,39 @@ export const noteForm = {
     confirm: "Supprimer",
   },
 } as const satisfies NoteFormTexts;
+
+export const lexicon = {
+  eyebrow: "Lexique",
+  title: "Lexique",
+  terms: "{count} terme(s)",
+  allAmudim: "Tous les amudim ({count})",
+  amud: "Amud",
+  search: "Rechercher un terme ou une traduction…",
+  add: "Ajouter un terme",
+  addHere: "Ajouter",
+  edit: "Modifier",
+  delete: "Supprimer",
+  emptyAmud: "Aucun terme sur {amud}.",
+  noMatch: "Aucun terme ne correspond.",
+  empty: {
+    title: "Lexique vide",
+    description:
+      "Note les mots et expressions de chaque amud avec ta propre traduction.",
+  },
+  form: {
+    newTitle: "Nouveau terme",
+    editTitle: "Modifier le terme",
+    term: "Terme",
+    termPlaceholder: "Ex. תיובתא",
+    translation: "Ma traduction",
+    note: "Note (facultatif)",
+    save: "Enregistrer",
+    saveAndNext: "Enregistrer et ajouter un autre",
+    cancel: "Annuler",
+  },
+  deleteConfirm: {
+    title: "Supprimer ce terme ?",
+    cancel: "Annuler",
+    confirm: "Supprimer",
+  },
+} as const satisfies LexiconTexts;

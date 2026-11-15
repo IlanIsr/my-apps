@@ -12,7 +12,7 @@ import { DatabaseNotConfiguredError } from "@/db/client";
 import { currentOwnerId } from "@/lib/owner";
 import { LIMITS, type Exam, type Question } from "@/lib/exam-logic";
 import * as store from "@/lib/store";
-import type { Note, StudyPlan } from "@/lib/study-logic";
+import type { LexiconEntry, Note, StudyPlan } from "@/lib/study-logic";
 import * as study from "@/lib/study-store";
 import * as v from "@/lib/validate";
 
@@ -204,6 +204,35 @@ export async function deleteNoteAction(
 ): Promise<ActionResult<null>> {
   return run(async (ownerId) => {
     await study.deleteNote(ownerId, v.id(id));
+    return null;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Lexicon
+
+export async function createLexiconEntryAction(
+  input: unknown,
+): Promise<ActionResult<LexiconEntry>> {
+  return run((ownerId) =>
+    study.createLexiconEntry(ownerId, v.lexiconInput(input)),
+  );
+}
+
+export async function updateLexiconEntryAction(
+  id: string,
+  input: unknown,
+): Promise<ActionResult<LexiconEntry>> {
+  return run((ownerId) =>
+    study.updateLexiconEntry(ownerId, v.id(id), v.lexiconInput(input)),
+  );
+}
+
+export async function deleteLexiconEntryAction(
+  id: string,
+): Promise<ActionResult<null>> {
+  return run(async (ownerId) => {
+    await study.deleteLexiconEntry(ownerId, v.id(id));
     return null;
   });
 }

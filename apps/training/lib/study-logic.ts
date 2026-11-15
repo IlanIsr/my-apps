@@ -334,7 +334,42 @@ export type NoteInput = Pick<
 
 export const EMPTY_DOC: RichDoc = { type: "doc", content: [] };
 
+// ---------------------------------------------------------------------------
+// Lexicon
+
+/** One term of the user's lexicon, on one amud. */
+export type LexiconEntry = {
+  id: string;
+  book: string;
+  amud: number;
+  term: string;
+  translation: string;
+  note: string;
+  createdAt: string;
+};
+
+export type LexiconInput = Pick<
+  LexiconEntry,
+  "book" | "amud" | "term" | "translation" | "note"
+>;
+
+/** Search over term, translation and note, ignoring niqqud and case. */
+export function matchesLexicon(entry: LexiconEntry, query: string): boolean {
+  const plain = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0591-\u05C7\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const q = plain(query.trim());
+  return (
+    !q ||
+    plain(`${entry.term}\n${entry.translation}\n${entry.note}`).includes(q)
+  );
+}
+
 export const STUDY_LIMITS = {
+  term: 200,
+  translation: 2000,
   /** Serialized note JSON, in characters. */
   noteJson: 200_000,
   noteText: 50_000,

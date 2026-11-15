@@ -9,6 +9,7 @@ export const appShell = {
   menu: "תפריט",
   nav: {
     study: "לימוד",
+    lexicon: "מילון",
     notes: "סיכומים",
     questions: "שאלות",
     newExam: "מבחן חדש",

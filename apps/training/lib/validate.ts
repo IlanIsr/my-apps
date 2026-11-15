@@ -16,6 +16,7 @@ import {
   masekhetOf,
   STUDY_LIMITS,
   SUBJECTS,
+  type LexiconInput,
   type NoteInput,
   type RichDoc,
   type StudyPlan,
@@ -234,5 +235,29 @@ export function noteInput(value: unknown): NoteInput {
     title: text(input.title ?? "", "title", STUDY_LIMITS.title),
     content: richDoc(input.content),
     text: text(input.text ?? "", "text", STUDY_LIMITS.noteText),
+  };
+}
+
+export function lexiconInput(value: unknown): LexiconInput {
+  if (typeof value !== "object" || value === null) {
+    throw new InvalidInputError("lexicon");
+  }
+  const input = value as Record<string, unknown>;
+  if (typeof input.book !== "string") throw new InvalidInputError("book");
+  const m = masekhetOf(input.book);
+  if (!m) throw new InvalidInputError("book");
+  const term = text(input.term, "term", STUDY_LIMITS.term);
+  const translation = text(
+    input.translation,
+    "translation",
+    STUDY_LIMITS.translation,
+  );
+  if (!term || !translation) throw new InvalidInputError("term");
+  return {
+    book: m.key,
+    amud: int(input.amud, "amud", m.first, m.last),
+    term,
+    translation,
+    note: text(input.note ?? "", "note", STUDY_LIMITS.translation),
   };
 }

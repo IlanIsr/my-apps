@@ -129,3 +129,21 @@ export const notes = pgTable(
   },
   (t) => [index("notes_owner_idx").on(t.ownerId)],
 );
+
+/** The user's own lexicon: a term and its translation, on one amud. */
+export const lexiconEntries = pgTable(
+  "lexicon_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: text("owner_id").notNull(),
+    /** Masekhet key. */
+    book: text("book").notNull(),
+    amud: integer("amud").notNull(),
+    term: text("term").notNull(),
+    translation: text("translation").notNull(),
+    note: text("note").notNull().default(""),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("lexicon_owner_book_idx").on(t.ownerId, t.book)],
+);

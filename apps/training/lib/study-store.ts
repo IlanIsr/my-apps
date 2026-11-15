@@ -9,10 +9,12 @@ import "server-only";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
-import { notes, studyPlans } from "@/db/schema";
+import { lexiconEntries, notes, studyPlans } from "@/db/schema";
 
 import { StoreError } from "./store";
 import type {
+  LexiconEntry,
+  LexiconInput,
   Note,
   NoteInput,
   StudyPlan,
@@ -189,4 +191,83 @@ export async function updateNote(
 
 export async function deleteNote(ownerId: string, id: string): Promise<void> {
   await db().delete(notes).where(ownNote(ownerId, id));
+}
+
+// ---------------------------------------------------------------------------
+// Lexicon
+
+type LexiconRow = typeof lexiconEntries.$inferSelect;
+
+function toEntry(row: LexiconRow): LexiconEntry {
+  return {
+    id: row.id,
+    book: row.book,
+    amud: row.amud,
+    term: row.term,
+    translation: row.translation,
+    note: row.note,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+const ownEntry = (ownerId: string, id: string) =>
+  and(eq(lexiconEntries.ownerId, ownerId), eq(lexiconEntries.id, id));
+
+/** One masekhet's lexicon, by amud then in the order written. */
+export async function listLexicon(
+  ownerId: string,
+  book: string,
+): Promise<LexiconEntry[]> {
+  const rows = await db()
+    .select()
+    .from(lexiconEntries)
+    .where(
+      and(eq(lexiconEntries.ownerId, ownerId), eq(lexiconEntries.book, book)),
+    )
+    .orderBy(lexiconEntries.amud, lexiconEntries.createdAt);
+  return rows.map(toEntry);
+}
+
+/** How many entries each masekhet has. */
+export async function lexiconCounts(
+  ownerId: string,
+): Promise<Record<string, number>> {
+  const rows = await db()
+    .select({ book: lexiconEntries.book, count: sql<number>`count(*)::int` })
+    .from(lexiconEntries)
+    .where(eq(lexiconEntries.ownerId, ownerId))
+    .groupBy(lexiconEntries.book);
+  return Object.fromEntries(rows.map((r) => [r.book, r.count]));
+}
+
+export async function createLexiconEntry(
+  ownerId: string,
+  input: LexiconInput,
+): Promise<LexiconEntry> {
+  const [row] = await db()
+    .insert(lexiconEntries)
+    .values({ ownerId, ...input })
+    .returning();
+  return toEntry(row!);
+}
+
+export async function updateLexiconEntry(
+  ownerId: string,
+  id: string,
+  input: LexiconInput,
+): Promise<LexiconEntry> {
+  const [row] = await db()
+    .update(lexiconEntries)
+    .set({ ...input, updatedAt: new Date() })
+    .where(ownEntry(ownerId, id))
+    .returning();
+  if (!row) throw new StoreError("not-found");
+  return toEntry(row);
+}
+
+export async function deleteLexiconEntry(
+  ownerId: string,
+  id: string,
+): Promise<void> {
+  await db().delete(lexiconEntries).where(ownEntry(ownerId, id));
 }

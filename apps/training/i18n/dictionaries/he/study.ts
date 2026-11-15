@@ -1,3 +1,4 @@
+import type { LexiconTexts } from "@/app/components/LexiconView";
 import type { NoteFormTexts } from "@/app/components/NoteFormView";
 import type { NotesTexts } from "@/app/components/NotesView";
 import type { PlanFormTexts } from "@/app/components/PlanFormView";
@@ -62,6 +63,7 @@ export const plan = {
   nothingToday: "לא נשאר מה ללמוד בתוכנית זו.",
   markAll: "סמן הכל כנלמד",
   writeNote: "כתיבת סיכום",
+  lexicon: "מילון",
   endsOn: "סיום משוער ב־{date}",
   catchUp: "יש פיגור: מה שנשאר מתחלק על השיעורים עד תאריך הסיום.",
   shift: "דחיית הסיום ל־{date}",
@@ -140,3 +142,38 @@ export const noteForm = {
     confirm: "מחיקה",
   },
 } as const satisfies NoteFormTexts;
+
+export const lexicon = {
+  eyebrow: "מילון",
+  title: "מילון",
+  terms: "{count} מונחים",
+  allAmudim: "כל העמודים ({count})",
+  amud: "עמוד",
+  search: "חיפוש מונח או תרגום…",
+  add: "הוספת מונח",
+  addHere: "הוספה",
+  edit: "עריכה",
+  delete: "מחיקה",
+  emptyAmud: "אין מונחים ב־{amud}.",
+  noMatch: "אין מונח מתאים.",
+  empty: {
+    title: "המילון ריק",
+    description: "רשום את המילים והביטויים של כל עמוד עם התרגום שלך.",
+  },
+  form: {
+    newTitle: "מונח חדש",
+    editTitle: "עריכת מונח",
+    term: "מונח",
+    termPlaceholder: "למשל: תיובתא",
+    translation: "התרגום שלי",
+    note: "הערה (לא חובה)",
+    save: "שמירה",
+    saveAndNext: "שמירה והוספת עוד",
+    cancel: "ביטול",
+  },
+  deleteConfirm: {
+    title: "למחוק את המונח?",
+    cancel: "ביטול",
+    confirm: "מחיקה",
+  },
+} as const satisfies LexiconTexts;

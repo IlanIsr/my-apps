@@ -31,6 +31,7 @@ export type AppShellTexts = {
   nav: {
     study: string;
     notes: string;
+    lexicon: string;
     questions: string;
     newExam: string;
     history: string;
@@ -41,6 +42,7 @@ export type AppShellTexts = {
 const LINKS = [
   { href: "/study", key: "study" },
   { href: "/notes", key: "notes" },
+  { href: "/lexicon", key: "lexicon" },
   { href: "/exams/new", key: "newExam" },
   { href: "/questions", key: "questions" },
   { href: "/exams", key: "history" },

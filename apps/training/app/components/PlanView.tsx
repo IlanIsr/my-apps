@@ -53,6 +53,7 @@ export type PlanTexts = {
   nothingToday: string;
   markAll: string;
   writeNote: string;
+  lexicon: string;
   endsOn: string;
   catchUp: string;
   shift: string;
@@ -278,6 +279,13 @@ export function PlanView({
                         href={noteHref(s.amudim[0]!, s.amudim.at(-1)!)}
                       >
                         {t.writeNote}
+                      </LinkButton>
+                      <LinkButton
+                        size="sm"
+                        variant="ghost"
+                        href={`/lexicon/${encodeURIComponent(plan.book)}?amud=${s.amudim[0]}`}
+                      >
+                        {t.lexicon}
                       </LinkButton>
                     </>
                   );

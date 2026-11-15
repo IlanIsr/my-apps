@@ -8,6 +8,7 @@ import type { AppShellTexts } from "@/app/components/AppShell";
 import type { ErrorTexts } from "@/app/components/common";
 import type { ExamTexts } from "@/app/components/ExamView";
 import type { GenerateTexts } from "@/app/components/GenerateView";
+import type { LexiconTexts } from "@/app/components/LexiconView";
 import type { NoteFormTexts } from "@/app/components/NoteFormView";
 import type { NotesTexts } from "@/app/components/NotesView";
 import type { PlanFormTexts } from "@/app/components/PlanFormView";
@@ -39,4 +40,5 @@ export type Messages = {
   plan: PlanTexts;
   notes: NotesTexts;
   noteForm: NoteFormTexts;
+  lexicon: LexiconTexts;
 };
