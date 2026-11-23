@@ -35,6 +35,11 @@ const apps = [
     description: "Jeu de mots : l'adversaire change de mot pour vous échapper.",
     url: isDev ? "http://localhost:3005" : "https://sournois.myappshub.dev/",
   },
+  {
+    name: "Atelier de traduction",
+    description: "Traduction notariale de documents hébreux, avec Claude.",
+    url: isDev ? "http://localhost:3006" : "https://translation.myappshub.dev/",
+  },
 ];
 
 export default function Page() {
