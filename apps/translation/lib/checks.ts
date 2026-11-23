@@ -4,7 +4,8 @@
  * in the active language) and its data. Flags with severity `warn` / `bad`
  * are "open" until the reviewer resolves them (`Page.resolved`, by key).
  *
- * - Israeli ID numbers (ת.ז.) near their label: the check digit is verified.
+ * - Israeli ID numbers (ת.ז.) near their label: the check digit is verified
+ *   (only an invalid one is flagged — no "all good" confirmations).
  * - Every number of the original must appear in the translation, and the
  *   other way round (multiset comparison).
  * - Hebrew letters left in the translation.
@@ -15,7 +16,7 @@
 
 import type { GlossaryEntry, Page, Term } from "./model";
 
-export type Severity = "info" | "ok" | "warn" | "bad";
+export type Severity = "info" | "warn" | "bad";
 
 export type Flag =
   | { kind: "source-docx"; sev: "info" }
@@ -23,11 +24,9 @@ export type Flag =
   | { kind: "source-pdf-discarded"; sev: "info"; reason: string }
   | { kind: "reading"; sev: "warn"; text: string }
   | { kind: "illegible"; sev: "warn"; count: number }
-  | { kind: "id-valid"; sev: "ok"; number: string }
   | { kind: "id-invalid"; sev: "bad"; number: string }
   | { kind: "numbers-missing"; sev: "bad"; numbers: string[] }
   | { kind: "numbers-added"; sev: "warn"; numbers: string[] }
-  | { kind: "numbers-ok"; sev: "ok"; count: number }
   | { kind: "hebrew-left"; sev: "warn"; sample: string }
   | { kind: "glossary"; sev: "warn"; source: string; rendering: string }
   | { kind: "term"; sev: "warn"; term: Term }
@@ -100,7 +99,6 @@ export function normalizeHebrew(s: string): string {
 
 export function flagKey(f: Flag): string {
   switch (f.kind) {
-    case "id-valid":
     case "id-invalid":
       return `${f.kind}|${f.number}`;
     case "numbers-missing":
@@ -119,8 +117,6 @@ export function flagKey(f: Flag): string {
       return `${f.kind}|${f.reason}`;
     case "illegible":
       return `illegible|${f.count}`;
-    case "numbers-ok":
-      return `numbers-ok|${f.count}`;
     default:
       return f.kind;
   }
@@ -155,11 +151,9 @@ export function computeFlags(
       const digits = (m[2] ?? "").replace(/\D/g, "");
       if (seen.has(digits) || digits.length < 5 || digits.length > 9) continue;
       seen.add(digits);
-      flags.push(
-        validIsraeliId(digits)
-          ? { kind: "id-valid", sev: "ok", number: digits }
-          : { kind: "id-invalid", sev: "bad", number: digits },
-      );
+      // A valid one is just a confirmation: only the invalid ones are flagged.
+      if (!validIsraeliId(digits))
+        flags.push({ kind: "id-invalid", sev: "bad", number: digits });
     }
 
     const tl = page.translation;
@@ -173,9 +167,6 @@ export function computeFlags(
       }
       if (added.length) {
         flags.push({ kind: "numbers-added", sev: "warn", numbers: added });
-      }
-      if (!missing.length && !added.length && a.length) {
-        flags.push({ kind: "numbers-ok", sev: "ok", count: a.length });
       }
 
       const leftovers = (tl.text.match(HEBREW_RUN) ?? [])

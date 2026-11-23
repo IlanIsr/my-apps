@@ -181,6 +181,48 @@
   .doc-area:disabled {
     @apply bg-sunken text-muted;
   }
+  /* A review flag highlighted on the document (`MarkedText`): soft ground,
+   * underline in the severity colour, its number at the start corner. No
+   * padding or border, so the editor's backdrop stays aligned with the text. */
+  .flag-mark {
+    position: relative;
+    border-radius: 2px;
+    background: var(--tag-soft);
+    box-shadow: inset 0 -2px var(--tag);
+  }
+  .flag-mark.is-selected {
+    outline: 2px solid var(--tag);
+    outline-offset: 1px;
+  }
+  .flag-mark[data-n]::before {
+    content: attr(data-n);
+    position: absolute;
+    top: -0.95em;
+    inset-inline-start: -0.35em;
+    min-width: 1.3em;
+    padding: 0 0.25em;
+    border-radius: 0.65em;
+    background: var(--tag);
+    color: var(--surface);
+    font: 600 10px/1.3em var(--font-sans);
+    text-align: center;
+    pointer-events: none;
+  }
+  /* The translation editor: the text is typed in a transparent textarea laid
+   * over a backdrop that draws the highlights at the same place. */
+  .marked-editor {
+    display: grid;
+  }
+  .marked-editor > * {
+    grid-area: 1 / 1;
+  }
+  .marked-backdrop {
+    @apply pointer-events-none border-transparent whitespace-pre-wrap break-words;
+  }
+  .marked-input {
+    @apply resize-none overflow-hidden bg-transparent;
+    field-sizing: fixed;
+  }
   .he-area {
     @apply w-full resize-y rounded-md border border-line-strong bg-surface px-4 py-3 font-he text-[17px] leading-[1.75];
     field-sizing: content;

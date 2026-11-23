@@ -1,10 +1,14 @@
 /**
  * Word exports, built in the browser (`docx`): the translation (one section
  * per page, page numbers in the footer, the translator's certification at the
- * end) and the Hebrew transcription (right-to-left).
+ * end) and the Hebrew transcription (right-to-left). Both are laid out like
+ * the original, block by block (`lib/layout.ts`): header and footer small and
+ * centred, title centred in bold, tables as tables, stamps framed, signatures
+ * at the end of the line.
  */
 
-import type { Page, Settings, TargetLang } from "./model";
+import { looksLikeTable, tableRows, translationBlocks } from "./layout";
+import type { Block, Page, Settings, TargetLang } from "./model";
 
 /** Texts of the transcription export, in the UI language. */
 export type ExportTexts = {
@@ -99,6 +103,100 @@ async function footer(d: typeof import("docx"), template: string) {
   });
 }
 
+type Docx = typeof import("docx");
+type Node = InstanceType<Docx["Paragraph"]> | InstanceType<Docx["Table"]>;
+
+function runs(d: Docx, text: string, rtl: boolean, style: object = {}) {
+  return text.split("\n").map(
+    (line, j) =>
+      new d.TextRun({
+        text: line,
+        break: j ? 1 : 0,
+        ...(rtl ? { rightToLeft: true, font: "David" } : {}),
+        ...style,
+      }),
+  );
+}
+
+/** One block of the page, styled by its type like the original. */
+function blockNodes(d: Docx, block: Block, rtl: boolean): Node[] {
+  const start = rtl ? d.AlignmentType.RIGHT : d.AlignmentType.LEFT;
+  const end = rtl ? d.AlignmentType.LEFT : d.AlignmentType.RIGHT;
+  const para = (options: object, style: object = {}) =>
+    new d.Paragraph({
+      bidirectional: rtl,
+      spacing: { after: 180 },
+      alignment: start,
+      children: runs(d, block.text, rtl, style),
+      ...options,
+    });
+
+  if (block.type === "table" || looksLikeTable(block.text)) {
+    const rows = tableRows(block.text);
+    const width = Math.max(...rows.map((r) => r.length));
+    return [
+      new d.Table({
+        width: { size: 100, type: d.WidthType.PERCENTAGE },
+        visuallyRightToLeft: rtl,
+        rows: rows.map(
+          (row) =>
+            new d.TableRow({
+              children: Array.from(
+                { length: width },
+                (_, c) =>
+                  new d.TableCell({
+                    children: [
+                      new d.Paragraph({
+                        bidirectional: rtl,
+                        alignment: start,
+                        children: runs(d, row[c] ?? "", rtl, { size: 21 }),
+                      }),
+                    ],
+                  }),
+              ),
+            }),
+        ),
+      }),
+      new d.Paragraph({ spacing: { after: 120 }, children: [] }),
+    ];
+  }
+
+  const border = { style: d.BorderStyle.DOUBLE, size: 6, color: "777777" };
+  switch (block.type) {
+    case "header":
+    case "footer":
+      return [
+        para(
+          { alignment: d.AlignmentType.CENTER },
+          { size: 18, color: "555555" },
+        ),
+      ];
+    case "title":
+      return [
+        para(
+          { alignment: d.AlignmentType.CENTER, spacing: { after: 300 } },
+          { bold: true, size: 28 },
+        ),
+      ];
+    case "stamp":
+      return [
+        para(
+          {
+            alignment: end,
+            border: { top: border, bottom: border, left: border, right: border },
+          },
+          { italics: true },
+        ),
+      ];
+    case "signature":
+      return [para({ alignment: end }, { italics: true })];
+    case "handwriting":
+      return [para({}, { italics: true })];
+    default:
+      return [para({ alignment: d.AlignmentType.JUSTIFIED })];
+  }
+}
+
 export async function exportTranslation(input: {
   title: string;
   target: TargetLang;
@@ -108,7 +206,7 @@ export async function exportTranslation(input: {
   const d = await import("docx");
   const t = TRANSLATION_TEXTS[input.target];
   const N = input.pages.length;
-  const children: InstanceType<typeof d.Paragraph>[] = [];
+  const children: Node[] = [];
   input.pages.forEach((p, i) => {
     children.push(
       new d.Paragraph({
@@ -123,17 +221,10 @@ export async function exportTranslation(input: {
         ],
       }),
     );
-    const text = p.translation?.text ?? t.untranslated;
-    for (const para of text.split(/\n\s*\n/)) {
-      children.push(
-        new d.Paragraph({
-          spacing: { after: 180 },
-          children: para
-            .split("\n")
-            .map((line, j) => new d.TextRun({ text: line, break: j ? 1 : 0 })),
-        }),
-      );
-    }
+    const blocks: Block[] = p.translation
+      ? translationBlocks(p)
+      : [{ type: "paragraph", text: t.untranslated }];
+    for (const b of blocks) children.push(...blockNodes(d, b, false));
   });
 
   const cert = input.settings.certification[input.target].trim();
@@ -186,7 +277,7 @@ export async function exportTranscription(input: {
 }) {
   const d = await import("docx");
   const N = input.pages.length;
-  const children: InstanceType<typeof d.Paragraph>[] = [];
+  const children: Node[] = [];
   input.pages.forEach((p, i) => {
     children.push(
       new d.Paragraph({
@@ -201,25 +292,10 @@ export async function exportTranscription(input: {
         ],
       }),
     );
-    const blocks = p.transcription?.blocks ?? [{ text: input.t.unread }];
-    for (const b of blocks) {
-      children.push(
-        new d.Paragraph({
-          bidirectional: true,
-          alignment: d.AlignmentType.RIGHT,
-          spacing: { after: 180 },
-          children: b.text.split("\n").map(
-            (line, j) =>
-              new d.TextRun({
-                text: line,
-                rightToLeft: true,
-                font: "David",
-                break: j ? 1 : 0,
-              }),
-          ),
-        }),
-      );
-    }
+    const blocks: Block[] = p.transcription?.blocks ?? [
+      { type: "paragraph", text: input.t.unread },
+    ];
+    for (const b of blocks) children.push(...blockNodes(d, b, true));
   });
   const doc = new d.Document({
     title: input.title,

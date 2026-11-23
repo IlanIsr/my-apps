@@ -6,6 +6,10 @@
  * the API routes), holds the pages in state, auto-saves the reviewer's edits,
  * and exports. Route boundary: reads its texts.
  *
+ * Pages are reviewed one at a time: previous / next buttons and the page
+ * strip switch between them (the "to do" filter limits both to the pages
+ * still needing work), no scrolling through the whole document.
+ *
  * The scans come from this browser's IndexedDB; a page whose scan isn't
  * here can still be translated and reviewed, just not read again.
  */
@@ -99,6 +103,9 @@ export type WorkbenchTexts = {
   filter: { all: string; open: string };
   noOpen: string;
   jumpTo: string;
+  prev: string;
+  next: string;
+  pageOf: string;
   stopped: string;
   fatal: string;
   zoomTitle: string;
@@ -148,6 +155,10 @@ export function WorkbenchView({
   const [notice, setNotice] = useState<string | null>(null);
   const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
   const [filter, setFilter] = useState<"all" | "open">("all");
+  const [currentId, setCurrentId] = useState<string | null>(
+    initial.pages[0]?.id ?? null,
+  );
+  const topRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState<string | null>(null);
   const [modal, setModal] = useState<"retranslate" | "delete" | "add" | null>(
     null,
@@ -601,16 +612,39 @@ export function WorkbenchView({
   // ---------------------------------------------------------------------
   // Render
 
-  const visible =
-    filter === "all"
-      ? pages
-      : pages.filter(
-          (p) =>
-            !p.reviewed &&
-            (p.error ||
-              (flags[p.id] ?? []).some((f) => isOpen(p, f)) ||
-              !p.translation),
-        );
+  const needsWork = (p: Page) =>
+    !p.reviewed &&
+    Boolean(
+      p.error ||
+        (flags[p.id] ?? []).some((f) => isOpen(p, f)) ||
+        !p.translation,
+    );
+  const shown = (p: Page) => filter === "all" || needsWork(p);
+  const visibleCount = pages.filter(shown).length;
+
+  // The page on screen (the first one if it was deleted). It stays on screen
+  // when the filter would hide it (e.g. its last point was just resolved).
+  const currentIndex = Math.max(
+    0,
+    pages.findIndex((p) => p.id === currentId),
+  );
+  const current = pages[currentIndex];
+  const prevPage = pages.slice(0, currentIndex).reverse().find(shown);
+  const nextPage = pages.slice(currentIndex + 1).find(shown);
+
+  function goTo(page: Page | undefined) {
+    if (!page) return;
+    setCurrentId(page.id);
+    const top = topRef.current;
+    if (top && top.getBoundingClientRect().top < 0)
+      top.scrollIntoView({ block: "start" });
+  }
+
+  function changeFilter(value: "all" | "open") {
+    setFilter(value);
+    if (value === "open" && current && !needsWork(current))
+      setCurrentId(pages.find(needsWork)?.id ?? current.id);
+  }
 
   const runLabel = active
     ? stopping
@@ -705,9 +739,24 @@ export function WorkbenchView({
               { value: "open", label: t.filter.open },
             ]}
             value={filter}
-            onChange={setFilter}
+            onChange={changeFilter}
           />
-          <nav aria-label={t.jumpTo} className="flex flex-wrap gap-1">
+          <nav
+            aria-label={t.jumpTo}
+            className="flex flex-wrap items-center gap-1"
+          >
+            <Button
+              size="sm"
+              variant="outline"
+              isIconOnly
+              aria-label={t.prev}
+              disabled={!prevPage}
+              onClick={() => goTo(prevPage)}
+            >
+              <span aria-hidden className="inline-block rtl:-scale-x-100">
+                ‹
+              </span>
+            </Button>
             {pages.map((p, i) => {
               const s = statuses[p.id];
               const tone =
@@ -718,17 +767,34 @@ export function WorkbenchView({
                     : s === "error"
                       ? "border-bad text-bad"
                       : "border-line-strong text-muted";
+              const isCurrent = p.id === current?.id;
               return (
-                <a
+                <Button
                   key={p.id}
-                  href={`#page-${i + 1}`}
-                  className={`grid h-7 min-w-7 place-items-center rounded border px-1 font-mono text-xs hover:bg-sunken ${tone}`}
-                  title={messages.labels.status[s ?? "idle"]}
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`${fill(t.pageOf, { n: i + 1, total: pages.length })} · ${messages.labels.status[s ?? "idle"]}`}
+                  onClick={() => goTo(p)}
+                  className={`h-7 min-h-0 min-w-7 rounded border px-1 font-mono text-xs ${tone} ${
+                    isCurrent ? "bg-accent-soft ring-2 ring-accent" : ""
+                  } ${shown(p) || isCurrent ? "" : "opacity-40"}`}
                 >
                   {i + 1}
-                </a>
+                </Button>
               );
             })}
+            <Button
+              size="sm"
+              variant="outline"
+              isIconOnly
+              aria-label={t.next}
+              disabled={!nextPage}
+              onClick={() => goTo(nextPage)}
+            >
+              <span aria-hidden className="inline-block rtl:-scale-x-100">
+                ›
+              </span>
+            </Button>
           </nav>
           <span className="flex-1" />
           <Button
@@ -784,50 +850,74 @@ export function WorkbenchView({
         )}
       </div>
 
-      {visible.length === 0 && filter === "open" && (
-        <p className="sheet px-5 py-8 text-center text-muted">{t.noOpen}</p>
+      <div ref={topRef} className="scroll-mt-4 lg:scroll-mt-48" />
+      {visibleCount === 0 && filter === "open" && (
+        <p className="sheet px-5 py-4 text-center text-muted">{t.noOpen}</p>
       )}
 
-      <div className="flex flex-col gap-5">
-        {visible.map((page) => {
-          const index = pages.indexOf(page);
-          return (
-            <PageCard
-              key={page.id}
-              page={page}
-              index={index}
-              total={pages.length}
-              flags={flags[page.id] ?? []}
-              status={statuses[page.id] ?? "idle"}
-              scanUrl={scans[page.id] ?? null}
-              target={doc.target}
-              t={messages.pageCard}
-              flagTexts={messages.flags}
-              labels={messages.labels}
-              errorText={
-                page.error
-                  ? (messages.errors[page.error as ErrorCode] ??
-                    messages.errors.unknown)
-                  : null
-              }
-              saveState={saveStates[page.id] ?? "idle"}
-              canRun={!active}
-              canUseClaude={!active}
-              onTextChange={(text) => onTextChange(page, text)}
-              onReviewChange={(change) => void onReviewChange(page, change)}
-              onClaudeEdit={(input) => onClaudeEdit(page, input)}
-              onRun={({ reread }) => void runOne(page, { reread })}
-              onRetranslate={(blocks) =>
-                void runOne(page, { reread: false, blocks })
-              }
-              onToggleReviewed={() => void onToggleReviewed(page)}
-              onMove={(delta) => void onMove(page, delta)}
-              onRemove={() => void onRemove(page)}
-              onZoom={() => setZoom(scans[page.id] ?? null)}
-            />
-          );
-        })}
-      </div>
+      {current && (
+        <PageCard
+          key={current.id}
+          page={current}
+          index={currentIndex}
+          total={pages.length}
+          flags={flags[current.id] ?? []}
+          status={statuses[current.id] ?? "idle"}
+          scanUrl={scans[current.id] ?? null}
+          target={doc.target}
+          t={messages.pageCard}
+          flagTexts={messages.flags}
+          labels={messages.labels}
+          errorText={
+            current.error
+              ? (messages.errors[current.error as ErrorCode] ??
+                messages.errors.unknown)
+              : null
+          }
+          saveState={saveStates[current.id] ?? "idle"}
+          canRun={!active}
+          canUseClaude={!active}
+          onTextChange={(text) => onTextChange(current, text)}
+          onReviewChange={(change) => void onReviewChange(current, change)}
+          onClaudeEdit={(input) => onClaudeEdit(current, input)}
+          onRun={({ reread }) => void runOne(current, { reread })}
+          onRetranslate={(blocks) =>
+            void runOne(current, { reread: false, blocks })
+          }
+          onToggleReviewed={() => void onToggleReviewed(current)}
+          onMove={(delta) => void onMove(current, delta)}
+          onRemove={() => void onRemove(current)}
+          onZoom={() => setZoom(scans[current.id] ?? null)}
+        />
+      )}
+
+      {pages.length > 1 && (
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            variant="outline"
+            disabled={!prevPage}
+            onClick={() => goTo(prevPage)}
+          >
+            <span aria-hidden className="inline-block rtl:-scale-x-100">
+              ‹
+            </span>{" "}
+            {t.prev}
+          </Button>
+          <span className="text-sm text-muted">
+            {fill(t.pageOf, { n: currentIndex + 1, total: pages.length })}
+          </span>
+          <Button
+            variant="outline"
+            disabled={!nextPage}
+            onClick={() => goTo(nextPage)}
+          >
+            {t.next}{" "}
+            <span aria-hidden className="inline-block rtl:-scale-x-100">
+              ›
+            </span>
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2 border-t border-line pt-5">
         <Button

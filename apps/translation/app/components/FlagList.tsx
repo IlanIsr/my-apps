@@ -1,11 +1,13 @@
 "use client";
 
 /**
- * A page's review flags, next to its translation. An open flag (warn / bad)
- * offers four actions — replace, add, remove, keep as is — each opening an
- * inline editor: apply it by hand (exact text edit, all occurrences on
- * request) or let Claude apply it (adjusting the grammar around it). A
- * resolved flag shows what was done, with "reopen" / "undo".
+ * A page's review flags ("comments"), numbered like their highlights on the
+ * document. One line each; selecting one (here or by clicking its highlight)
+ * opens it: an open flag (warn / bad) offers four actions — replace, add,
+ * remove, keep as is — each opening an inline editor: apply it by hand (exact
+ * text edit, all occurrences on request) or let Claude apply it (adjusting
+ * the grammar around it). A resolved flag shows what was done, with
+ * "reopen" / "undo" — greyed, never a green "all good".
  */
 
 import { useState } from "react";
@@ -37,11 +39,9 @@ export type FlagTexts = {
     sourcePdfDiscarded: string;
     discardReason: Record<string, string>;
     illegible: string;
-    idValid: string;
     idInvalid: string;
     numbersMissing: string;
     numbersAdded: string;
-    numbersOk: string;
     hebrewLeft: string;
     glossary: string;
     cutStart: string;
@@ -89,7 +89,6 @@ export type FlagTexts = {
 
 const SEV_STYLE: Record<KeyedFlag["sev"], string> = {
   info: "bg-info-soft [--tag:var(--info)]",
-  ok: "bg-ok-soft [--tag:var(--ok)]",
   warn: "bg-warn-soft [--tag:var(--warn)]",
   bad: "bg-bad-soft [--tag:var(--bad)]",
 };
@@ -123,10 +122,6 @@ export function FlagMessage({ flag, t }: { flag: KeyedFlag; t: FlagTexts }) {
       return <span dir="auto">{flag.text}</span>;
     case "illegible":
       return <>{fill(m.illegible, { n: flag.count })}</>;
-    case "id-valid":
-      return (
-        <span className="font-mono">{fill(m.idValid, { n: flag.number })}</span>
-      );
     case "id-invalid":
       return (
         <span className="font-mono">
@@ -145,8 +140,6 @@ export function FlagMessage({ flag, t }: { flag: KeyedFlag; t: FlagTexts }) {
           {fill(m.numbersAdded, { list: flag.numbers.join(", ") })}
         </span>
       );
-    case "numbers-ok":
-      return <>{fill(m.numbersOk, { n: flag.count })}</>;
     case "hebrew-left":
       return (
         <>
@@ -219,6 +212,11 @@ export type ReviewChange = {
 export function FlagList({
   page,
   flags,
+  numbers,
+  selected,
+  action,
+  onSelect,
+  onAction,
   t,
   target,
   canUseClaude,
@@ -228,6 +226,14 @@ export function FlagList({
 }: {
   page: Page;
   flags: KeyedFlag[];
+  /** Each flag's number, as shown on its highlights. */
+  numbers: Record<string, number>;
+  /** The flag being looked at (its actions are shown), or `null`. */
+  selected: string | null;
+  /** The editor open on the selected flag, or `null`. */
+  action: EditAction | null;
+  onSelect: (key: string | null) => void;
+  onAction: (action: EditAction | null) => void;
   t: FlagTexts;
   target: TargetLang;
   canUseClaude: boolean;
@@ -244,11 +250,16 @@ export function FlagList({
 }) {
   if (!flags.length) return null;
   return (
-    <ul className="flex flex-col gap-1.5">
+    <ul className="flex flex-col gap-1">
       {flags.map((flag) => (
         <FlagItem
           key={flag.key}
           flag={flag}
+          n={numbers[flag.key] ?? 0}
+          isSelected={selected === flag.key}
+          action={selected === flag.key ? action : null}
+          onSelect={() => onSelect(selected === flag.key ? null : flag.key)}
+          onAction={onAction}
           page={page}
           t={t}
           target={target}
@@ -264,6 +275,11 @@ export function FlagList({
 
 function FlagItem({
   flag,
+  n,
+  isSelected,
+  action,
+  onSelect,
+  onAction,
   page,
   t,
   target,
@@ -273,6 +289,11 @@ function FlagItem({
   getSelection,
 }: {
   flag: KeyedFlag;
+  n: number;
+  isSelected: boolean;
+  action: EditAction | null;
+  onSelect: () => void;
+  onAction: (action: EditAction | null) => void;
   page: Page;
   t: FlagTexts;
   target: TargetLang;
@@ -281,7 +302,6 @@ function FlagItem({
   onClaudeEdit: Parameters<typeof FlagList>[0]["onClaudeEdit"];
   getSelection: () => string;
 }) {
-  const [action, setAction] = useState<EditAction | null>(null);
   const resolution = page.resolved[flag.key];
   const open = isOpen(page, flag);
   const translation = page.translation?.text ?? "";
@@ -294,76 +314,98 @@ function FlagItem({
 
   return (
     <li
-      className={`grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2 rounded-md px-2.5 py-2 text-[13.5px] ${
-        resolution ? "bg-sunken" : SEV_STYLE[flag.sev]
-      }`}
+      id={`flag-${flag.key}`}
+      className={`rounded-md text-[13.5px] ${
+        resolution ? "bg-sunken [--tag:var(--muted)]" : SEV_STYLE[flag.sev]
+      } ${isSelected ? "ring-2 ring-[var(--tag)]" : ""}`}
     >
-      <i className="rounded bg-surface px-1.5 py-0.5 text-[11px] font-semibold tracking-wide whitespace-nowrap text-[var(--tag)] not-italic uppercase">
-        {t.tag[flag.kind]}
-      </i>
-      <div className="flex min-w-0 flex-col gap-2">
-        <span className={resolution ? "text-muted" : undefined}>
+      <Button
+        variant="ghost"
+        onClick={onSelect}
+        aria-expanded={isSelected}
+        className="grid h-auto min-h-0 w-full grid-cols-[auto_auto_minmax(0,1fr)] items-start justify-start gap-2 rounded-md px-2.5 py-1.5 text-start font-normal whitespace-normal text-inherit"
+      >
+        <span
+          aria-hidden
+          className={`grid h-[1.3rem] min-w-[1.3rem] place-items-center rounded-full px-1 font-sans text-[10.5px] font-semibold ${
+            resolution
+              ? "bg-line text-muted"
+              : "bg-[var(--tag)] text-[var(--surface)]"
+          }`}
+        >
+          {n}
+        </span>
+        <i className="rounded bg-surface px-1.5 py-0.5 text-[11px] font-semibold tracking-wide whitespace-nowrap text-[var(--tag)] not-italic uppercase">
+          {t.tag[flag.kind]}
+        </i>
+        <span
+          className={`min-w-0 ${resolution ? "text-muted" : ""} ${
+            isSelected ? "" : "line-clamp-2"
+          }`}
+        >
           <FlagMessage flag={flag} t={t} />
         </span>
+      </Button>
 
-        {resolution && (
-          <div className="flex flex-wrap items-center gap-2 font-medium text-ok">
-            <span>
-              ✓ <bdi>{resolution.label}</bdi>
-            </span>
-            {resolution.after === null ? (
-              <Button variant="outline" size="sm" onClick={() => unresolve()}>
-                {t.reopen}
-              </Button>
-            ) : (
-              translation === resolution.after &&
-              resolution.before !== null && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => unresolve(resolution.before ?? undefined)}
-                >
-                  {t.undo}
+      {isSelected && (resolution || (open && page.translation)) && (
+        <div className="flex flex-col gap-2 px-2.5 pb-2.5">
+          {resolution && (
+            <div className="flex flex-wrap items-center gap-2 text-muted">
+              <bdi>{resolution.label}</bdi>
+              {resolution.after === null ? (
+                <Button variant="outline" size="sm" onClick={() => unresolve()}>
+                  {t.reopen}
                 </Button>
-              )
-            )}
-          </div>
-        )}
+              ) : (
+                translation === resolution.after &&
+                resolution.before !== null && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => unresolve(resolution.before ?? undefined)}
+                  >
+                    {t.undo}
+                  </Button>
+                )
+              )}
+            </div>
+          )}
 
-        {open && page.translation && (
-          <div className="flex flex-wrap gap-1.5">
-            {(["replace", "add", "remove", "keep"] as const).map((a) => (
-              <Button
-                key={a}
-                size="sm"
-                variant={action === a ? "primary" : "outline"}
-                onClick={() => setAction(action === a ? null : a)}
-              >
-                {t.actions[a]}
-              </Button>
-            ))}
-          </div>
-        )}
+          {open && page.translation && (
+            <div className="flex flex-wrap gap-1.5">
+              {(["replace", "add", "remove", "keep"] as const).map((a) => (
+                <Button
+                  key={a}
+                  size="sm"
+                  variant={action === a ? "primary" : "outline"}
+                  onClick={() => onAction(action === a ? null : a)}
+                >
+                  {t.actions[a]}
+                </Button>
+              ))}
+            </div>
+          )}
 
-        {open && action && page.translation && (
-          <FlagEditor
-            key={action}
-            flag={flag}
-            action={action}
-            page={page}
-            t={t}
-            target={target}
-            canUseClaude={canUseClaude}
-            onClose={() => setAction(null)}
-            onChange={(change) => {
-              setAction(null);
-              onChange(change);
-            }}
-            onClaudeEdit={onClaudeEdit}
-            getSelection={getSelection}
-          />
-        )}
-      </div>
+          {open && action && page.translation && (
+            <FlagEditor
+              key={action}
+              flag={flag}
+              action={action}
+              page={page}
+              t={t}
+              target={target}
+              canUseClaude={canUseClaude}
+              onClose={() => onAction(null)}
+              onChange={(change) => {
+                onAction(null);
+                onChange(change);
+              }}
+              onClaudeEdit={onClaudeEdit}
+              getSelection={getSelection}
+            />
+          )}
+        </div>
+      )}
     </li>
   );
 }
